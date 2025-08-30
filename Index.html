@@ -1,0 +1,1351 @@
+<!DOCTYPE html>
+<html lang="id" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>blabla - Belanja Online Terlengkap & Terpercaya</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#0095DA',
+                        secondary: '#FF6B35',
+                        accent: '#00C851',
+                        neutral: '#6b7280',
+                        dark: '#1f2937'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                        display: ['Poppins', 'system-ui', 'sans-serif']
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-in-out',
+                        'slide-up': 'slideUp 0.6s ease-out',
+                        'bounce-slow': 'bounce 2s infinite',
+                        'pulse-slow': 'pulse 3s infinite',
+                        'float': 'float 6s ease-in-out infinite',
+                        'glow': 'glow 2s ease-in-out infinite alternate'
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' }
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(20px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' }
+                        },
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-20px)' }
+                        },
+                        glow: {
+                            '0%': { boxShadow: '0 0 5px #0095DA' },
+                            '100%': { boxShadow: '0 0 20px #0095DA, 0 0 30px #0095DA' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .gradient-text {
+            background: linear-gradient(135deg, #0095DA, #00C851);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .card-hover {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-glow:hover {
+            box-shadow: 0 0 20px rgba(255, 107, 53, 0.5);
+        }
+        
+        .hero-bg {
+            background: linear-gradient(135deg, #0095DA 0%, #00C851 100%);
+        }
+        
+        .category-hover:hover {
+            transform: translateY(-5px);
+            transition: all 0.3s ease;
+        }
+        
+        .flash-sale-bg {
+            background: linear-gradient(45deg, #FF6B35, #FF8E53);
+        }
+        
+        .notification-badge {
+            animation: pulse 2s infinite;
+        }
+        
+        .search-focus:focus {
+            box-shadow: 0 0 0 3px rgba(0, 149, 218, 0.1);
+        }
+
+        .product-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid #e5e7eb;
+        }
+
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            border-color: #0095DA;
+        }
+
+        .badge-discount {
+            background: linear-gradient(45deg, #FF6B35, #FF8E53);
+        }
+
+        .badge-new {
+            background: linear-gradient(45deg, #00C851, #00A644);
+        }
+
+        .badge-bestseller {
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .logo-container:hover {
+            transform: scale(1.05);
+        }
+
+        .logo-image {
+            height: 110px;
+            width: auto;
+            object-fit: contain;
+        }
+    </style>
+</head>
+<body class="font-sans text-gray-900 bg-gray-50">
+    <!-- Top Bar -->
+    <div class="bg-gradient-to-r from-primary to-blue-600 text-white text-sm py-2 relative overflow-hidden">
+        <div class="absolute inset-0 bg-black opacity-10"></div>
+        <div class="max-w-7xl mx-auto px-4 flex justify-between items-center relative z-10">
+            <div class="flex items-center space-x-6">
+                <a href="#" class="hover:text-blue-200 transition-colors flex items-center space-x-1">
+                    <i class="fas fa-mobile-alt"></i>
+                    <span>Download App</span>
+                </a>
+                <a href="#" class="hover:text-blue-200 transition-colors flex items-center space-x-1">
+                    <i class="fas fa-heart"></i>
+                    <span>Ikuti Kami</span>
+                </a>
+            </div>
+            <div class="flex items-center space-x-6">
+                <a href="#" class="hover:text-blue-200 transition-colors flex items-center space-x-1">
+                    <i class="fas fa-store"></i>
+                    <span>Jual di blabla</span>
+                </a>
+                <a href="#" class="hover:text-blue-200 transition-colors flex items-center space-x-1">
+                    <i class="fas fa-headset"></i>
+                    <span>Customer Care</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Header -->
+    <header class="bg-white shadow-lg border-b border-gray-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <!-- Logo -->
+                <div class="flex items-center">
+                    <a href="#" class="logo-container">
+                        <img src="blabla.png" alt="blabla - Belanja Online Terlengkap" class="logo-image">
+                    </a>
+                </div>
+
+                <!-- Search Bar -->
+                <div class="flex-1 max-w-2xl mx-8">
+                    <div class="relative">
+                        <input type="text" 
+                               placeholder="Cari produk, brand, atau toko..." 
+                               class="w-full px-6 py-4 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent search-focus transition-all duration-300 text-gray-700 placeholder-gray-400">
+                        <button class="absolute right-3 top-1/2 transform -translate-y-1/2 bg-primary text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-all duration-300 btn-glow">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Right Menu -->
+                <div class="flex items-center space-x-6">
+                    <a href="#" class="flex items-center space-x-2 text-gray-700 hover:text-primary transition-colors relative">
+                        <i class="fas fa-heart text-xl"></i>
+                        <span class="hidden md:block">Wishlist</span>
+                        <span class="absolute -top-2 -right-2 bg-accent text-white text-xs rounded-full px-2 py-1 notification-badge">3</span>
+                    </a>
+                    <a href="#" class="flex items-center space-x-2 text-gray-700 hover:text-primary transition-colors relative">
+                        <i class="fas fa-shopping-cart text-xl"></i>
+                        <span class="hidden md:block">Keranjang</span>
+                        <span class="absolute -top-2 -right-2 bg-secondary text-white text-xs rounded-full px-2 py-1 notification-badge">5</span>
+                    </a>
+                    <a href="#" class="flex items-center space-x-2 text-gray-700 hover:text-primary transition-colors">
+                        <i class="fas fa-user-circle text-xl"></i>
+                        <span class="hidden md:block">Masuk</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation -->
+    <nav class="bg-white border-b border-gray-200 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex items-center space-x-8 py-4">
+                <button class="flex items-center space-x-2 text-gray-700 hover:text-primary transition-colors bg-gray-50 px-4 py-2 rounded-lg hover:bg-gray-100">
+                    <i class="fas fa-bars"></i>
+                    <span class="font-medium">Semua Kategori</span>
+                </button>
+                <a href="#flash-sale" class="text-secondary font-bold hover:text-orange-600 transition-colors flex items-center space-x-1 animate-pulse-slow">
+                    <i class="fas fa-bolt"></i>
+                    <span>Flash Sale</span>
+                </a>
+                <a href="#elektronik" class="text-gray-700 hover:text-primary transition-colors font-medium">Elektronik</a>
+                <a href="#fashion" class="text-gray-700 hover:text-primary transition-colors font-medium">Fashion</a>
+                <a href="#kesehatan" class="text-gray-700 hover:text-primary transition-colors font-medium">Kesehatan</a>
+                <a href="#rumah-tangga" class="text-gray-700 hover:text-primary transition-colors font-medium">Rumah Tangga</a>
+                <a href="#olahraga" class="text-gray-700 hover:text-primary transition-colors font-medium">Olahraga</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Banner -->
+    <section class="hero-bg text-white py-20 relative overflow-hidden">
+        <div class="absolute inset-0 bg-black opacity-20"></div>
+        <div class="absolute top-10 right-10 animate-float">
+            <i class="fas fa-shopping-cart text-6xl text-white opacity-20"></i>
+        </div>
+        <div class="absolute bottom-10 left-10 animate-float" style="animation-delay: -3s;">
+            <i class="fas fa-gift text-8xl text-white opacity-20"></i>
+        </div>
+        
+        <div class="max-w-7xl mx-auto px-4 relative z-10">
+            <div class="grid lg:grid-cols-2 gap-12 items-center">
+                <div class="space-y-8 animate-slide-up">
+                    <h1 class="font-display font-bold text-5xl lg:text-6xl leading-tight">
+                        Selamat Datang di
+                        <span class="block text-yellow-300">blabla.com</span>
+                    </h1>
+                    <p class="text-xl text-blue-100 leading-relaxed">
+                        Belanja online terlengkap dengan jutaan produk berkualitas, harga terbaik, dan pengiriman cepat ke seluruh Indonesia
+                    </p>
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <button class="bg-secondary text-white px-8 py-4 rounded-xl font-semibold hover:bg-orange-600 transition-all duration-300 shadow-lg btn-glow transform hover:scale-105">
+                            <i class="fas fa-shopping-bag mr-2"></i>
+                            Mulai Belanja
+                        </button>
+                        <button class="border-2 border-white text-white px-8 py-4 rounded-xl font-semibold hover:bg-white hover:text-primary transition-all duration-300">
+                            <i class="fas fa-play mr-2"></i>
+                            Lihat Video
+                        </button>
+                    </div>
+                    
+                    <!-- Stats -->
+                    <div class="grid grid-cols-3 gap-6 pt-8">
+                        <div class="text-center">
+                            <div class="text-3xl font-bold text-yellow-300">10M+</div>
+                            <div class="text-blue-100 text-sm">Produk</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-3xl font-bold text-yellow-300">5M+</div>
+                            <div class="text-blue-100 text-sm">Pengguna</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-3xl font-bold text-yellow-300">1M+</div>
+                            <div class="text-blue-100 text-sm">Toko</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex justify-center animate-fade-in">
+                    <div class="relative">
+                        <img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/f29f96b1-df5e-4878-9c34-bd6df9ab1800.png" 
+                             alt="Modern e-commerce shopping experience with colorful packages and digital devices showing online marketplace" 
+                             class="w-full max-w-md rounded-2xl shadow-2xl">
+                        <div class="absolute -top-4 -right-4 bg-yellow-400 text-gray-800 px-4 py-2 rounded-full font-bold animate-bounce-slow">
+                            Gratis Ongkir!
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Flash Sale -->
+    <section id="flash-sale" class="bg-white py-12 relative">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flash-sale-bg text-white p-6 rounded-2xl mb-8">
+                <div class="flex items-center justify-between mb-6">
+                    <div class="flex items-center space-x-4">
+                        <h2 class="text-3xl font-bold flex items-center">
+                            <i class="fas fa-bolt mr-3"></i>
+                            Flash Sale
+                        </h2>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-lg">Berakhir dalam:</span>
+                            <div class="flex space-x-1">
+                                <span class="bg-white text-secondary px-3 py-2 rounded-lg text-lg font-bold" id="hours">02</span>
+                                <span class="text-2xl">:</span>
+                                <span class="bg-white text-secondary px-3 py-2 rounded-lg text-lg font-bold" id="minutes">45</span>
+                                <span class="text-2xl">:</span>
+                                <span class="bg-white text-secondary px-3 py-2 rounded-lg text-lg font-bold" id="seconds">30</span>
+                            </div>
+                        </div>
+                    </div>
+                    <a href="#" class="text-white hover:text-yellow-200 transition-colors font-semibold">Lihat Semua</a>
+                </div>
+
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+                    <!-- Flash Sale Item 1 -->
+                    <div class="bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow overflow-hidden card-hover">
+                        <div class="relative">
+                            <img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/4281db6b-7559-4489-a344-1aeb801b24d9.png" 
+                                 alt="Smartphone Android flagship dengan layar AMOLED 6.7 inch dan kamera 108MP" 
+                                 class="w-full h-40 object-cover">
+                            <div class="absolute top-2 left-2 badge-discount text-white px-3 py-1 rounded-full text-xs font-bold">
+                                50% OFF
+                            </div>
+                            <div class="absolute top-2 right-2 bg-white text-red-500 p-2 rounded-full shadow-lg">
+                                <i class="fas fa-heart"></i>
+                            </div>
+                        </div>
+                        <div class="p-4">
+                            <h3 class="font-semibold text-gray-800 mb-2">Smartphone Premium Android</h3>
+                            <div class="space-y-2">
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-xl font-bold text-secondary">Rp 2.499.000</span>
+                                    <span class="text-sm text-gray-500 line-through">Rp 4.999.000</span>
+                                </div>
+                                <div class="flex items-center space-x-2 text-sm text-gray-600">
+                                    <div class="flex text-yellow-400">
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                    </div>
+                                    <span>(1.2k)</span>
+                                    <span>•</span>
+                                    <span>Terjual 500+</span>
+                                </div>
+                                <button class="w-full bg-primary text-white py-2 rounded-lg hover:bg-blue-600 transition-colors font-semibold">
+                                    <i class="fas fa-cart-plus mr-2"></i>Beli Sekarang
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Flash Sale Item 2 -->
+                    <div class="bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow overflow-hidden card-hover">
+                        <div class="relative">
+                            <img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/8bcc6554-0141-4eac-a843-2aac66b83b0e.png" 
+                                 alt="Laptop gaming dengan processor Intel Core i7 dan graphics card RTX 4060" 
+                                 class="w-full h-40 object-cover">
+                            <div class="absolute top-2 left-2 badge-discount text-white px-3 py-1 rounded-full text-xs font-bold">
+                                30% OFF
+                            </div>
+                            <div class="absolute top-2 right-2 bg-white text-red-500 p-2 rounded-full shadow-lg">
+                                <i class="fas fa-heart"></i>
+                            </div>
+                        </div>
+                        <div class="p-4">
+                            <h3 class="font-semibold text-gray-800 mb-2">Laptop Gaming High-End</h3>
+                            <div class="space-y-2">
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-xl font-bold text-secondary">Rp 8.999.000</span>
+                                    <span class="text-sm text-gray-500 line-through">Rp 12.999.000</span>
+                                </div>
+                                <div class="flex items-center space-x-2 text-sm text-gray-600">
+                                    <div class="flex text-yellow-400">
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star-half-alt"></i>
+                                    </div>
+                                    <span>(856)</span>
+                                    <span>•</span>
+                                    <span>Terjual 200+</span>
+                                </div>
+                                <button class="w-full bg-primary text-white py-2 rounded-lg hover:bg-blue-600 transition-colors font-semibold">
+                                    <i class="fas fa-cart-plus mr-2"></i>Beli Sekarang
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Flash Sale Item 3 -->
+                    <div class="bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow overflow-hidden card-hover">
+                        <div class="relative">
+                            <img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/ba92bb15-89c3-4268-94a2-9afc3b5fc144.png" 
+                                 alt="Wireless headphones dengan noise cancelling dan battery life 30 jam" 
+                                 class="w-full h-40 object-cover">
+                            <div class="absolute top-2 left-2 badge-discount text-white px-3 py-1 rounded-full text-xs font-bold">
+                                40% OFF
+                            </div>
+                            <div class="absolute top-2 right-2 bg-white text-red-500 p-2 rounded-full shadow-lg">
+                                <i class="fas fa-heart"></i>
+                            </div>
+                        </div>
+                        <div class="p-4">
+                            <h3 class="font-semibold text-gray-800 mb-2">Wireless Headphones Pro</h3>
+                            <div class="space-y-2">
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-xl font-bold text-secondary">Rp 599.000</span>
+                                    <span class="text-sm text-gray-500 line-through">Rp 999.000</span>
+                                </div>
+                                <div class="flex items-center space-x-2 text-sm text-gray-600">
+                                    <div class="flex text-yellow-400">
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                    </div>
+                                    <span>(2.1k)</span>
+                                    <span>•</span>
+                                    <span>Terjual 1k+</span>
+                                </div>
+                                <button class="w-full bg-primary text-white py-2 rounded-lg hover:bg-blue-600 transition-colors font-semibold">
+                                    <i class="fas fa-cart-plus mr-2"></i>Beli Sekarang
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Flash Sale Item 4 -->
+                    <div class="bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow overflow-hidden card-hover">
+                        <div class="relative">
+                            <img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/5e24b80f-ceee-4864-8772-8081e4c0c570.png" 
+                                 alt="Smartwatch sport dengan GPS tracking dan heart rate monitor" 
+                                 class="w-full h-40 object-cover">
+                            <div class="absolute top-2 left-2 badge-discount text-white px-3 py-1 rounded-full text-xs font-bold">
+                                35% OFF
+                            </div>
+                            <div class="absolute top-2 right-2 bg-white text-red-500 p-2 rounded-full shadow-lg">
+                                <i class="fas fa-heart"></i>
+                            </div>
+                        </div>
+                        <div class="p-4">
+                            <h3 class="font-semibold text-gray-800 mb-2">Smartwatch Sport GPS</h3>
+                            <div class="space-y-2">
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-xl font-bold text-secondary">Rp 1.299.000</span>
+                                    <span class="text-sm text-gray-500 line-through">Rp 1.999.000</span>
+                                </div>
+                                <div class="flex items-center space-x-2 text-sm text-gray-600">
+                                    <div class="flex text-yellow-400">
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="far fa-star"></i>
+                                    </div>
+                                    <span>(743)</span>
+                                    <span>•</span>
+                                    <span>Terjual 300+</span>
+                                </div>
+                                <button class="w-full bg-primary text-white py-2 rounded-lg hover:bg-blue-600 transition-colors font-semibold">
+                                    <i class="fas fa-cart-plus mr-2"></i>Beli Sekarang
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Categories -->
+    <section class="bg-gray-50 py-16">
+        <div class="max-w-7xl mx-auto px-4">
+            <h2 class="text-3xl font-bold text-gray-800 mb-12 text-center">Kategori Pilihan</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-6">
+                <div class="text-center group cursor-pointer category-hover">
+                    <div class="w-20 h-20 bg-white rounded-xl shadow-lg flex items-center justify-center mx-auto mb-3 group-hover:shadow-xl transition-shadow">
+                        <i class="fas fa-mobile-alt text-3xl text-primary"></i>
+                    </div>
+                    <span class="text-sm font-medium text-gray-700">Handphone</span>
+                </div>
+                <div class="text-center group cursor-pointer category-hover">
+                    <div class="w-20 h-20 bg-white rounded-xl shadow-lg flex items-center justify-center mx-auto mb-3 group-hover:shadow-xl transition-shadow">
+                        <i class="fas fa-laptop text-3xl text-primary"></i>
+                    </div>
+                    <span class="text-sm font-medium text-gray-700">Laptop</span>
+                </div>
+                <div class="text-center group cursor-pointer category-hover">
+                    <div class="w-20 h-20 bg-white rounded-xl shadow-lg flex items-center justify-center mx-auto mb-3 group-hover:shadow-xl transition-shadow">
+                        <i class="fas fa-tshirt text-3xl text-primary"></i>
+                    </div>
+                    <span class="text-sm font-medium text-gray-700">Fashion</span>
+                </div>
+                <div class="text-center group cursor-pointer category-hover">
+                    <div class="w-20 h-20 bg-white rounded-xl shadow-lg flex items-center justify-center mx-auto mb-3 group-hover:shadow-xl transition-shadow">
+                        <i class="fas fa-home text-3xl text-primary"></i>
+                    </div>
+                    <span class="text-sm font-medium text-gray-700">Rumah Tangga</span>
+                </div>
+                <div class="text-center group cursor-pointer category-hover">
+                    <div class="w-20 h-20 bg-white rounded-xl shadow-lg flex items-center justify-center mx-auto mb-3 group-hover:shadow-xl transition-shadow">
+                        <i class="fas fa-heartbeat text-3xl text-primary"></i>
+                    </div>
+                    <span class="text-sm font-medium text-gray-700">Kesehatan</span>
+                </div>
+                <div class="text-center group cursor-pointer category-hover">
+                    <div class="w-20 h-20 bg-white rounded-xl shadow-lg flex items-center justify-center mx-auto mb-3 group-hover:shadow-xl transition-shadow">
+                        <i class="fas fa-gamepad text-3xl text-primary"></i>
+                    </div>
+                    <span class="text-sm font-medium text-gray-700">Gaming</span>
+                </div>
+                <div class="text-center group cursor-pointer category-hover">
+                    <div class="w-20 h-20 bg-white rounded-xl shadow-lg flex items-center justify-center mx-auto mb-3 group-hover:shadow-xl transition-shadow">
+                        <i class="fas fa-car text-3xl text-primary"></i>
+                    </div>
+                    <span class="text-sm font-medium text-gray-700">Otomotif</span>
+                </div>
+                <div class="text-center group cursor-pointer category-hover">
+                    <div class="w-20 h-20 bg-white rounded-xl shadow-lg flex items-center justify-center mx-auto mb-3 group-hover:shadow-xl transition-shadow">
+                        <i class="fas fa-dumbbell text-3xl text-primary"></i>
+                    </div>
+                    <span class="text-sm font-medium text-gray-700">Olahraga</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Elektronik Products -->
+    <section id="elektronik" class="bg-white py-16">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex items-center justify-between mb-10">
+                <h2 class="text-3xl font-bold text-gray-800 flex items-center">
+                    <i class="fas fa-plug mr-3 text-primary"></i>
+                    Elektronik Terlaris
+                </h2>
+                <a href="#" class="text-primary hover:text-blue-600 transition-colors font-semibold">Lihat Semua</a>
+            </div>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Product 1 -->
+                <div class="product-card bg-white rounded-xl shadow-lg overflow-hidden">
+                    <div class="relative">
+                        <img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/c92986d2-3872-4618-aeb8-8f6c4f343d13.png" 
+                             alt="Samsung Galaxy S24 Ultra dengan S Pen dan kamera 200MP" 
+                             class="w-full h-48 object-cover">
+                        <div class="absolute top-3 left-3 badge-bestseller text-white px-2 py-1 rounded-full text-xs font-bold">
+                            Best Seller
+                        </div>
+                        <div class="absolute top-3 right-3 bg-white text-red-500 p-2 rounded-full shadow-md hover:bg-red-500 hover:text-white transition-colors cursor-pointer">
+                            <i class="fas fa-heart"></i>
+                        </div>
+                    </div>
+                    <div class="p-5">
+                        <h3 class="font-semibold text-gray-800 mb-2">Samsung Galaxy S24 Ultra</h3>
+                        <p class="text-gray-600 text-sm mb-3">Flagship smartphone dengan S Pen dan AI</p>
+                        <div class="space-y-3">
+                            <div class="flex items-center space-x-2">
+                                <span class="text-2xl font-bold text-primary">Rp 18.999.000</span>
+                            </div>
+                            <div class="flex items-center space-x-2 text-sm text-gray-600">
+                                <div class="flex text-yellow-400">
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                </div>
+                                <span>(2.5k)</span>
+                                <span>•</span>
+                                <span>Terjual 1k+</span>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button class="flex-1 bg-primary text-white py-2 rounded-lg hover:bg-blue-600 transition-colors font-semibold">
+                                    <i class="fas fa-cart-plus mr-1"></i>Keranjang
+                                </button>
+                                <button class="flex-1 bg-secondary text-white py-2 rounded-lg hover:bg-orange-600 transition-colors font-semibold">
+                                    Beli Langsung
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Product 2 -->
+                <div class="product-card bg-white rounded-xl shadow-lg overflow-hidden">
+                    <div class="relative">
+                        <img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/dde469e1-2516-4583-9744-1b4ee9697f13.png" 
+                             alt="MacBook Pro M3 dengan layar Retina 14 inch dan performa tinggi" 
+                             class="w-full h-48 object-cover">
+                        <div class="absolute top-3 left-3 badge-new text-white px-2 py-1 rounded-full text-xs font-bold">
+                            New
+                        </div>
+                        <div class="absolute top-3 right-3 bg-white text-gray-400 p-2 rounded-full shadow-md hover:bg-red-500 hover:text-white transition-colors cursor-pointer">
+                            <i class="fas fa-heart"></i>
+                        </div>
+                    </div>
+                    <div class="p-5">
+                        <h3 class="font-semibold text-gray-800 mb-2">MacBook Pro M3 14"</h3>
+                        <p class="text-gray-600 text-sm mb-3">Laptop profesional dengan chip M3</p>
+                        <div class="space-y-3">
+                            <div class="flex items-center space-x-2">
+                                <span class="text-2xl font-bold text-primary">Rp 32.999.000</span>
+                            </div>
+                            <div class="flex items-center space-x-2 text-sm text-gray-600">
+                                <div class="flex text-yellow-400">
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star-half-alt"></i>
+                                </div>
+                                <span>(1.8k)</span>
+                                <span>•</span>
+                                <span>Terjual 500+</span>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button class="flex-1 bg-primary text-white py-2 rounded-lg hover:bg-blue-600 transition-colors font-semibold">
+                                    <i class="fas fa-cart-plus mr-1"></i>Keranjang
+                                </button>
+                                <button class="flex-1 bg-secondary text-white py-2 rounded-lg hover:bg-orange-600 transition-colors font-semibold">
+                                    Beli Langsung
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Product 3 -->
+                <div class="product-card bg-white rounded-xl shadow-lg overflow-hidden">
+                    <div class="relative">
+                        <img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/77d4ff8d-84fc-4816-a56b-9b2ceb9b8864.png" 
+                             alt="Sony WH-1000XM5 wireless noise cancelling headphones hitam" 
+                             class="w-full h-48 object-cover">
+                        <div class="absolute top-3 right-3 bg-white text-gray-400 p-2 rounded-full shadow-md hover:bg-red-500 hover:text-white transition-colors cursor-pointer">
+                            <i class="fas fa-heart"></i>
+                        </div>
+                    </div>
+                    <div class="p-5">
+                        <h3 class="font-semibold text-gray-800 mb-2">Sony WH-1000XM5</h3>
+                        <p class="text-gray-600 text-sm mb-3">Wireless noise cancelling headphones</p>
+                        <div class="space-y-3">
+                            <div class="flex items-center space-x-2">
+                                <span class="text-2xl font-bold text-primary">Rp 5.499.000</span>
+                            </div>
+                            <div class="flex items-center space-x-2 text-sm text-gray-600">
+                                <div class="flex text-yellow-400">
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                </div>
+                                <span>(3.2k)</span>
+                                <span>•</span>
+                                <span>Terjual 2k+</span>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button class="flex-1 bg-primary text-white py-2 rounded-lg hover:bg-blue-600 transition-colors font-semibold">
+                                    <i class="fas fa-cart-plus mr-1"></i>Keranjang
+                                </button>
+                                <button class="flex-1 bg-secondary text-white py-2 rounded-lg hover:bg-orange-600 transition-colors font-semibold">
+                                    Beli Langsung
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Product 4 -->
+                <div class="product-card bg-white rounded-xl shadow-lg overflow-hidden">
+                    <div class="relative">
+                        <img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/575ac60b-0d01-40b5-8caa-5696211b8b54.png" 
+                             alt="iPad Air M2 dengan Apple Pencil dan Smart Keyboard" 
+                             class="w-full h-48 object-cover">
+                        <div class="absolute top-3 right-3 bg-white text-gray-400 p-2 rounded-full shadow-md hover:bg-red-500 hover:text-white transition-colors cursor-pointer">
+                            <i class="fas fa-heart"></i>
+                        </div>
+                    </div>
+                    <div class="p-5">
+                        <h3 class="font-semibold text-gray-800 mb-2">iPad Air M2</h3>
+                        <p class="text-gray-600 text-sm mb-3">Tablet powerful dengan chip M2</p>
+                        <div class="space-y-3">
+                            <div class="flex items-center space-x-2">
+                                <span class="text-2xl font-bold text-primary">Rp 12.999.000</span>
+                            </div>
+                            <div class="flex items-center space-x-2 text-sm text-gray-600">
+                                <div class="flex text-yellow-400">
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="far fa-star"></i>
+                                </div>
+                                <span>(1.5k)</span>
+                                <span>•</span>
+                                <span>Terjual 800+</span>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button class="flex-1 bg-primary text-white py-2 rounded-lg hover:bg-blue-600 transition-colors font-semibold">
+                                    <i class="fas fa-cart-plus mr-1"></i>Keranjang
+                                </button>
+                                <button class="flex-1 bg-secondary text-white py-2 rounded-lg hover:bg-orange-600 transition-colors font-semibold">
+                                    Beli Langsung
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Fashion Products -->
+    <section id="fashion" class="bg-gray-50 py-16">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex items-center justify-between mb-10">
+                <h2 class="text-3xl font-bold text-gray-800 flex items-center">
+                    <i class="fas fa-tshirt mr-3 text-primary"></i>
+                    Fashion Terkini
+                </h2>
+                <a href="#" class="text-primary hover:text-blue-600 transition-colors font-semibold">Lihat Semua</a>
+            </div>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Fashion Product 1 -->
+                <div class="product-card bg-white rounded-xl shadow-lg overflow-hidden">
+                    <div class="relative">
+                        <img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/4390ff6a-8124-4e2e-86b1-118d720b288f.png" 
+                             alt="Kemeja formal pria warna putih dengan bahan katun premium" 
+                             class="w-full h-48 object-cover">
+                        <div class="absolute top-3 left-3 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-bold">
+                            20% OFF
+                        </div>
+                        <div class="absolute top-3 right-3 bg-white text-gray-400 p-2 rounded-full shadow-md hover:bg-red-500 hover:text-white transition-colors cursor-pointer">
+                            <i class="fas fa-heart"></i>
+                        </div>
+                    </div>
+                    <div class="p-5">
+                        <h3 class="font-semibold text-gray-800 mb-2">Kemeja Formal Premium</h3>
+                        <p class="text-gray-600 text-sm mb-3">Kemeja katun berkualitas tinggi</p>
+                        <div class="space-y-3">
+                            <div class="flex items-center space-x-2">
+                                <span class="text-2xl font-bold text-primary">Rp 159.000</span>
+                                <span class="text-sm text-gray-500 line-through">Rp 199.000</span>
+                            </div>
+                            <div class="flex items-center space-x-2 text-sm text-gray-600">
+                                <div class="flex text-yellow-400">
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star-half-alt"></i>
+                                </div>
+                                <span>(892)</span>
+                                <span>•</span>
+                                <span>Terjual 2k+</span>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button class="flex-1 bg-primary text-white py-2 rounded-lg hover:bg-blue-600 transition-colors font-semibold">
+                                    <i class="fas fa-cart-plus mr-1"></i>Keranjang
+                                </button>
+                                <button class="flex-1 bg-secondary text-white py-2 rounded-lg hover:bg-orange-600 transition-colors font-semibold">
+                                    Beli Langsung
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fashion Product 2 -->
+                <div class="product-card bg-white rounded-xl shadow-lg overflow-hidden">
+                    <div class="relative">
+                        <img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/a38460ab-4bd4-44e8-8183-c94b4b5fdc81.png" 
+                             alt="Dress wanita elegan warna navy dengan bahan chiffon" 
+                             class="w-full h-48 object-cover">
+                        <div class="absolute top-3 left-3 badge-new text-white px-2 py-1 rounded-full text-xs font-bold">
+                            New
+                        </div>
+                        <div class="absolute top-3 right-3 bg-white text-gray-400 p-2 rounded-full shadow-md hover:bg-red-500 hover:text-white transition-colors cursor-pointer">
+                            <i class="fas fa-heart"></i>
+                        </div>
+                    </div>
+                    <div class="p-5">
+                        <h3 class="font-semibold text-gray-800 mb-2">Dress Elegan Chiffon</h3>
+                        <p class="text-gray-600 text-sm mb-3">Dress untuk acara formal</p>
+                        <div class="space-y-3">
+                            <div class="flex items-center space-x-2">
+                                <span class="text-2xl font-bold text-primary">Rp 299.000</span>
+                            </div>
+                            <div class="flex items-center space-x-2 text-sm text-gray-600">
+                                <div class="flex text-yellow-400">
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                </div>
+                                <span>(654)</span>
+                                <span>•</span>
+                                <span>Terjual 1k+</span>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button class="flex-1 bg-primary text-white py-2 rounded-lg hover:bg-blue-600 transition-colors font-semibold">
+                                    <i class="fas fa-cart-plus mr-1"></i>Keranjang
+                                </button>
+                                <button class="flex-1 bg-secondary text-white py-2 rounded-lg hover:bg-orange-600 transition-colors font-semibold">
+                                    Beli Langsung
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fashion Product 3 -->
+                <div class="product-card bg-white rounded-xl shadow-lg overflow-hidden">
+                    <div class="relative">
+                        <img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/fda5e1e3-eb17-40ef-be36-38369ad86303.png" 
+                             alt="Sepatu sneakers casual warna putih dengan desain minimalis" 
+                             class="w-full h-48 object-cover">
+                        <div class="absolute top-3 right-3 bg-white text-gray-400 p-2 rounded-full shadow-md hover:bg-red-500 hover:text-white transition-colors cursor-pointer">
+                            <i class="fas fa-heart"></i>
+                        </div>
+                    </div>
+                    <div class="p-5">
+                        <h3 class="font-semibold text-gray-800 mb-2">Sneakers Casual Minimalis</h3>
+                        <p class="text-gray-600 text-sm mb-3">Sepatu nyaman untuk sehari-hari</p>
+                        <div class="space-y-3">
+                            <div class="flex items-center space-x-2">
+                                <span class="text-2xl font-bold text-primary">Rp 399.000</span>
+                            </div>
+                            <div class="flex items-center space-x-2 text-sm text-gray-600">
+                                <div class="flex text-yellow-400">
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="far fa-star"></i>
+                                </div>
+                                <span>(1.2k)</span>
+                                <span>•</span>
+                                <span>Terjual 3k+</span>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button class="flex-1 bg-primary text-white py-2 rounded-lg hover:bg-blue-600 transition-colors font-semibold">
+                                    <i class="fas fa-cart-plus mr-1"></i>Keranjang
+                                </button>
+                                <button class="flex-1 bg-secondary text-white py-2 rounded-lg hover:bg-orange-600 transition-colors font-semibold">
+                                    Beli Langsung
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fashion Product 4 -->
+                <div class="product-card bg-white rounded-xl shadow-lg overflow-hidden">
+                    <div class="relative">
+                        <img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/17ff09d1-f1f3-4927-b351-42e897f8e705.png" 
+                             alt="Tas backpack kulit coklat dengan compartment laptop" 
+                             class="w-full h-48 object-cover">
+                        <div class="absolute top-3 left-3 badge-bestseller text-white px-2 py-1 rounded-full text-xs font-bold">
+                            Best Seller
+                        </div>
+                        <div class="absolute top-3 right-3 bg-white text-gray-400 p-2 rounded-full shadow-md hover:bg-red-500 hover:text-white transition-colors cursor-pointer">
+                            <i class="fas fa-heart"></i>
+                        </div>
+                    </div>
+                    <div class="p-5">
+                        <h3 class="font-semibold text-gray-800 mb-2">Backpack Kulit Premium</h3>
+                        <p class="text-gray-600 text-sm mb-3">Tas kulit dengan slot laptop</p>
+                        <div class="space-y-3">
+                            <div class="flex items-center space-x-2">
+                                <span class="text-2xl font-bold text-primary">Rp 599.000</span>
+                            </div>
+                            <div class="flex items-center space-x-2 text-sm text-gray-600">
+                                <div class="flex text-yellow-400">
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                </div>
+                                <span>(2.1k)</span>
+                                <span>•</span>
+                                <span>Terjual 5k+</span>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button class="flex-1 bg-primary text-white py-2 rounded-lg hover:bg-blue-600 transition-colors font-semibold">
+                                    <i class="fas fa-cart-plus mr-1"></i>Keranjang
+                                </button>
+                                <button class="flex-1 bg-secondary text-white py-2 rounded-lg hover:bg-orange-600 transition-colors font-semibold">
+                                    Beli Langsung
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Rumah Tangga Products -->
+    <section id="rumah-tangga" class="bg-white py-16">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex items-center justify-between mb-10">
+                <h2 class="text-3xl font-bold text-gray-800 flex items-center">
+                    <i class="fas fa-home mr-3 text-primary"></i>
+                    Peralatan Rumah Tangga
+                </h2>
+                <a href="#" class="text-primary hover:text-blue-600 transition-colors font-semibold">Lihat Semua</a>
+            </div>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Home Product 1 -->
+                <div class="product-card bg-white rounded-xl shadow-lg overflow-hidden">
+                    <div class="relative">
+                        <img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/2d74c381-5f31-462f-a9b5-7853993cbe49.png" 
+                             alt="Blender multifungsi dengan 5 speed setting dan glass jar" 
+                             class="w-full h-48 object-cover">
+                        <div class="absolute top-3 left-3 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-bold">
+                            25% OFF
+                        </div>
+                        <div class="absolute top-3 right-3 bg-white text-gray-400 p-2 rounded-full shadow-md hover:bg-red-500 hover:text-white transition-colors cursor-pointer">
+                            <i class="fas fa-heart"></i>
+                        </div>
+                    </div>
+                    <div class="p-5">
+                        <h3 class="font-semibold text-gray-800 mb-2">Blender Multifungsi Pro</h3>
+                        <p class="text-gray-600 text-sm mb-3">5 speed dengan glass jar 1.5L</p>
+                        <div class="space-y-3">
+                            <div class="flex items-center space-x-2">
+                                <span class="text-2xl font-bold text-primary">Rp 449.000</span>
+                                <span class="text-sm text-gray-500 line-through">Rp 599.000</span>
+                            </div>
+                            <div class="flex items-center space-x-2 text-sm text-gray-600">
+                                <div class="flex text-yellow-400">
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star-half-alt"></i>
+                                </div>
+                                <span>(756)</span>
+                                <span>•</span>
+                                <span>Terjual 1.5k+</span>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button class="flex-1 bg-primary text-white py-2 rounded-lg hover:bg-blue-600 transition-colors font-semibold">
+                                    <i class="fas fa-cart-plus mr-1"></i>Keranjang
+                                </button>
+                                <button class="flex-1 bg-secondary text-white py-2 rounded-lg hover:bg-orange-600 transition-colors font-semibold">
+                                    Beli Langsung
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Home Product 2 -->
+                <div class="product-card bg-white rounded-xl shadow-lg overflow-hidden">
+                    <div class="relative">
+                        <img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/02b56d4f-9916-4595-a3cd-49a24a7af4ff.png" 
+                             alt="Rice cooker digital 1.8L dengan fungsi slow cook dan steam" 
+                             class="w-full h-48 object-cover">
+                        <div class="absolute top-3 right-3 bg-white text-gray-400 p-2 rounded-full shadow-md hover:bg-red-500 hover:text-white transition-colors cursor-pointer">
+                            <i class="fas fa-heart"></i>
+                        </div>
+                    </div>
+                    <div class="p-5">
+                        <h3 class="font-semibold text-gray-800 mb-2">Rice Cooker Digital 1.8L</h3>
+                        <p class="text-gray-600 text-sm mb-3">Multi fungsi dengan layar digital</p>
+                        <div class="space-y-3">
+                            <div class="flex items-center space-x-2">
+                                <span class="text-2xl font-bold text-primary">Rp 899.000</span>
+                            </div>
+                            <div class="flex items-center space-x-2 text-sm text-gray-600">
+                                <div class="flex text-yellow-400">
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                </div>
+                                <span>(1.3k)</span>
+                                <span>•</span>
+                                <span>Terjual 2k+</span>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button class="flex-1 bg-primary text-white py-2 rounded-lg hover:bg-blue-600 transition-colors font-semibold">
+                                    <i class="fas fa-cart-plus mr-1"></i>Keranjang
+                                </button>
+                                <button class="flex-1 bg-secondary text-white py-2 rounded-lg hover:bg-orange-600 transition-colors font-semibold">
+                                    Beli Langsung
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Home Product 3 -->
+                <div class="product-card bg-white rounded-xl shadow-lg overflow-hidden">
+                    <div class="relative">
+                        <img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/bd630b8b-822d-4b32-80fe-b1361aec250b.png" 
+                             alt="Vacuum cleaner cordless dengan HEPA filter dan multiple brush" 
+                             class="w-full h-48 object-cover">
+                        <div class="absolute top-3 left-3 badge-new text-white px-2 py-1 rounded-full text-xs font-bold">
+                            New
+                        </div>
+                        <div class="absolute top-3 right-3 bg-white text-gray-400 p-2 rounded-full shadow-md hover:bg-red-500 hover:text-white transition-colors cursor-pointer">
+                            <i class="fas fa-heart"></i>
+                        </div>
+                    </div>
+                    <div class="p-5">
+                        <h3 class="font-semibold text-gray-800 mb-2">Vacuum Cordless HEPA</h3>
+                        <p class="text-gray-600 text-sm mb-3">Tanpa kabel dengan filter HEPA</p>
+                        <div class="space-y-3">
+                            <div class="flex items-center space-x-2">
+                                <span class="text-2xl font-bold text-primary">Rp 1.299.000</span>
+                            </div>
+                            <div class="flex items-center space-x-2 text-sm text-gray-600">
+                                <div class="flex text-yellow-400">
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="far fa-star"></i>
+                                </div>
+                                <span>(423)</span>
+                                <span>•</span>
+                                <span>Terjual 800+</span>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button class="flex-1 bg-primary text-white py-2 rounded-lg hover:bg-blue-600 transition-colors font-semibold">
+                                    <i class="fas fa-cart-plus mr-1"></i>Keranjang
+                                </button>
+                                <button class="flex-1 bg-secondary text-white py-2 rounded-lg hover:bg-orange-600 transition-colors font-semibold">
+                                    Beli Langsung
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Home Product 4 -->
+                <div class="product-card bg-white rounded-xl shadow-lg overflow-hidden">
+                    <div class="relative">
+                        <img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/f83e74f6-3ef9-4246-829f-2f702dbf5819.png" 
+                             alt="Air fryer digital 5L dengan touch screen dan 8 preset menu" 
+                             class="w-full h-48 object-cover">
+                        <div class="absolute top-3 left-3 badge-bestseller text-white px-2 py-1 rounded-full text-xs font-bold">
+                            Best Seller
+                        </div>
+                        <div class="absolute top-3 right-3 bg-white text-gray-400 p-2 rounded-full shadow-md hover:bg-red-500 hover:text-white transition-colors cursor-pointer">
+                            <i class="fas fa-heart"></i>
+                        </div>
+                    </div>
+                    <div class="p-5">
+                        <h3 class="font-semibold text-gray-800 mb-2">Air Fryer Digital 5L</h3>
+                        <p class="text-gray-600 text-sm mb-3">Touch screen dengan 8 preset</p>
+                        <div class="space-y-3">
+                            <div class="flex items-center space-x-2">
+                                <span class="text-2xl font-bold text-primary">Rp 799.000</span>
+                            </div>
+                            <div class="flex items-center space-x-2 text-sm text-gray-600">
+                                <div class="flex text-yellow-400">
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                </div>
+                                <span>(2.8k)</span>
+                                <span>•</span>
+                                <span>Terjual 5k+</span>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button class="flex-1 bg-primary text-white py-2 rounded-lg hover:bg-blue-600 transition-colors font-semibold">
+                                    <i class="fas fa-cart-plus mr-1"></i>Keranjang
+                                </button>
+                                <button class="flex-1 bg-secondary text-white py-2 rounded-lg hover:bg-orange-600 transition-colors font-semibold">
+                                    Beli Langsung
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Newsletter Section -->
+    <section class="bg-gradient-to-r from-primary to-blue-600 text-white py-16">
+        <div class="max-w-4xl mx-auto px-4 text-center">
+            <h2 class="text-3xl md:text-4xl font-bold mb-4">Dapatkan Penawaran Terbaik</h2>
+            <p class="text-xl mb-8 text-blue-100">Berlangganan newsletter kami dan dapatkan diskon hingga 50% untuk pembelian pertama</p>
+            <div class="flex flex-col sm:flex-row gap-4 max-w-lg mx-auto">
+                <input type="email" placeholder="Masukkan email Anda..." class="flex-1 px-6 py-3 rounded-full text-gray-800 focus:outline-none focus:ring-4 focus:ring-white/30">
+                <button class="bg-secondary hover:bg-orange-600 text-white font-bold py-3 px-8 rounded-full transition-colors">
+                    <i class="fas fa-paper-plane mr-2"></i>Subscribe
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-16">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <div class="flex items-center mb-4">
+                        <img src="blabla.png" alt="blabla - Belanja Online Terlengkap" class="h-8 w-auto">
+                    </div>
+                    <p class="text-gray-400 text-sm mb-6">Platform belanja online terpercaya dengan jutaan produk berkualitas dan layanan terbaik.</p>
+                    <div class="flex space-x-4">
+                        <a href="#" class="text-gray-400 hover:text-white transition-colors">
+                            <i class="fab fa-facebook-f text-xl"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-white transition-colors">
+                            <i class="fab fa-twitter text-xl"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-white transition-colors">
+                            <i class="fab fa-instagram text-xl"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-white transition-colors">
+                            <i class="fab fa-youtube text-xl"></i>
+                        </a>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4 text-lg">Layanan</h4>
+                    <ul class="space-y-2 text-sm text-gray-400">
+                        <li><a href="#" class="hover:text-white transition-colors">Bantuan</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Cara Belanja</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Pengiriman</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Pembayaran</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Retur & Refund</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4 text-lg">Tentang blabla</h4>
+                    <ul class="space-y-2 text-sm text-gray-400">
+                        <li><a href="#" class="hover:text-white transition-colors">Tentang Kami</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Karir</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Blog</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Press</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Investor</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4 text-lg">Hubungi Kami</h4>
+                    <ul class="space-y-2 text-sm text-gray-400">
+                        <li class="flex items-center">
+                            <i class="fas fa-envelope mr-2"></i>
+                            info@blabla.com
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-phone mr-2"></i>
+                            021-1234-5678
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fab fa-whatsapp mr-2"></i>
+                            0812-3456-7890
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-map-marker-alt mr-2"></i>
+                            Jakarta, Indonesia
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-700 mt-12 pt-8 text-center text-sm text-gray-400">
+                <p>© 2024 blabla. All rights reserved. | Privacy Policy | Terms of Service</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Floating WhatsApp Button -->
+    <a href="https://wa.me/6281234567890" class="fixed bottom-6 right-6 bg-green-500 hover:bg-green-600 text-white p-4 rounded-full shadow-2xl transition-all duration-300 transform hover:scale-110 z-50 animate-bounce-slow">
+        <i class="fab fa-whatsapp text-2xl"></i>
+    </a>
+
+    <!-- Scroll to Top Button -->
+    <button id="scrollTop" class="fixed bottom-6 left-6 bg-primary hover:bg-blue-600 text-white p-3 rounded-full shadow-2xl transition-all duration-300 transform hover:scale-110 z-50 opacity-0 invisible">
+        <i class="fas fa-arrow-up text-xl"></i>
+    </button>
+
+    <script>
+        // Countdown timer for flash sale
+        function updateCountdown() {
+            const hours = document.getElementById('hours');
+            const minutes = document.getElementById('minutes');
+            const seconds = document.getElementById('seconds');
+            
+            let h = parseInt(hours.textContent);
+            let m = parseInt(minutes.textContent);
+            let s = parseInt(seconds.textContent);
+            
+            if (s > 0) {
+                s--;
+            } else if (m > 0) {
+                s = 59;
+                m--;
+            } else if (h > 0) {
+                s = 59;
+                m = 59;
+                h--;
+            }
+            
+            hours.textContent = h.toString().padStart(2, '0');
+            minutes.textContent = m.toString().padStart(2, '0');
+            seconds.textContent = s.toString().padStart(2, '0');
+        }
+        
+        setInterval(updateCountdown, 1000);
+
+        // Scroll to top button
+        const scrollTopBtn = document.getElementById('scrollTop');
+        
+        window.addEventListener('scroll', function() {
+            if (window.pageYOffset > 300) {
+                scrollTopBtn.style.opacity = '1';
+                scrollTopBtn.style.visibility = 'visible';
+            } else {
+                scrollTopBtn.style.opacity = '0';
+                scrollTopBtn.style.visibility = 'invisible';
+            }
+        });
+
+        scrollTopBtn.addEventListener('click', function() {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        });
+
+        // Add to cart animation
+        document.querySelectorAll('button').forEach(button => {
+            if (button.textContent.includes('Keranjang') || button.textContent.includes('Beli')) {
+                button.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    // Create success feedback
+                    const originalText = this.innerHTML;
+                    this.innerHTML = '<i class="fas fa-check mr-1"></i>Ditambahkan!';
+                    this.classList.remove('bg-primary', 'bg-secondary');
+                    this.classList.add('bg-green-500');
+                    
+                    setTimeout(() => {
+                        this.innerHTML = originalText;
+                        this.classList.remove('bg-green-500');
+                        if (originalText.includes('Keranjang')) {
+                            this.classList.add('bg-primary');
+                        } else {
+                            this.classList.add('bg-secondary');
+                        }
+                    }, 1500);
+                    
+                    // Update cart counter
+                    const cartBadge = document.querySelector('.notification-badge');
+                    if (cartBadge) {
+                        let count = parseInt(cartBadge.textContent);
+                        cartBadge.textContent = count + 1;
+                    }
+                });
+            }
+        });
+
+        // Heart/Wishlist animation
+        document.querySelectorAll('.fa-heart').forEach(heart => {
+            heart.addEventListener('click', function(e) {
+                e.preventDefault();
+                this.classList.toggle('fas');
+                this.classList.toggle('far');
+                
+                if (this.classList.contains('fas')) {
+                    this.parentElement.classList.add('bg-red-500', 'text-white');
+                    this.parentElement.classList.remove('text-gray-400', 'text-red-500');
+                } else {
+                    this.parentElement.classList.remove('bg-red-500', 'text-white');
+                    this.parentElement.classList.add('text-gray-400');
+                }
+            });
+        });
+
+        // Smooth scrolling for navigation
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Search functionality
+        const searchInput = document.querySelector('input[type="text"]');
+        searchInput.addEventListener('focus', function() {
+            this.parentElement.classList.add('animate-glow');
+        });
+
+        searchInput.addEventListener('blur', function() {
+            this.parentElement.classList.remove('animate-glow');
+        });
+
+        // Category click animation
+        document.querySelectorAll('.category-hover').forEach(category => {
+            category.addEventListener('click', function() {
+                // Add ripple effect
+                this.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    this.style.transform = 'translateY(-5px)';
+                }, 150);
+            });
+        });
+
+        // Newsletter subscription
+        const subscribeBtn = document.querySelector('button[class*="secondary"]');
+        const emailInput = document.querySelector('input[type="email"]');
+        
+        if (subscribeBtn && emailInput) {
+            subscribeBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const email = emailInput.value;
+                if (email && email.includes('@')) {
+                    this.innerHTML = '<i class="fas fa-check mr-2"></i>Berhasil!';
+                    this.classList.add('bg-green-500');
+                    emailInput.value = '';
+                    
+                    setTimeout(() => {
+                        this.innerHTML = '<i class="fas fa-paper-plane mr-2"></i>Subscribe';
+                        this.classList.remove('bg-green-500');
+                        this.classList.add('bg-secondary');
+                    }, 2000);
+                } else {
+                    alert('Mohon masukkan email yang valid.');
+                }
+            });
+        }
+    </script>
+</body>
+</html>
+

@@ -3,17 +3,15 @@ services:
     image: mysql:8.0
     container_name: sisdmk2-db
     restart: unless-stopped
-    command: --default-authentication-plugin=mysql_native_password
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root123}
-      MYSQL_DATABASE: ${MYSQL_DATABASE:-sisdmk2}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-Tianh@7}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-si_data}
       MYSQL_USER: ${MYSQL_USER:-sisdmk2_user}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:-sisdmk2_pass}
     ports:
-      - "${MYSQL_PORT:-3306}:3306"
+      - "${MYSQL_PUBLIC_PORT:-3307}:3306"
     volumes:
-      - mysql_data:/var/lib/mysql
-      - ./sql/export_pegawai_ukpd.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+      - sisdmk2_mysql_data:/var/lib/mysql
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p$$MYSQL_ROOT_PASSWORD || exit 1"]
       interval: 10s
@@ -26,17 +24,20 @@ services:
       dockerfile: Dockerfile
     container_name: sisdmk2-app
     restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
     environment:
       NODE_ENV: production
       PORT: 3000
-      JWT_SECRET: ${JWT_SECRET:-change-this-secret-in-production}
       MYSQL_HOST: ${MYSQL_HOST:-db}
       MYSQL_PORT: ${MYSQL_PORT:-3306}
       MYSQL_USER: ${MYSQL_USER:-sisdmk2_user}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:-sisdmk2_pass}
-      MYSQL_DATABASE: ${MYSQL_DATABASE:-sisdmk2}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-si_data}
+      JWT_SECRET: ${JWT_SECRET:-sisdmk2-secret-ganti-nanti}
     ports:
-      - "${APP_PORT:-3000}:3000"
+      - "${APP_PORT:-8080}:3000"
 
 volumes:
-  mysql_data:
+  sisdmk2_mysql_data:

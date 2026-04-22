@@ -1,0 +1,535 @@
+{
+  "generated_at": "2026-04-22T10:12:38.688Z",
+  "total_files": 88,
+  "total_pegawai_rows": 30963,
+  "files": [
+    {
+      "file": "000001_puskesmas-cakung.sql",
+      "id_ukpd": 1,
+      "nama_ukpd": "Puskesmas Cakung",
+      "rows": 387
+    },
+    {
+      "file": "000004_puskesmas-tebet.sql",
+      "id_ukpd": 4,
+      "nama_ukpd": "Puskesmas Tebet",
+      "rows": 295
+    },
+    {
+      "file": "000005_puskesmas-cempaka-putih.sql",
+      "id_ukpd": 5,
+      "nama_ukpd": "Puskesmas Cempaka Putih",
+      "rows": 225
+    },
+    {
+      "file": "000031_puskesmas-tambora.sql",
+      "id_ukpd": 31,
+      "nama_ukpd": "Puskesmas Tambora",
+      "rows": 351
+    },
+    {
+      "file": "000888_puskesmas-cilincing.sql",
+      "id_ukpd": 888,
+      "nama_ukpd": "Puskesmas Cilincing",
+      "rows": 397
+    },
+    {
+      "file": "005555_puskesmas-cengkareng.sql",
+      "id_ukpd": 5555,
+      "nama_ukpd": "Puskesmas Cengkareng",
+      "rows": 383
+    },
+    {
+      "file": "007777_puskesmas-cilandak.sql",
+      "id_ukpd": 7777,
+      "nama_ukpd": "Puskesmas Cilandak",
+      "rows": 277
+    },
+    {
+      "file": "009999_puskesmas-cipayung.sql",
+      "id_ukpd": 9999,
+      "nama_ukpd": "Puskesmas Cipayung",
+      "rows": 339
+    },
+    {
+      "file": "026003_upt-jaminan-kesehatan-jakarta.sql",
+      "id_ukpd": 26003,
+      "nama_ukpd": "UPT Jaminan Kesehatan Jakarta",
+      "rows": 17
+    },
+    {
+      "file": "219990_puskesmas-taman-sari.sql",
+      "id_ukpd": 219990,
+      "nama_ukpd": "Puskesmas Taman Sari",
+      "rows": 227
+    },
+    {
+      "file": "219991_puskesmas-tanah-abang.sql",
+      "id_ukpd": 219991,
+      "nama_ukpd": "Puskesmas Tanah Abang",
+      "rows": 257
+    },
+    {
+      "file": "219999_rsud-cilincing.sql",
+      "id_ukpd": 219999,
+      "nama_ukpd": "RSUD Cilincing",
+      "rows": 356
+    },
+    {
+      "file": "220000_rsud-cipayung.sql",
+      "id_ukpd": 220000,
+      "nama_ukpd": "RSUD Cipayung",
+      "rows": 273
+    },
+    {
+      "file": "220002_rsud-johar-baru.sql",
+      "id_ukpd": 220002,
+      "nama_ukpd": "RSUD Johar Baru",
+      "rows": 249
+    },
+    {
+      "file": "220003_rsud-kalideres.sql",
+      "id_ukpd": 220003,
+      "nama_ukpd": "RSUD Kalideres",
+      "rows": 466
+    },
+    {
+      "file": "220004_dinas-kesehatan.sql",
+      "id_ukpd": 220004,
+      "nama_ukpd": "Dinas Kesehatan",
+      "rows": 234
+    },
+    {
+      "file": "230001_puskesmas-ciracas.sql",
+      "id_ukpd": 230001,
+      "nama_ukpd": "Puskesmas Ciracas",
+      "rows": 297
+    },
+    {
+      "file": "230002_puskesmas-duren-sawit.sql",
+      "id_ukpd": 230002,
+      "nama_ukpd": "Puskesmas Duren Sawit",
+      "rows": 408
+    },
+    {
+      "file": "230003_puskesmas-grogol-petamburan.sql",
+      "id_ukpd": 230003,
+      "nama_ukpd": "Puskesmas Grogol Petamburan",
+      "rows": 312
+    },
+    {
+      "file": "230004_puskesmas-jagakarsa.sql",
+      "id_ukpd": 230004,
+      "nama_ukpd": "Puskesmas Jagakarsa",
+      "rows": 323
+    },
+    {
+      "file": "230005_puskesmas-jatinegara.sql",
+      "id_ukpd": 230005,
+      "nama_ukpd": "Puskesmas Jatinegara",
+      "rows": 360
+    },
+    {
+      "file": "230006_puskesmas-johar-baru.sql",
+      "id_ukpd": 230006,
+      "nama_ukpd": "Puskesmas Johar Baru",
+      "rows": 238
+    },
+    {
+      "file": "230007_puskesmas-kalideres.sql",
+      "id_ukpd": 230007,
+      "nama_ukpd": "Puskesmas Kalideres",
+      "rows": 375
+    },
+    {
+      "file": "230008_puskesmas-kebayoran-baru.sql",
+      "id_ukpd": 230008,
+      "nama_ukpd": "Puskesmas Kebayoran Baru",
+      "rows": 275
+    },
+    {
+      "file": "230009_puskesmas-kebayoran-lama.sql",
+      "id_ukpd": 230009,
+      "nama_ukpd": "Puskesmas Kebayoran Lama",
+      "rows": 273
+    },
+    {
+      "file": "230010_puskesmas-kebon-jeruk.sql",
+      "id_ukpd": 230010,
+      "nama_ukpd": "Puskesmas Kebon Jeruk",
+      "rows": 317
+    },
+    {
+      "file": "230011_puskesmas-kelapa-gading.sql",
+      "id_ukpd": 230011,
+      "nama_ukpd": "Puskesmas Kelapa Gading",
+      "rows": 227
+    },
+    {
+      "file": "230012_puskesmas-kemayoran.sql",
+      "id_ukpd": 230012,
+      "nama_ukpd": "Puskesmas Kemayoran",
+      "rows": 249
+    },
+    {
+      "file": "230013_puskesmas-kepulauan-seribu-selatan.sql",
+      "id_ukpd": 230013,
+      "nama_ukpd": "Puskesmas Kepulauan Seribu Selatan",
+      "rows": 159
+    },
+    {
+      "file": "230014_puskesmas-kembangan.sql",
+      "id_ukpd": 230014,
+      "nama_ukpd": "Puskesmas Kembangan",
+      "rows": 343
+    },
+    {
+      "file": "230015_puskesmas-kepulauan-seribu-utara.sql",
+      "id_ukpd": 230015,
+      "nama_ukpd": "Puskesmas Kepulauan Seribu Utara",
+      "rows": 156
+    },
+    {
+      "file": "230016_puskesmas-koja.sql",
+      "id_ukpd": 230016,
+      "nama_ukpd": "Puskesmas Koja",
+      "rows": 352
+    },
+    {
+      "file": "230017_puskesmas-kramatjati.sql",
+      "id_ukpd": 230017,
+      "nama_ukpd": "Puskesmas Kramatjati",
+      "rows": 362
+    },
+    {
+      "file": "230018_puskesmas-makasar.sql",
+      "id_ukpd": 230018,
+      "nama_ukpd": "Puskesmas Makasar",
+      "rows": 315
+    },
+    {
+      "file": "230019_puskesmas-mampang-prapatan.sql",
+      "id_ukpd": 230019,
+      "nama_ukpd": "Puskesmas Mampang Prapatan",
+      "rows": 241
+    },
+    {
+      "file": "230020_puskesmas-matraman.sql",
+      "id_ukpd": 230020,
+      "nama_ukpd": "Puskesmas Matraman",
+      "rows": 330
+    },
+    {
+      "file": "230021_puskesmas-menteng.sql",
+      "id_ukpd": 230021,
+      "nama_ukpd": "Puskesmas Menteng",
+      "rows": 209
+    },
+    {
+      "file": "230022_puskesmas-pademangan.sql",
+      "id_ukpd": 230022,
+      "nama_ukpd": "Puskesmas Pademangan",
+      "rows": 215
+    },
+    {
+      "file": "230023_puskesmas-palmerah.sql",
+      "id_ukpd": 230023,
+      "nama_ukpd": "Puskesmas Palmerah",
+      "rows": 309
+    },
+    {
+      "file": "230024_puskesmas-pancoran.sql",
+      "id_ukpd": 230024,
+      "nama_ukpd": "Puskesmas Pancoran",
+      "rows": 289
+    },
+    {
+      "file": "230025_puskesmas-pasar-minggu.sql",
+      "id_ukpd": 230025,
+      "nama_ukpd": "Puskesmas Pasar Minggu",
+      "rows": 315
+    },
+    {
+      "file": "230026_puskesmas-pasar-rebo.sql",
+      "id_ukpd": 230026,
+      "nama_ukpd": "Puskesmas Pasar Rebo",
+      "rows": 321
+    },
+    {
+      "file": "230027_puskesmas-penjaringan.sql",
+      "id_ukpd": 230027,
+      "nama_ukpd": "Puskesmas Penjaringan",
+      "rows": 292
+    },
+    {
+      "file": "230028_puskesmas-pesanggrahan.sql",
+      "id_ukpd": 230028,
+      "nama_ukpd": "Puskesmas Pesanggrahan",
+      "rows": 254
+    },
+    {
+      "file": "230029_puskesmas-pulogadung.sql",
+      "id_ukpd": 230029,
+      "nama_ukpd": "Puskesmas Pulogadung",
+      "rows": 298
+    },
+    {
+      "file": "230030_puskesmas-sawah-besar.sql",
+      "id_ukpd": 230030,
+      "nama_ukpd": "Puskesmas Sawah Besar",
+      "rows": 245
+    },
+    {
+      "file": "230031_puskesmas-setiabudi.sql",
+      "id_ukpd": 230031,
+      "nama_ukpd": "Puskesmas Setiabudi",
+      "rows": 252
+    },
+    {
+      "file": "230033_puskesmas-tanjung-priok.sql",
+      "id_ukpd": 230033,
+      "nama_ukpd": "Puskesmas Tanjung Priok",
+      "rows": 351
+    },
+    {
+      "file": "240001_rsud-budhi-asih.sql",
+      "id_ukpd": 240001,
+      "nama_ukpd": "RSUD Budhi Asih",
+      "rows": 1069
+    },
+    {
+      "file": "240002_rsud-cengkareng.sql",
+      "id_ukpd": 240002,
+      "nama_ukpd": "RSUD Cengkareng",
+      "rows": 1421
+    },
+    {
+      "file": "240003_rsud-jati-padang.sql",
+      "id_ukpd": 240003,
+      "nama_ukpd": "RSUD Jati Padang",
+      "rows": 285
+    },
+    {
+      "file": "240004_rsud-kebayoran-baru.sql",
+      "id_ukpd": 240004,
+      "nama_ukpd": "RSUD Kebayoran Baru",
+      "rows": 280
+    },
+    {
+      "file": "240005_rsud-kebayoran-lama.sql",
+      "id_ukpd": 240005,
+      "nama_ukpd": "RSUD Kebayoran Lama",
+      "rows": 272
+    },
+    {
+      "file": "240006_rsud-kemayoran.sql",
+      "id_ukpd": 240006,
+      "nama_ukpd": "RSUD Kemayoran",
+      "rows": 246
+    },
+    {
+      "file": "240007_rsud-kembangan.sql",
+      "id_ukpd": 240007,
+      "nama_ukpd": "RSUD Kembangan",
+      "rows": 357
+    },
+    {
+      "file": "240008_rsud-kepulauan-seribu.sql",
+      "id_ukpd": 240008,
+      "nama_ukpd": "RSUD Kepulauan Seribu",
+      "rows": 150
+    },
+    {
+      "file": "240009_rsud-koja.sql",
+      "id_ukpd": 240009,
+      "nama_ukpd": "RSUD Koja",
+      "rows": 2186
+    },
+    {
+      "file": "240010_rsud-kramat-jati.sql",
+      "id_ukpd": 240010,
+      "nama_ukpd": "RSUD Kramat Jati",
+      "rows": 356
+    },
+    {
+      "file": "240011_rsud-matraman.sql",
+      "id_ukpd": 240011,
+      "nama_ukpd": "RSUD Matraman",
+      "rows": 252
+    },
+    {
+      "file": "240012_rsud-pasar-minggu.sql",
+      "id_ukpd": 240012,
+      "nama_ukpd": "RSUD Pasar Minggu",
+      "rows": 1264
+    },
+    {
+      "file": "240013_rsud-pasar-rebo.sql",
+      "id_ukpd": 240013,
+      "nama_ukpd": "RSUD Pasar Rebo",
+      "rows": 1024
+    },
+    {
+      "file": "240014_rsud-pesanggrahan.sql",
+      "id_ukpd": 240014,
+      "nama_ukpd": "RSUD Pesanggrahan",
+      "rows": 311
+    },
+    {
+      "file": "240015_rsud-taman-sari.sql",
+      "id_ukpd": 240015,
+      "nama_ukpd": "RSUD Taman Sari",
+      "rows": 273
+    },
+    {
+      "file": "240016_rsud-tanah-abang.sql",
+      "id_ukpd": 240016,
+      "nama_ukpd": "RSUD Tanah Abang",
+      "rows": 254
+    },
+    {
+      "file": "240017_rsud-tanjung-priok.sql",
+      "id_ukpd": 240017,
+      "nama_ukpd": "RSUD Tanjung Priok",
+      "rows": 251
+    },
+    {
+      "file": "240018_rsud-tarakan.sql",
+      "id_ukpd": 240018,
+      "nama_ukpd": "RSUD Tarakan",
+      "rows": 1364
+    },
+    {
+      "file": "240019_rsud-tugu-koja.sql",
+      "id_ukpd": 240019,
+      "nama_ukpd": "RSUD Tugu Koja",
+      "rows": 344
+    },
+    {
+      "file": "240020_rsud-tebet.sql",
+      "id_ukpd": 240020,
+      "nama_ukpd": "RSUD Tebet",
+      "rows": 289
+    },
+    {
+      "file": "245001_rskd-duren-sawit.sql",
+      "id_ukpd": 245001,
+      "nama_ukpd": "RSKD Duren Sawit",
+      "rows": 895
+    },
+    {
+      "file": "250001_suku-dinas-kesehatan-kepulauan-seribu.sql",
+      "id_ukpd": 250001,
+      "nama_ukpd": "Suku Dinas Kesehatan Kepulauan Seribu",
+      "rows": 71
+    },
+    {
+      "file": "250002_suku-dinas-kesehatan-jakarta-barat.sql",
+      "id_ukpd": 250002,
+      "nama_ukpd": "Suku Dinas Kesehatan Jakarta Barat",
+      "rows": 90
+    },
+    {
+      "file": "250003_suku-dinas-kesehatan-jakarta-pusat.sql",
+      "id_ukpd": 250003,
+      "nama_ukpd": "Suku Dinas Kesehatan Jakarta Pusat",
+      "rows": 92
+    },
+    {
+      "file": "250004_suku-dinas-kesehatan-jakarta-timur.sql",
+      "id_ukpd": 250004,
+      "nama_ukpd": "Suku Dinas Kesehatan Jakarta Timur",
+      "rows": 98
+    },
+    {
+      "file": "250005_suku-dinas-kesehatan-jakarta-utara.sql",
+      "id_ukpd": 250005,
+      "nama_ukpd": "Suku Dinas Kesehatan Jakarta Utara",
+      "rows": 85
+    },
+    {
+      "file": "250006_suku-dinas-kesehatan-jakarta-selatan.sql",
+      "id_ukpd": 250006,
+      "nama_ukpd": "Suku Dinas Kesehatan Jakarta Selatan",
+      "rows": 87
+    },
+    {
+      "file": "260001_upt-labkesda.sql",
+      "id_ukpd": 260001,
+      "nama_ukpd": "UPT Labkesda",
+      "rows": 148
+    },
+    {
+      "file": "260002_upt-ppkp.sql",
+      "id_ukpd": 260002,
+      "nama_ukpd": "UPT PPKP",
+      "rows": 119
+    },
+    {
+      "file": "260004_upt-pk3d.sql",
+      "id_ukpd": 260004,
+      "nama_ukpd": "UPT PK3D",
+      "rows": 976
+    },
+    {
+      "file": "260005_upt-pusat-data-dan-informasi-kesehatan.sql",
+      "id_ukpd": 260005,
+      "nama_ukpd": "UPT Pusat Data dan Informasi Kesehatan",
+      "rows": 27
+    },
+    {
+      "file": "260007_upt-pusat-pelatihan-pegawai.sql",
+      "id_ukpd": 260007,
+      "nama_ukpd": "UPT Pusat Pelatihan Pegawai",
+      "rows": 32
+    },
+    {
+      "file": "260008_puskesmas-gambir.sql",
+      "id_ukpd": 260008,
+      "nama_ukpd": "Puskesmas Gambir",
+      "rows": 229
+    },
+    {
+      "file": "260009_puskesmas-senen.sql",
+      "id_ukpd": 260009,
+      "nama_ukpd": "Puskesmas Senen",
+      "rows": 231
+    },
+    {
+      "file": "260010_rsud-cempaka-putih.sql",
+      "id_ukpd": 260010,
+      "nama_ukpd": "RSUD Cempaka Putih",
+      "rows": 232
+    },
+    {
+      "file": "260011_rsud-sawah-besar.sql",
+      "id_ukpd": 260011,
+      "nama_ukpd": "RSUD Sawah Besar",
+      "rows": 241
+    },
+    {
+      "file": "260012_rsud-mampang-prapatan.sql",
+      "id_ukpd": 260012,
+      "nama_ukpd": "RSUD Mampang Prapatan",
+      "rows": 276
+    },
+    {
+      "file": "260013_rsud-ciracas.sql",
+      "id_ukpd": 260013,
+      "nama_ukpd": "RSUD Ciracas",
+      "rows": 275
+    },
+    {
+      "file": "260014_rsud-pademangan.sql",
+      "id_ukpd": 260014,
+      "nama_ukpd": "RSUD Pademangan",
+      "rows": 231
+    },
+    {
+      "file": "789662_rsud-jagakarsa.sql",
+      "id_ukpd": 789662,
+      "nama_ukpd": "RSUD Jagakarsa",
+      "rows": 285
+    }
+  ]
+}

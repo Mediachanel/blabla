@@ -1,0 +1,19 @@
+{
+  "normalized_at": "2026-04-22T03:33:34.121Z",
+  "total_rows": 30963,
+  "counts": {
+    "S1": 5732,
+    "D3": 14323,
+    "SMA/SMK": 7657,
+    "D4": 320,
+    "D2": 2,
+    "S2": 1283,
+    "SMP": 35,
+    "D1": 32,
+    "SD": 5,
+    "Tidak Diketahui": 393,
+    "Profesi": 1084,
+    "Spesialis": 74,
+    "S3": 23
+  }
+}

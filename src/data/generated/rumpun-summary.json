@@ -1,0 +1,26 @@
+{
+  "normalized_at": "2026-04-22T09:26:25.849Z",
+  "total_rows": 30963,
+  "changed_rows": 163,
+  "counts": {
+    "Jabatan Fungsional Keahlian Kesehatan": 6629,
+    "Jabatan Pengawas": 139,
+    "Jabatan Pelaksana Teknis Tingkat Ahli": 508,
+    "Jabatan Pelaksana Teknis Tingkat Terampil": 1274,
+    "Jabatan Pelaksana Administrasi Tingkat Terampil": 2315,
+    "Jabatan Pelaksana Operasional Tingkat Terampil": 1148,
+    "Jabatan Fungsional Keterampilan Kesehatan": 13615,
+    "PJLP": 4803,
+    "Jabatan Administrator/ Kepala Puskesmas": 26,
+    "Jabatan Administrator": 102,
+    "Jabatan Pelaksana Administrasi Tingkat Ahli": 1,
+    "Jabatan Pelaksana Satuan": 166,
+    "Jabatan Pelaksana Pelayanan Tingkat Terampil": 66,
+    "Staf": 10,
+    "Jabatan Pimpinan Tinggi Pratama": 10,
+    "Jabatan Pelaksana Operasional Tingkat Ahli": 65,
+    "Tidak Diketahui": 3,
+    "Jabatan Fungsional Keterampilan Non Kesehatan": 47,
+    "Jabatan Fungsional Keahlian Non Kesehatan": 36
+  }
+}

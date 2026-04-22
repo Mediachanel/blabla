@@ -1,5 +1,5 @@
 import { ROLES } from "@/lib/constants/roles";
-import { getPool, hasMysqlConfig } from "@/lib/db/mysql";
+import { getConnectedPool, hasMysqlConfig } from "@/lib/db/mysql";
 import { pegawaiMaster, ukpdList } from "@/data/mock";
 
 const PEGAWAI_COLUMNS = [
@@ -62,7 +62,7 @@ function normalizeUkpd(row) {
 }
 
 async function queryRows(sql, params = []) {
-  const pool = getPool();
+  const pool = await getConnectedPool();
   if (!pool) return null;
   const [rows] = await pool.query(sql, params);
   return rows.map(normalizeRow);
@@ -98,7 +98,7 @@ export async function getPegawaiData() {
 export async function createPegawaiData(data) {
   return withFallback(
     async () => {
-      const pool = getPool();
+      const pool = await getConnectedPool();
       const [[maxRow]] = await pool.query("SELECT COALESCE(MAX(`id_pegawai`), 0) + 1 AS next_id FROM `pegawai`");
       const item = {
         id_pegawai: Number(maxRow.next_id),
@@ -129,7 +129,7 @@ export async function createPegawaiData(data) {
 export async function updatePegawaiData(id, data) {
   return withFallback(
     async () => {
-      const pool = getPool();
+      const pool = await getConnectedPool();
       const columns = PEGAWAI_MUTABLE_COLUMNS.filter((column) => Object.prototype.hasOwnProperty.call(data, column));
       if (columns.length) {
         await pool.query(
@@ -153,7 +153,7 @@ export async function updatePegawaiData(id, data) {
 export async function deletePegawaiData(id) {
   return withFallback(
     async () => {
-      const pool = getPool();
+      const pool = await getConnectedPool();
       await pool.query("DELETE FROM `pegawai` WHERE `id_pegawai` = ?", [Number(id)]);
       return { id_pegawai: Number(id) };
     },

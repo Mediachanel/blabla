@@ -18,7 +18,10 @@ export async function POST(request) {
     user = await findLoginUser(username);
   } catch (error) {
     console.error("Login MySQL error:", error.message);
-    return fail("Gagal konek database MySQL. Cek konfigurasi MYSQL_HOST, MYSQL_USER, MYSQL_PASSWORD, dan MYSQL_DATABASE.", 503);
+    return fail(
+      `Gagal konek database MySQL. Cek MYSQL_HOSTS, MYSQL_USER, MYSQL_PASSWORD, dan MYSQL_DATABASE. Detail: ${error.message}`,
+      503
+    );
   }
   if (!user) return fail("Kredensial tidak valid.", 401);
 

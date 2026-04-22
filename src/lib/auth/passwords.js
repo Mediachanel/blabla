@@ -1,6 +1,6 @@
 import bcrypt from "bcryptjs";
 import { users } from "@/data/mock";
-import { getPool, hasMysqlConfig } from "@/lib/db/mysql";
+import { getConnectedPool, hasMysqlConfig } from "@/lib/db/mysql";
 
 const DEMO_PASSWORD = "password123";
 
@@ -38,7 +38,7 @@ export async function findLoginUser(login) {
   const username = normalizeLogin(login);
 
   if (hasMysqlConfig()) {
-    const pool = getPool();
+    const pool = await getConnectedPool();
     const [rows] = await pool.query(
       `SELECT \`id_ukpd\`, \`ukpd_id\`, \`nama_ukpd\`, \`password\`, \`role\`, \`wilayah\`
        FROM \`ukpd\`

@@ -4,7 +4,8 @@ import path from "node:path";
 const rootDir = process.cwd();
 const sourcePath = path.join(rootDir, "src", "data", "generated", "ukpd.json");
 const outputPath = path.join(rootDir, "sql", "ukpd_password_123.sql");
-const DEFAULT_PASSWORD = "123";
+const DEFAULT_PASSWORD_LABEL = "admin123";
+const DEFAULT_PASSWORD_HASH = "$2b$10$.VgTG22czHv9lIJUkYiDCuggux2JDK/gsaVxxgnSOajPJnz.G/p6G";
 
 const columns = [
   "id_ukpd",
@@ -38,7 +39,7 @@ const valuesSql = rows
       row.id_ukpd,
       row.ukpd_id,
       row.nama_ukpd,
-      DEFAULT_PASSWORD,
+      DEFAULT_PASSWORD_HASH,
       row.jenis_ukpd,
       row.role,
       row.wilayah,
@@ -54,7 +55,7 @@ const updateSql = columns
   .join(", ");
 
 const sql = `-- Auto generated on ${new Date().toISOString()}
--- Seed lengkap tabel ukpd dengan password standar ${DEFAULT_PASSWORD}
+-- Seed lengkap tabel ukpd dengan password hash bcrypt untuk ${DEFAULT_PASSWORD_LABEL}
 SET NAMES utf8mb4;
 CREATE DATABASE IF NOT EXISTS \`si_data\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE \`si_data\`;

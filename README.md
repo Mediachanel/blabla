@@ -13,32 +13,91 @@ Aplikasi berjalan di `http://localhost:3000`.
 
 ## Deploy ke CasaOS (Docker Compose)
 
-File untuk deploy sudah disiapkan:
+File utama untuk deploy:
 
 - `Dockerfile`
 - `docker-compose.yml`
-- `docker-compose.casaos.yml`
-- `.env.casaos.example`
+- `sql/ukpd_password_123.sql`
+- `sql/export_pegawai_ukpd.sql`
 
-Langkah cepat:
+Branch deploy GitHub: `sisdmk2-casaos`.
 
-1. Salin `.env.casaos.example` jadi `.env`, lalu isi `MYSQL_HOST`, `MYSQL_DATABASE`, `MYSQL_USER`, `MYSQL_PASSWORD`, dan `JWT_SECRET`.
-2. Di CasaOS buka **App Store -> Custom Install -> Import docker-compose.yml**.
-3. Jika memakai database `si_data` yang sudah ada di CasaOS/phpMyAdmin, upload/isi file `docker-compose.casaos.yml`.
-4. Jika ingin membuat MySQL baru dari project ini, upload/isi file `docker-compose.yml`.
-5. Jalankan stack.
+Contoh `docker-compose.yml` untuk CasaOS dengan MySQL satu stack:
+
+```yml
+services:
+  db:
+    image: mysql:8.0
+    container_name: sisdmk2-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: Tianh@27
+      MYSQL_DATABASE: si_data
+    ports:
+      - "3307:3306"
+    volumes:
+      - sisdmk2_mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p$${MYSQL_ROOT_PASSWORD} || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sisdmk2-app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      MYSQL_HOST: db
+      MYSQL_HOSTS: db,mariadb,mysql,host.docker.internal,172.17.0.1,172.31.254.56,127.0.0.1
+      MYSQL_PORT: 3306
+      MYSQL_USER: root
+      MYSQL_PASSWORD: Tianh@27
+      MYSQL_DATABASE: si_data
+      JWT_SECRET: sisdmk2-jwt-secret-2026-ganti-nanti
+    ports:
+      - "8080:3000"
+
+volumes:
+  sisdmk2_mysql_data:
+```
+
+Jalankan di folder project pada server CasaOS:
+
+```bash
+git pull origin sisdmk2-casaos
+docker compose down
+docker compose build --no-cache app
+docker compose up -d
+```
+
+Setelah container hidup, import tabel akun UKPD dan data pegawai:
+
+```bash
+docker exec -i sisdmk2-db mysql -uroot -p'Tianh@27' si_data < sql/ukpd_password_123.sql
+docker exec -i sisdmk2-db mysql -uroot -p'Tianh@27' si_data < sql/export_pegawai_ukpd.sql
+```
 
 Setelah berjalan:
 
-- App: `http://IP-CASAOS:3000`
-- MySQL: port `3306` (atau sesuai `MYSQL_PORT` di `.env`)
+- App: `http://IP-CASAOS:8080`
+- MySQL internal app: `db:3306`
+- MySQL dari host/phpMyAdmin: `IP-CASAOS:3307`
 
-Catatan:
+Catatan troubleshooting:
 
-- Jika memakai database server yang sudah ada di CasaOS/phpMyAdmin, set `.env` seperti ini: `MYSQL_HOST=host.docker.internal`, `MYSQL_DATABASE=si_data`, lalu isi user dan password MySQL sesuai akun server.
-- Jika memakai MySQL bawaan `docker-compose.yml`, pakai `MYSQL_HOST=db` dan `MYSQL_DATABASE=sisdmk2`.
-- Script SQL import otomatis jalan saat container MySQL pertama kali dibuat.
-- Kalau mau re-import dari nol, hapus volume `mysql_data` lalu start ulang stack.
+- Kolom `ukpd.password` memakai hash bcrypt untuk password login `admin123`, bukan plaintext.
+- Login super admin awal: username `SUPER ADMIN`, password `admin123`.
+- Jika muncul pesan gagal konek database, cek `MYSQL_HOSTS`, `MYSQL_USER`, `MYSQL_PASSWORD`, dan `MYSQL_DATABASE` pada container app.
+- Jika volume `sisdmk2_mysql_data` sudah pernah dibuat dengan password root lama, mengganti `MYSQL_ROOT_PASSWORD` di compose tidak otomatis mengubah password MySQL. Pakai password lama, ubah password root manual dari MySQL, atau buat volume baru bila data lama boleh dihapus.
+- Aplikasi mencoba beberapa host MySQL secara berurutan dari `MYSQL_HOSTS`, mirip konfigurasi PHP lama: `db`, `mariadb`, `mysql`, `host.docker.internal`, `172.17.0.1`, `172.31.254.56`, dan `127.0.0.1`.
 
 ## Import CSV Master Pegawai
 
@@ -121,15 +180,18 @@ node scripts/normalize-generated-gender.mjs
 
 Nilai asli tetap disimpan di `jenis_kelamin_raw`.
 
-## Akun Demo
+## Akun Login
 
-Semua akun memakai password `password123`.
+Jika MySQL aktif, login membaca tabel `ukpd`. Seed `sql/ukpd_password_123.sql` mengisi semua UKPD dengan hash bcrypt untuk password `admin123`.
 
-| Role | Username |
-| --- | --- |
-| Super Admin | `superadmin` |
-| Admin Wilayah | `admin-timur` |
-| Admin UKPD | `admin-cakung` |
+| Role | Username / Nama UKPD | Password |
+| --- | --- | --- |
+| Super Admin | `SUPER ADMIN` | `admin123` |
+| Dinas Kesehatan | `Dinas Kesehatan` | `admin123` |
+| Admin UKPD | nama UKPD, contoh `Puskesmas Tebet` | `admin123` |
+| Admin UKPD | kode UKPD, contoh `4` | `admin123` |
+
+Jika MySQL belum dikonfigurasi, aplikasi fallback ke akun demo lokal dengan password `password123`.
 
 ## Struktur Utama
 

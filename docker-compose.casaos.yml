@@ -12,10 +12,11 @@ services:
       NODE_ENV: production
       PORT: 3000
       JWT_SECRET: ${JWT_SECRET:-change-this-secret-in-production}
-      MYSQL_HOST: ${MYSQL_HOST:-host.docker.internal}
-      MYSQL_PORT: ${MYSQL_PORT:-3306}
-      MYSQL_DATABASE: ${MYSQL_DATABASE:-si_data}
-      MYSQL_USER: ${MYSQL_USER:-root}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-}
+      MYSQL_HOST: host.docker.internal
+      MYSQL_HOSTS: host.docker.internal
+      MYSQL_PORT: 3306
+      MYSQL_DATABASE: si_data
+      MYSQL_USER: root
+      MYSQL_PASSWORD: Tianh@27
     ports:
       - "${APP_PORT:-3000}:3000"

@@ -39,7 +39,7 @@ function addWhere(parts, params, clause, values = []) {
   params.push(...values);
 }
 
-async function getPegawaiPage({ user, q, status, wilayah, ukpd, page, pageSize }) {
+async function getPegawaiPage({ user, q, status, wilayah, ukpd, page, pageSize, exportAll = false }) {
   const pool = await getConnectedPool();
   const where = [];
   const params = [];
@@ -74,9 +74,9 @@ async function getPegawaiPage({ user, q, status, wilayah, ukpd, page, pageSize }
      FROM \`pegawai\` p
      ${joinSql}
      ${whereSql}
-     ORDER BY (p.\`nip\` IS NULL OR p.\`nip\` = '') ASC, p.\`id_pegawai\` DESC
-     LIMIT ? OFFSET ?`,
-    [...params, pageSize, offset]
+     ORDER BY p.\`nama\` ASC, p.\`id_pegawai\` ASC
+     ${exportAll ? "" : "LIMIT ? OFFSET ?"}`,
+    exportAll ? params : [...params, pageSize, offset]
   );
 
   const scopedUkpdWhere = [];
@@ -113,9 +113,10 @@ export async function GET(request) {
   const wilayah = searchParams.get("wilayah") || "";
   const ukpd = searchParams.get("ukpd") || "";
   const page = numberParam(searchParams.get("page"), 1, 1, 100000);
-  const pageSize = numberParam(searchParams.get("pageSize"), 8, 5, 50);
+  const pageSize = numberParam(searchParams.get("pageSize"), 10, 10, 100);
+  const exportAll = searchParams.get("export") === "1";
 
-  return ok(await getPegawaiPage({ user, q, status, wilayah, ukpd, page, pageSize }));
+  return ok(await getPegawaiPage({ user, q, status, wilayah, ukpd, page, pageSize, exportAll }));
 }
 
 export async function POST(request) {

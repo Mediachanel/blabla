@@ -733,7 +733,6 @@ function DashboardAnalyticsPanel({ analytics }) {
         {activeTab === "ukpd" || activeTab === "jenis-ukpd" ? (
           <>
             <UkpdDrillPanel query={query} />
-            <GroupedUkpdKpiTable rows={limitedRows} />
           </>
         ) : activeTab === "rumpun" ? (
           <PivotDrillPanel mode="rumpun" query={query} />
@@ -778,7 +777,7 @@ export default function DashboardPage() {
   return (
     <>
       <PageHeader
-        title={`Selamat datang, ${data.user.username}`}
+        title={`Selamat datang, ${data.user.nama_ukpd || data.user.username}`}
         description={`Dashboard ${data.user.role} untuk ${data.user.wilayah || data.user.nama_ukpd}. Data Yang Ditampilkan Sesuai Session Login.`}
         action={<Link className="btn-primary" href="/pegawai/new"><FilePlus2 className="h-4 w-4" /> Tambah Pegawai</Link>}
       />

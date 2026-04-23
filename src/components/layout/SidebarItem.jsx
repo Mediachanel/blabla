@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { ChevronDown } from "lucide-react";
 
 export default function SidebarItem({ item, collapsed, onNavigate }) {
   const pathname = usePathname();
+  const router = useRouter();
   const Icon = item.icon;
   const active = item.href ? pathname === item.href || pathname.startsWith(`${item.href}/`) : item.children?.some((child) => pathname.startsWith(child.href));
 
@@ -37,9 +38,17 @@ export default function SidebarItem({ item, collapsed, onNavigate }) {
 
   if (item.action === "logout") {
     return (
-      <a className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 focus-ring" href={item.href}>
+      <button
+        className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-slate-600 transition hover:bg-slate-100 focus-ring"
+        type="button"
+        onClick={async () => {
+          await fetch("/api/auth/logout", { method: "POST" });
+          router.replace("/login");
+          router.refresh();
+        }}
+      >
         {content}
-      </a>
+      </button>
     );
   }
 

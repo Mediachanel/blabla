@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Edit, Eye, Plus, Trash2 } from "lucide-react";
+import { Download, Edit, Eye, Plus, Trash2 } from "lucide-react";
 import PageHeader from "@/components/layout/PageHeader";
 import DataTable from "@/components/tables/DataTable";
 import SearchFilterBar from "@/components/forms/SearchFilterBar";
@@ -25,8 +25,8 @@ export default function PegawaiPage() {
   const [wilayah, setWilayah] = useState("");
   const [ukpd, setUkpd] = useState("");
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [deleteTarget, setDeleteTarget] = useState(null);
-  const pageSize = 8;
 
   useEffect(() => {
     const controller = new AbortController();
@@ -48,7 +48,7 @@ export default function PegawaiPage() {
       })
       .finally(() => setLoading(false));
     return () => controller.abort();
-  }, [search, status, wilayah, ukpd, page]);
+  }, [search, status, wilayah, ukpd, page, pageSize]);
 
   const maxPage = Math.max(1, Math.ceil(totalRows / pageSize));
 
@@ -57,6 +57,40 @@ export default function PegawaiPage() {
     setRows((current) => current.filter((item) => item.id_pegawai !== deleteTarget.id_pegawai));
     setTotalRows((current) => Math.max(0, current - 1));
     setDeleteTarget(null);
+  }
+
+  function escapeCsv(value) {
+    const text = String(value ?? "");
+    if (text.includes(",") || text.includes("\"") || text.includes("\n")) return `"${text.replace(/"/g, "\"\"")}"`;
+    return text;
+  }
+
+  async function exportPegawai() {
+    const params = new URLSearchParams({ q: search, status, wilayah, ukpd, export: "1" });
+    const payload = await fetch(`/api/pegawai?${params}`).then((res) => res.json());
+    const exportRows = payload.data?.rows || [];
+    const headers = ["No", "Nama", "NIP", "Jabatan Kepmenpan 11", "Status", "Nama UKPD", "Wilayah"];
+    const lines = [
+      headers.map(escapeCsv).join(","),
+      ...exportRows.map((item, index) => [
+        index + 1,
+        item.nama,
+        item.nip || "",
+        item.nama_jabatan_menpan || item.nama_jabatan_orb || "",
+        item.jenis_pegawai || "",
+        item.nama_ukpd || "",
+        item.wilayah || ""
+      ].map(escapeCsv).join(","))
+    ];
+    const blob = new Blob(["\uFEFF", lines.join("\n")], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "data-pegawai.csv";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   }
 
   const columns = [
@@ -73,7 +107,12 @@ export default function PegawaiPage() {
         title="Data Pegawai"
         description="Kelola data pegawai dengan filter berbasis role. Admin wilayah dan UKPD tetap dibatasi oleh API."
         breadcrumbs={[{ label: "Data Pegawai" }]}
-        action={<Link className="btn-primary" href="/pegawai/new"><Plus className="h-4 w-4" /> Tambah Pegawai</Link>}
+        action={
+          <div className="flex flex-wrap gap-2">
+            <button className="btn-secondary" type="button" onClick={exportPegawai}><Download className="h-4 w-4" /> Export Excel</button>
+            <Link className="btn-primary" href="/pegawai/new"><Plus className="h-4 w-4" /> Tambah Pegawai</Link>
+          </div>
+        }
       />
       <SearchFilterBar
         search={search}
@@ -92,6 +131,8 @@ export default function PegawaiPage() {
             columns={columns}
             data={rows}
             rowKey="id_pegawai"
+            showNumber
+            startNumber={(page - 1) * pageSize + 1}
             actions={(item) => (
               <div className="flex items-center gap-2">
                 <Link className="rounded-lg p-2 text-dinkes-700 hover:bg-dinkes-50 focus-ring" href={`/pegawai/${item.id_pegawai}`} target="_blank" rel="noopener noreferrer" aria-label="Lihat profil"><Eye className="h-4 w-4" /></Link>
@@ -102,10 +143,24 @@ export default function PegawaiPage() {
           />
         )}
       </div>
-      <footer className="mt-4 flex items-center justify-between text-sm text-slate-600">
+      <footer className="mt-4 flex flex-col gap-3 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
         <span>Menampilkan {rows.length} dari {totalRows} pegawai</span>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <label className="flex items-center gap-2">
+            <span>Per halaman</span>
+            <select
+              className="input py-2"
+              value={pageSize}
+              onChange={(event) => {
+                setPageSize(Number(event.target.value));
+                setPage(1);
+              }}
+            >
+              {[10, 25, 50, 100].map((value) => <option key={value} value={value}>{value}</option>)}
+            </select>
+          </label>
           <button className="btn-secondary py-2" disabled={page === 1} onClick={() => setPage((value) => Math.max(1, value - 1))}>Sebelumnya</button>
+          <span className="px-2">Hal {page} / {maxPage}</span>
           <button className="btn-secondary py-2" disabled={page === maxPage} onClick={() => setPage((value) => Math.min(maxPage, value + 1))}>Berikutnya</button>
         </div>
       </footer>

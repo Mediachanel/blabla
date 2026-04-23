@@ -60,6 +60,22 @@ function normalizeUkpd(row) {
   };
 }
 
+function normalizeText(value) {
+  return String(value || "").trim();
+}
+
+function buildAlamatLengkap(row) {
+  const jalan = normalizeText(row.jalan);
+  const jalanLower = jalan.toLowerCase();
+  const tail = [row.kelurahan, row.kecamatan, row.kota_kabupaten, row.provinsi]
+    .map(normalizeText)
+    .filter(Boolean)
+    .filter((part, index, all) => all.findIndex((candidate) => candidate.toLowerCase() === part.toLowerCase()) === index)
+    .filter((part) => !jalanLower || !jalanLower.includes(part.toLowerCase()));
+
+  return [jalan, ...tail].filter(Boolean).join(", ");
+}
+
 async function queryRows(sql, params = []) {
   const pool = await getConnectedPool();
   const [rows] = await pool.query(sql, params);
@@ -73,6 +89,24 @@ export async function getUkpdData() {
 
 export async function getPegawaiData() {
   return queryRows("SELECT * FROM `pegawai` ORDER BY `id_pegawai` DESC");
+}
+
+export async function getPegawaiAlamat(id) {
+  const rows = await queryRows(
+    `SELECT * FROM \`alamat\`
+     WHERE \`id_pegawai\` = ?
+     ORDER BY CASE
+       WHEN LOWER(\`tipe\`) = 'ktp' THEN 0
+       WHEN LOWER(\`tipe\`) = 'domisili' THEN 1
+       ELSE 2
+     END, \`id\` ASC`,
+    [Number(id)]
+  );
+
+  return rows.map((row) => ({
+    ...row,
+    alamat_lengkap: buildAlamatLengkap(row)
+  }));
 }
 
 export async function createPegawaiData(data) {

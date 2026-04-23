@@ -2,7 +2,7 @@ import { z } from "zod";
 import { filterPegawaiByRole, getPegawaiWilayah } from "@/lib/auth/access";
 import { requireAuth } from "@/lib/auth/requireAuth";
 import { fail, ok } from "@/lib/helpers/response";
-import { deletePegawaiData, getPegawaiData, getUkpdData, updatePegawaiData } from "@/lib/data/pegawaiStore";
+import { deletePegawaiData, getPegawaiAlamat, getPegawaiData, getUkpdData, updatePegawaiData } from "@/lib/data/pegawaiStore";
 
 const schema = z.object({
   nama: z.string().min(3),
@@ -25,11 +25,18 @@ export async function GET(_request, { params }) {
   const [pegawaiMaster, ukpdList] = await Promise.all([getPegawaiData(), getUkpdData()]);
   const item = findAllowed(params.id, user, pegawaiMaster, ukpdList);
   if (!item) return fail("Data pegawai tidak ditemukan atau tidak dapat diakses.", 404);
+
+  const alamat = await getPegawaiAlamat(params.id);
+  const alamatKtp = alamat.find((entry) => String(entry.tipe || "").toLowerCase() === "ktp");
+  const alamatDomisili = alamat.find((entry) => String(entry.tipe || "").toLowerCase() === "domisili");
+
   return ok({
     ...item,
     nip: cleanNip(item.nip),
     wilayah: getPegawaiWilayah(item, ukpdList),
-    alamat: [],
+    alamat,
+    alamat_ktp: alamatKtp?.alamat_lengkap || null,
+    alamat_domisili: alamatDomisili?.alamat_lengkap || null,
     pasangan: null,
     anak: []
   });

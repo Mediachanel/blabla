@@ -1,8 +1,9 @@
 import { z } from "zod";
-import { usulanMutasi } from "@/data/mock";
 import { ROLES } from "@/lib/constants/roles";
 import { requireAuth } from "@/lib/auth/requireAuth";
 import { fail, ok } from "@/lib/helpers/response";
+
+const usulanMutasi = [];
 
 const schema = z.object({
   nip: z.string().optional().default(""),

@@ -1,4 +1,3 @@
-import { usulanMutasi, usulanPutusJf } from "@/data/mock";
 import { filterPegawaiByRole, getPegawaiWilayah } from "@/lib/auth/access";
 import { requireAuth } from "@/lib/auth/requireAuth";
 import { getPegawaiData, getUkpdData } from "@/lib/data/pegawaiStore";
@@ -17,6 +16,121 @@ function toChart(obj) {
   return { labels: Object.keys(obj), values: Object.values(obj) };
 }
 
+const CHART_VIEW_CONFIGS = {
+  statusPegawai: {
+    label: "Status Pegawai",
+    titleSuffix: "Status",
+    field: "jenis_pegawai",
+    categories: [
+      { key: "PNS", label: "PNS", color: "#18a8e0" },
+      { key: "CPNS", label: "CPNS", color: "#13a8be" },
+      { key: "PPPK", label: "PPPK", color: "#22c55e" },
+      { key: "NON PNS", label: "PROFESIONAL", color: "#14b8a6" },
+      { key: "PJLP", label: "PJLP", color: "#10b981" },
+      { key: "PPPK Paruh Waktu", label: "PPPK Paruh Waktu", color: "#8b5cf6" }
+    ],
+    normalize: normalizeJenisPegawai
+  },
+  jenisKelamin: {
+    label: "Jenis Kelamin",
+    titleSuffix: "Jenis Kelamin",
+    field: "jenis_kelamin",
+    categories: [
+      { key: "Laki-laki", label: "Laki-laki", color: "#18a8e0" },
+      { key: "Perempuan", label: "Perempuan", color: "#f97316" }
+    ],
+    normalize(value) {
+      const text = String(value || "").trim().toLowerCase();
+      if (text.includes("laki")) return "Laki-laki";
+      if (text.includes("perempuan") || text === "p") return "Perempuan";
+      return "";
+    }
+  },
+  statusPernikahan: {
+    label: "Status Pernikahan",
+    titleSuffix: "Status Pernikahan",
+    field: "status_perkawinan",
+    categories: [
+      { key: "Belum Menikah", label: "Belum Menikah", color: "#18a8e0" },
+      { key: "Menikah", label: "Menikah", color: "#22c55e" },
+      { key: "Cerai Hidup", label: "Cerai Hidup", color: "#f97316" },
+      { key: "Cerai Mati", label: "Cerai Mati", color: "#ef4444" }
+    ],
+    normalize(value) {
+      const text = String(value || "").trim().toUpperCase().replace(/\s+/g, " ");
+      if (!text) return "";
+      if (text.includes("BELUM")) return "Belum Menikah";
+      if (text.includes("CERAI") && text.includes("MATI")) return "Cerai Mati";
+      if (text.includes("CERAI")) return "Cerai Hidup";
+      if (text.includes("MENIKAH") || text.includes("KAWIN")) return "Menikah";
+      return "";
+    }
+  }
+};
+
+function createSeriesChart(labels, categories, counts) {
+  return {
+    labels,
+    datasets: categories.map((category) => ({
+      label: category.label,
+      backgroundColor: category.color,
+      data: labels.map((label) => counts.get(`${label}||${category.key}`) || 0)
+    }))
+  };
+}
+
+function buildGroupedChart(items, groupFn, config, sortByTotal = true) {
+  const groupTotals = new Map();
+  const counts = new Map();
+
+  for (const item of items) {
+    const group = groupFn(item) || "Tidak Diketahui";
+    const category = config.normalize(item[config.field]);
+    if (!category || !config.categories.some((option) => option.key === category)) continue;
+    groupTotals.set(group, (groupTotals.get(group) || 0) + 1);
+    counts.set(`${group}||${category}`, (counts.get(`${group}||${category}`) || 0) + 1);
+  }
+
+  const labels = [...groupTotals.entries()]
+    .sort((a, b) => (sortByTotal ? b[1] - a[1] : 0) || a[0].localeCompare(b[0]))
+    .map(([label]) => label);
+
+  return createSeriesChart(labels, config.categories, counts);
+}
+
+function buildDistributionChart(items, config) {
+  const counts = new Map(config.categories.map((category) => [category.key, 0]));
+  for (const item of items) {
+    const category = config.normalize(item[config.field]);
+    if (counts.has(category)) counts.set(category, counts.get(category) + 1);
+  }
+
+  return {
+    labels: config.categories.map((category) => category.label),
+    values: config.categories.map((category) => counts.get(category.key) || 0),
+    colors: config.categories.map((category) => category.color)
+  };
+}
+
+function buildChartViews(items) {
+  return Object.fromEntries(Object.entries(CHART_VIEW_CONFIGS).map(([key, config]) => [
+    key,
+    {
+      label: config.label,
+      titles: {
+        distribution: `Distribusi Pegawai per ${config.titleSuffix} (Aktif)`,
+        ukpd: `Distribusi Pegawai per UKPD (${config.titleSuffix})`,
+        pendidikan: `Distribusi Pegawai per Jenjang Pendidikan (${config.titleSuffix})`,
+        rumpun: `Rumpun A - ${config.titleSuffix} Pegawai`
+      },
+      distribution: buildDistributionChart(items, config),
+      ukpd: buildGroupedChart(items, (item) => item.nama_ukpd, config, false),
+      pendidikan: buildGroupedChart(items, (item) => item.jenjang_pendidikan, config),
+      rumpun: buildGroupedChart(items, (item) => item.status_rumpun, config)
+    }
+  ]));
+}
+
 function sortByCount(rows) {
   return rows.sort((a, b) => b.jumlah - a.jumlah || String(a.label || a.nama_ukpd).localeCompare(String(b.label || b.nama_ukpd)));
 }
@@ -33,7 +147,7 @@ function buildDashboardAnalytics(data, ukpdList) {
     const officialUkpd = officialUkpdById.get(Number(item.id_ukpd)) || officialUkpdByName.get(item.nama_ukpd);
     const ukpdKey = officialUkpd?.id_ukpd || item.id_ukpd || item.nama_ukpd || "Tidak Diketahui";
     const namaUkpd = officialUkpd?.nama_ukpd || item.nama_ukpd || "Tidak Diketahui";
-    const wilayah = officialUkpd?.wilayah || getPegawaiWilayah(item);
+    const wilayah = officialUkpd?.wilayah || getPegawaiWilayah(item, ukpdList);
 
     if (!ukpdMap.has(ukpdKey)) {
       ukpdMap.set(ukpdKey, {
@@ -79,7 +193,7 @@ export async function GET() {
   if (error) return error;
 
   const [pegawaiMaster, ukpdList] = await Promise.all([getPegawaiData(), getUkpdData()]);
-  const data = filterPegawaiByRole(pegawaiMaster, user);
+  const data = filterPegawaiByRole(pegawaiMaster, user, ukpdList);
   const summary = {
     total: data.length,
     pnsCpns: data.filter((item) => ["PNS", "CPNS"].includes(normalizeJenisPegawai(item.jenis_pegawai))).length,
@@ -91,6 +205,7 @@ export async function GET() {
 
   const visibleUkpd = [...new Set(data.map((item) => item.nama_ukpd))];
   const wilayahUkpd = ukpdList.filter((item) => visibleUkpd.includes(item.nama_ukpd));
+  const activeData = data.filter((item) => String(item.kondisi || "").toUpperCase() === "AKTIF");
 
   return ok({
     user,
@@ -102,12 +217,13 @@ export async function GET() {
       wilayah: toChart(countBy(data, getPegawaiWilayah)),
       ukpd: toChart(countBy(data, (item) => item.nama_ukpd))
     },
+    chartViews: buildChartViews(activeData.length ? activeData : data),
     latestEmployees: data.slice(0, 5),
     visibleUkpd: wilayahUkpd,
     analytics: buildDashboardAnalytics(data, ukpdList),
     usulanSummary: {
-      mutasi: usulanMutasi.length,
-      putusJf: usulanPutusJf.length
+      mutasi: 0,
+      putusJf: 0
     }
   });
 }

@@ -2,8 +2,9 @@ import { z } from "zod";
 import { filterPegawaiByRole, getPegawaiWilayah } from "@/lib/auth/access";
 import { requireAuth } from "@/lib/auth/requireAuth";
 import { fail, ok } from "@/lib/helpers/response";
-import { normalizeJenisPegawai } from "@/lib/helpers/pegawaiStatus";
-import { createPegawaiData, getPegawaiData } from "@/lib/data/pegawaiStore";
+import { createPegawaiData, getPegawaiData, getUkpdData } from "@/lib/data/pegawaiStore";
+import { getConnectedPool } from "@/lib/db/mysql";
+import { ROLES } from "@/lib/constants/roles";
 
 const schema = z.object({
   nama: z.string().min(3),
@@ -16,6 +17,93 @@ const schema = z.object({
   kondisi: z.string().optional()
 }).passthrough();
 
+function numberParam(value, fallback, min, max) {
+  const number = Number.parseInt(value || "", 10);
+  if (!Number.isFinite(number)) return fallback;
+  return Math.min(max, Math.max(min, number));
+}
+
+function cleanNip(value) {
+  return String(value || "").trim().replace(/^`+/, "");
+}
+
+function normalizePegawaiRows(rows) {
+  return rows.map((row) => ({
+    ...row,
+    nip: cleanNip(row.nip)
+  }));
+}
+
+function addWhere(parts, params, clause, values = []) {
+  parts.push(clause);
+  params.push(...values);
+}
+
+async function getPegawaiPage({ user, q, status, wilayah, ukpd, page, pageSize }) {
+  const pool = await getConnectedPool();
+  const where = [];
+  const params = [];
+
+  if (user.role === ROLES.ADMIN_UKPD) {
+    addWhere(where, params, "p.`nama_ukpd` = ?", [user.nama_ukpd]);
+  } else if (user.role === ROLES.ADMIN_WILAYAH) {
+    addWhere(where, params, "COALESCE(NULLIF(p.`wilayah`, ''), u.`wilayah`) = ?", [user.wilayah]);
+  } else if (user.role !== ROLES.SUPER_ADMIN) {
+    addWhere(where, params, "1 = 0");
+  }
+
+  if (q) {
+    const keyword = `%${q}%`;
+    addWhere(
+      where,
+      params,
+      "(p.`nama` LIKE ? OR p.`nip` LIKE ? OR p.`nama_jabatan_menpan` LIKE ? OR p.`nama_jabatan_orb` LIKE ? OR p.`nama_ukpd` LIKE ?)",
+      [keyword, keyword, keyword, keyword, keyword]
+    );
+  }
+  if (status) addWhere(where, params, "p.`jenis_pegawai` = ?", [status]);
+  if (wilayah) addWhere(where, params, "COALESCE(NULLIF(p.`wilayah`, ''), u.`wilayah`) = ?", [wilayah]);
+  if (ukpd) addWhere(where, params, "p.`nama_ukpd` = ?", [ukpd]);
+
+  const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
+  const joinSql = "LEFT JOIN `ukpd` u ON u.`nama_ukpd` = p.`nama_ukpd`";
+  const offset = (page - 1) * pageSize;
+  const [countRows] = await pool.query(`SELECT COUNT(*) AS total FROM \`pegawai\` p ${joinSql} ${whereSql}`, params);
+  const [rows] = await pool.query(
+    `SELECT p.*, COALESCE(NULLIF(p.\`wilayah\`, ''), u.\`wilayah\`, '-') AS \`wilayah\`
+     FROM \`pegawai\` p
+     ${joinSql}
+     ${whereSql}
+     ORDER BY (p.\`nip\` IS NULL OR p.\`nip\` = '') ASC, p.\`id_pegawai\` DESC
+     LIMIT ? OFFSET ?`,
+    [...params, pageSize, offset]
+  );
+
+  const scopedUkpdWhere = [];
+  const scopedUkpdParams = [];
+  if (user.role === ROLES.ADMIN_UKPD) {
+    addWhere(scopedUkpdWhere, scopedUkpdParams, "`nama_ukpd` = ?", [user.nama_ukpd]);
+  } else if (user.role === ROLES.ADMIN_WILAYAH) {
+    addWhere(scopedUkpdWhere, scopedUkpdParams, "`wilayah` = ?", [user.wilayah]);
+  } else if (user.role !== ROLES.SUPER_ADMIN) {
+    addWhere(scopedUkpdWhere, scopedUkpdParams, "1 = 0");
+  }
+  const [ukpdRows] = await pool.query(
+    `SELECT DISTINCT \`nama_ukpd\` FROM \`ukpd\` ${scopedUkpdWhere.length ? `WHERE ${scopedUkpdWhere.join(" AND ")}` : ""} ORDER BY \`nama_ukpd\` ASC`,
+    scopedUkpdParams
+  );
+
+  return {
+    rows: normalizePegawaiRows(rows),
+    total: Number(countRows[0]?.total || 0),
+    page,
+    pageSize,
+    filters: {
+      ukpdOptions: ukpdRows.map((row) => row.nama_ukpd).filter(Boolean)
+    }
+  };
+}
+
 export async function GET(request) {
   const { user, error } = await requireAuth();
   if (error) return error;
@@ -24,14 +112,10 @@ export async function GET(request) {
   const status = searchParams.get("status") || "";
   const wilayah = searchParams.get("wilayah") || "";
   const ukpd = searchParams.get("ukpd") || "";
+  const page = numberParam(searchParams.get("page"), 1, 1, 100000);
+  const pageSize = numberParam(searchParams.get("pageSize"), 8, 5, 50);
 
-  const pegawaiMaster = await getPegawaiData();
-  let data = filterPegawaiByRole(pegawaiMaster, user).map((item) => ({ ...item, wilayah: getPegawaiWilayah(item) }));
-  if (q) data = data.filter((item) => [item.nama, item.nip, item.nama_jabatan_menpan, item.nama_jabatan_orb, item.nama_ukpd].join(" ").toLowerCase().includes(q));
-  if (status) data = data.filter((item) => normalizeJenisPegawai(item.jenis_pegawai) === status);
-  if (wilayah) data = data.filter((item) => item.wilayah === wilayah);
-  if (ukpd) data = data.filter((item) => item.nama_ukpd === ukpd);
-  return ok(data);
+  return ok(await getPegawaiPage({ user, q, status, wilayah, ukpd, page, pageSize }));
 }
 
 export async function POST(request) {
@@ -41,7 +125,8 @@ export async function POST(request) {
   if (!parsed.success) return fail("Validasi data pegawai gagal.", 422, parsed.error.flatten());
 
   const nextItem = { ...parsed.data };
-  const allowed = filterPegawaiByRole([nextItem], user).length === 1;
+  const ukpdList = await getUkpdData();
+  const allowed = filterPegawaiByRole([nextItem], user, ukpdList).length === 1;
   if (!allowed) return fail("Anda tidak boleh membuat pegawai untuk UKPD atau wilayah lain.", 403);
   const created = await createPegawaiData(nextItem);
   return ok(created, "Pegawai berhasil ditambahkan");

@@ -1,11 +1,10 @@
 import { ROLES } from "@/lib/constants/roles";
-import { ukpdList } from "@/data/mock";
 
 export function canAccessMenu(role, allowedRoles = []) {
   return allowedRoles.includes(role);
 }
 
-export function filterPegawaiByRole(pegawai, user) {
+export function filterPegawaiByRole(pegawai, user, ukpdList = []) {
   if (!user) return [];
   if (user.role === ROLES.SUPER_ADMIN) return pegawai;
   if (user.role === ROLES.ADMIN_UKPD) {
@@ -23,6 +22,6 @@ export function filterPegawaiByRole(pegawai, user) {
   return [];
 }
 
-export function getPegawaiWilayah(pegawai) {
+export function getPegawaiWilayah(pegawai, ukpdList = []) {
   return pegawai.wilayah || ukpdList.find((ukpd) => ukpd.nama_ukpd === pegawai.nama_ukpd)?.wilayah || "-";
 }

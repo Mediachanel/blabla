@@ -19,7 +19,7 @@ export async function POST(request) {
   } catch (error) {
     console.error("Login MySQL error:", error.message);
     return fail(
-      `Gagal konek database MySQL. Cek MYSQL_HOSTS, MYSQL_USER, MYSQL_PASSWORD, dan MYSQL_DATABASE. Detail: ${error.message}`,
+      `Gagal konek database MySQL. Cek MYSQL_HOSTS, MYSQL_USER, MYSQL_PASSWORD, MYSQL_DATABASE, dan MYSQL_DATABASES. Detail: ${error.message}`,
       503
     );
   }

@@ -1,19 +1,16 @@
 import bcrypt from "bcryptjs";
-import { users } from "@/data/mock";
-import { getConnectedPool, hasMysqlConfig } from "@/lib/db/mysql";
-
-const DEMO_PASSWORD = "password123";
-
-export const loginUsers = users.map((user) => ({
-  ...user,
-  passwordHash: bcrypt.hashSync(DEMO_PASSWORD, 10)
-}));
+import crypto from "node:crypto";
+import { getConnectedPool } from "@/lib/db/mysql";
 
 export async function verifyPassword(password, passwordHash) {
   if (!passwordHash) return false;
   const storedPassword = String(passwordHash);
   if (storedPassword.startsWith("$2a$") || storedPassword.startsWith("$2b$") || storedPassword.startsWith("$2y$")) {
     return bcrypt.compare(password, storedPassword);
+  }
+  if (/^[a-f0-9]{64}$/i.test(storedPassword)) {
+    const sha256 = crypto.createHash("sha256").update(String(password)).digest("hex");
+    return crypto.timingSafeEqual(Buffer.from(sha256, "hex"), Buffer.from(storedPassword, "hex"));
   }
   return String(password) === storedPassword;
 }
@@ -37,21 +34,15 @@ function normalizeDbUser(row) {
 export async function findLoginUser(login) {
   const username = normalizeLogin(login);
 
-  if (hasMysqlConfig()) {
-    const pool = await getConnectedPool();
-    const [rows] = await pool.query(
-      `SELECT \`id_ukpd\`, \`ukpd_id\`, \`nama_ukpd\`, \`password\`, \`role\`, \`wilayah\`
-       FROM \`ukpd\`
-       WHERE LOWER(\`nama_ukpd\`) = LOWER(?)
-          OR CAST(\`id_ukpd\` AS CHAR) = ?
-          OR CAST(\`ukpd_id\` AS CHAR) = ?
-       LIMIT 1`,
-      [username, username, username]
-    );
-    return normalizeDbUser(rows[0]);
-  }
-
-  return loginUsers.find(
-    (item) => item.username === username || item.nama_ukpd.toLowerCase() === username.toLowerCase()
+  const pool = await getConnectedPool();
+  const [rows] = await pool.query(
+    `SELECT \`id_ukpd\`, \`ukpd_id\`, \`nama_ukpd\`, \`password\`, \`role\`, \`wilayah\`
+     FROM \`ukpd\`
+     WHERE LOWER(\`nama_ukpd\`) = LOWER(?)
+        OR CAST(\`id_ukpd\` AS CHAR) = ?
+        OR CAST(\`ukpd_id\` AS CHAR) = ?
+     LIMIT 1`,
+    [username, username, username]
   );
+  return normalizeDbUser(rows[0]);
 }

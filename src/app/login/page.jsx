@@ -43,7 +43,7 @@ function LoginForm() {
       }
       router.replace(searchParams.get("next") || "/dashboard");
     } catch (err) {
-      setError(`Status: Gagal konek server: ${err?.message || "Network Error"}`);
+      setError("Status: server aplikasi belum aktif atau perlu direstart. Jalankan npm run dev lalu buka ulang halaman login.");
     } finally {
       setLoading(false);
     }

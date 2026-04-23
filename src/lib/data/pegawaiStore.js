@@ -1,6 +1,5 @@
 import { ROLES } from "@/lib/constants/roles";
-import { getConnectedPool, hasMysqlConfig } from "@/lib/db/mysql";
-import { pegawaiMaster, ukpdList } from "@/data/mock";
+import { getConnectedPool } from "@/lib/db/mysql";
 
 const PEGAWAI_COLUMNS = [
   "id_pegawai",
@@ -63,104 +62,52 @@ function normalizeUkpd(row) {
 
 async function queryRows(sql, params = []) {
   const pool = await getConnectedPool();
-  if (!pool) return null;
   const [rows] = await pool.query(sql, params);
   return rows.map(normalizeRow);
 }
 
-async function withFallback(operation, fallback) {
-  if (!hasMysqlConfig()) return fallback();
-  try {
-    return await operation();
-  } catch (error) {
-    console.warn("MySQL tidak bisa diakses, memakai data lokal:", error.message);
-    return fallback();
-  }
-}
-
 export async function getUkpdData() {
-  return withFallback(
-    async () => {
-      const rows = await queryRows("SELECT * FROM `ukpd` ORDER BY `nama_ukpd` ASC");
-      return rows.map(normalizeUkpd);
-    },
-    () => ukpdList
-  );
+  const rows = await queryRows("SELECT * FROM `ukpd` ORDER BY `nama_ukpd` ASC");
+  return rows.map(normalizeUkpd);
 }
 
 export async function getPegawaiData() {
-  return withFallback(
-    () => queryRows("SELECT * FROM `pegawai` ORDER BY `id_pegawai` DESC"),
-    () => pegawaiMaster
-  );
+  return queryRows("SELECT * FROM `pegawai` ORDER BY `id_pegawai` DESC");
 }
 
 export async function createPegawaiData(data) {
-  return withFallback(
-    async () => {
-      const pool = await getConnectedPool();
-      const [[maxRow]] = await pool.query("SELECT COALESCE(MAX(`id_pegawai`), 0) + 1 AS next_id FROM `pegawai`");
-      const item = {
-        id_pegawai: Number(maxRow.next_id),
-        created_at: new Date().toISOString().slice(0, 10),
-        ...data
-      };
-      const columns = PEGAWAI_COLUMNS.filter((column) => Object.prototype.hasOwnProperty.call(item, column));
-      const placeholders = columns.map(() => "?").join(", ");
-      const values = columns.map((column) => item[column] ?? null);
-      await pool.query(
-        `INSERT INTO \`pegawai\` (${columns.map((column) => `\`${column}\``).join(", ")}) VALUES (${placeholders})`,
-        values
-      );
-      return item;
-    },
-    () => {
-      const item = {
-        id_pegawai: Math.max(...pegawaiMaster.map((row) => row.id_pegawai)) + 1,
-        created_at: new Date().toISOString().slice(0, 10),
-        ...data
-      };
-      pegawaiMaster.unshift(item);
-      return item;
-    }
+  const pool = await getConnectedPool();
+  const [[maxRow]] = await pool.query("SELECT COALESCE(MAX(`id_pegawai`), 0) + 1 AS next_id FROM `pegawai`");
+  const item = {
+    id_pegawai: Number(maxRow.next_id),
+    created_at: new Date().toISOString().slice(0, 10),
+    ...data
+  };
+  const columns = PEGAWAI_COLUMNS.filter((column) => Object.prototype.hasOwnProperty.call(item, column));
+  const placeholders = columns.map(() => "?").join(", ");
+  const values = columns.map((column) => item[column] ?? null);
+  await pool.query(
+    `INSERT INTO \`pegawai\` (${columns.map((column) => `\`${column}\``).join(", ")}) VALUES (${placeholders})`,
+    values
   );
+  return item;
 }
 
 export async function updatePegawaiData(id, data) {
-  return withFallback(
-    async () => {
-      const pool = await getConnectedPool();
-      const columns = PEGAWAI_MUTABLE_COLUMNS.filter((column) => Object.prototype.hasOwnProperty.call(data, column));
-      if (columns.length) {
-        await pool.query(
-          `UPDATE \`pegawai\` SET ${columns.map((column) => `\`${column}\` = ?`).join(", ")} WHERE \`id_pegawai\` = ?`,
-          [...columns.map((column) => data[column] ?? null), Number(id)]
-        );
-      }
-      const [rows] = await pool.query("SELECT * FROM `pegawai` WHERE `id_pegawai` = ? LIMIT 1", [Number(id)]);
-      return rows[0] ? normalizeRow(rows[0]) : null;
-    },
-    () => {
-      const index = pegawaiMaster.findIndex((item) => item.id_pegawai === Number(id));
-      if (index === -1) return null;
-      const updated = { ...pegawaiMaster[index], ...data, id_pegawai: Number(id) };
-      pegawaiMaster[index] = updated;
-      return updated;
+  const pool = await getConnectedPool();
+  const columns = PEGAWAI_MUTABLE_COLUMNS.filter((column) => Object.prototype.hasOwnProperty.call(data, column));
+  if (columns.length) {
+    await pool.query(
+      `UPDATE \`pegawai\` SET ${columns.map((column) => `\`${column}\` = ?`).join(", ")} WHERE \`id_pegawai\` = ?`,
+      [...columns.map((column) => data[column] ?? null), Number(id)]
+    );
     }
-  );
+  const [rows] = await pool.query("SELECT * FROM `pegawai` WHERE `id_pegawai` = ? LIMIT 1", [Number(id)]);
+  return rows[0] ? normalizeRow(rows[0]) : null;
 }
 
 export async function deletePegawaiData(id) {
-  return withFallback(
-    async () => {
-      const pool = await getConnectedPool();
-      await pool.query("DELETE FROM `pegawai` WHERE `id_pegawai` = ?", [Number(id)]);
-      return { id_pegawai: Number(id) };
-    },
-    () => {
-      const index = pegawaiMaster.findIndex((item) => item.id_pegawai === Number(id));
-      if (index !== -1) pegawaiMaster.splice(index, 1);
-      return { id_pegawai: Number(id) };
-    }
-  );
+  const pool = await getConnectedPool();
+  await pool.query("DELETE FROM `pegawai` WHERE `id_pegawai` = ?", [Number(id)]);
+  return { id_pegawai: Number(id) };
 }

@@ -93,11 +93,11 @@ Setelah berjalan:
 
 Catatan troubleshooting:
 
-- Kolom `ukpd.password` memakai hash bcrypt untuk password login `admin123`, bukan plaintext.
+- Kolom `ukpd.password` bisa memakai hash bcrypt atau SHA-256 untuk password login `admin123`, bukan plaintext.
 - Login super admin awal: username `SUPER ADMIN`, password `admin123`.
-- Jika muncul pesan gagal konek database, cek `MYSQL_HOSTS`, `MYSQL_USER`, `MYSQL_PASSWORD`, dan `MYSQL_DATABASE` pada container app.
+- Jika muncul pesan gagal konek database, cek `MYSQL_HOSTS`, `MYSQL_USER`, `MYSQL_PASSWORD`, `MYSQL_DATABASE`, dan `MYSQL_DATABASES` pada container app.
 - Jika volume `sisdmk2_mysql_data` sudah pernah dibuat dengan password root lama, mengganti `MYSQL_ROOT_PASSWORD` di compose tidak otomatis mengubah password MySQL. Pakai password lama, ubah password root manual dari MySQL, atau buat volume baru bila data lama boleh dihapus.
-- Aplikasi mencoba beberapa host MySQL secara berurutan dari `MYSQL_HOSTS`, mirip konfigurasi PHP lama: `db`, `mariadb`, `mysql`, `host.docker.internal`, `172.17.0.1`, `172.31.254.56`, dan `127.0.0.1`.
+- Aplikasi mencoba beberapa host MySQL secara berurutan dari `MYSQL_HOSTS`, lalu fallback lokal/CasaOS: `127.0.0.1`, `localhost`, `db`, `mariadb`, `mysql`, `host.docker.internal`, `172.17.0.1`, dan `172.31.254.56`. Database yang dicoba berasal dari `MYSQL_DATABASES`/`MYSQL_DATABASE`, lalu fallback `sisdmk2` dan `si_data`.
 
 ## Import CSV Master Pegawai
 
@@ -232,7 +232,7 @@ database/
 - RBAC diterapkan pada middleware, sidebar, dan API.
 - `filterPegawaiByRole` memastikan Super Admin, Admin Wilayah, dan Admin UKPD hanya menerima data sesuai kewenangan.
 - Auth memakai JWT melalui HttpOnly cookie.
-- Password demo di-hash dengan bcrypt-compatible `bcryptjs`.
-- API pegawai, dashboard, DUK, drilldown, dan pivot akan membaca tabel MySQL `pegawai` dan `ukpd` jika variabel `MYSQL_HOST`, `MYSQL_USER`, dan `MYSQL_DATABASE` tersedia. Jika koneksi belum tersedia, aplikasi fallback ke data JSON lokal.
+- Password UKPD diverifikasi dari tabel MySQL `ukpd`; format bcrypt dan SHA-256 didukung.
+- API pegawai, dashboard, DUK, drilldown, dan pivot membaca tabel MySQL `pegawai` dan `ukpd`. Jika koneksi database gagal, API mengembalikan error dan tidak memakai data JSON dummy.
 - Query MySQL memakai `mysql2/promise` dari `src/lib/db/mysql.js`.
 - Untuk produksi, gunakan `id_ukpd` sebagai foreign key utama dan pertahankan `nama_ukpd` sebagai label laporan bila diperlukan.

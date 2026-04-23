@@ -752,6 +752,7 @@ function DashboardAnalyticsPanel({ analytics }) {
 
 export default function DashboardPage() {
   const [data, setData] = useState(null);
+  const [chartView, setChartView] = useState("statusPegawai");
 
   useEffect(() => {
     fetch("/api/dashboard").then((res) => res.json()).then((payload) => setData(payload.data));
@@ -772,6 +773,7 @@ export default function DashboardPage() {
     { key: "jenis_pegawai", header: "Status", render: (item) => <StatusBadge status={item.jenis_pegawai} /> },
     { key: "nama_ukpd", header: "UKPD" }
   ];
+  const activeChartView = data.chartViews?.[chartView] || data.chartViews?.statusPegawai;
 
   return (
     <>
@@ -790,12 +792,27 @@ export default function DashboardPage() {
         <KpiCard title="PJLP" value={data.summary.pjlp} helper="PJLP" icon={UsersRound} />
       </section>
 
-      <section className="mt-6 grid gap-5 xl:grid-cols-2">
-        <DashboardChartCard title="Jenis Kelamin" type="doughnut" {...data.charts.gender} />
-        <DashboardChartCard title="Jenjang Pendidikan" {...data.charts.pendidikan} />
-        <DashboardChartCard title="Rumpun Jabatan" {...data.charts.rumpun} />
-        <DashboardChartCard title="Distribusi Wilayah" {...data.charts.wilayah} />
-      </section>
+      {activeChartView ? (
+        <>
+          <div className="mt-6 flex justify-end">
+            <label className="flex items-center gap-3 text-sm text-slate-600">
+              <span>Tampilan chart:</span>
+              <select className="input min-w-44 py-2" value={chartView} onChange={(event) => setChartView(event.target.value)}>
+                {Object.entries(data.chartViews || {}).map(([key, view]) => (
+                  <option key={key} value={key}>{view.label}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <section className="mt-3 grid gap-5 xl:grid-cols-2">
+            <DashboardChartCard title={activeChartView.titles.distribution} type="doughnut" heightClass="h-80" {...activeChartView.distribution} />
+            <DashboardChartCard title={activeChartView.titles.ukpd} stacked heightClass="h-80" {...activeChartView.ukpd} />
+            <DashboardChartCard title={activeChartView.titles.pendidikan} horizontal stacked heightClass="h-80" {...activeChartView.pendidikan} />
+            <DashboardChartCard title={activeChartView.titles.rumpun} stacked heightClass="h-80" {...activeChartView.rumpun} />
+          </section>
+        </>
+      ) : null}
 
       <DashboardAnalyticsPanel analytics={data.analytics} />
 

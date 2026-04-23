@@ -1,6 +1,6 @@
 import { filterPegawaiByRole, getPegawaiWilayah } from "@/lib/auth/access";
 import { requireAuth } from "@/lib/auth/requireAuth";
-import { getPegawaiData } from "@/lib/data/pegawaiStore";
+import { getPegawaiData, getUkpdData } from "@/lib/data/pegawaiStore";
 import { ok } from "@/lib/helpers/response";
 
 function sortText(a, b) {
@@ -11,13 +11,13 @@ function uniqueSorted(values) {
   return [...new Set(values.filter(Boolean))].sort(sortText);
 }
 
-function mapEmployee(item) {
+function mapEmployee(item, ukpdList) {
   return {
     id_pegawai: item.id_pegawai,
     nama: item.nama,
     nip: item.nip || "-",
     nama_ukpd: item.nama_ukpd || "-",
-    wilayah: getPegawaiWilayah(item),
+    wilayah: getPegawaiWilayah(item, ukpdList),
     jenis_pegawai: item.jenis_pegawai || "-",
     rumpun_jabatan: item.status_rumpun || "-",
     jabatan_kepmenpan_11: item.nama_jabatan_menpan || item.nama_jabatan_orb || "-"
@@ -34,8 +34,8 @@ export async function GET(request) {
   const ukpd = searchParams.get("ukpd") || "";
   const field = type === "jabatan" ? "nama_jabatan_menpan" : "status_rumpun";
 
-  const pegawaiMaster = await getPegawaiData();
-  const base = filterPegawaiByRole(pegawaiMaster, user);
+  const [pegawaiMaster, ukpdList] = await Promise.all([getPegawaiData(), getUkpdData()]);
+  const base = filterPegawaiByRole(pegawaiMaster, user, ukpdList);
   const labels = uniqueSorted(base.map((item) => item[field] || "Tidak Diketahui"));
   const byLabel = label
     ? base.filter((item) => (item[field] || "Tidak Diketahui") === label)
@@ -45,7 +45,7 @@ export async function GET(request) {
   for (const item of byLabel) {
     const key = item.nama_ukpd || "Tidak Diketahui";
     if (!ukpdMap.has(key)) {
-      ukpdMap.set(key, { nama_ukpd: key, wilayah: getPegawaiWilayah(item), total_pegawai: 0 });
+      ukpdMap.set(key, { nama_ukpd: key, wilayah: getPegawaiWilayah(item, ukpdList), total_pegawai: 0 });
     }
     ukpdMap.get(key).total_pegawai += 1;
   }
@@ -55,7 +55,7 @@ export async function GET(request) {
     ? byLabel
       .filter((item) => item.nama_ukpd === ukpd)
       .sort((a, b) => sortText(a.nama, b.nama))
-      .map(mapEmployee)
+      .map((item) => mapEmployee(item, ukpdList))
     : [];
 
   return ok({

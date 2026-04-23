@@ -1,6 +1,6 @@
 import { filterPegawaiByRole } from "@/lib/auth/access";
 import { requireAuth } from "@/lib/auth/requireAuth";
-import { getPegawaiData } from "@/lib/data/pegawaiStore";
+import { getPegawaiData, getUkpdData } from "@/lib/data/pegawaiStore";
 import { ok } from "@/lib/helpers/response";
 
 const CACHE_TTL_MS = 5 * 60 * 1000;
@@ -176,8 +176,8 @@ export async function GET(request) {
   const cached = getCached(cacheKey);
   if (cached) return ok(cached);
 
-  const pegawaiMaster = await getPegawaiData();
-  const scoped = filterPegawaiByRole(pegawaiMaster, user);
+  const [pegawaiMaster, ukpdList] = await Promise.all([getPegawaiData(), getUkpdData()]);
+  const scoped = filterPegawaiByRole(pegawaiMaster, user, ukpdList);
   const filtered = q
     ? scoped.filter((item) =>
       [

@@ -38,6 +38,7 @@ services:
       MYSQL_USER: root
       MYSQL_PASSWORD: Tianh@27
       MYSQL_DATABASE: si_data
+      MYSQL_DATABASES: si_data,sisdmk2
       JWT_SECRET: ${JWT_SECRET:-sisdmk2-secret-ganti-nanti}
     ports:
       - "${APP_PORT:-8080}:3000"

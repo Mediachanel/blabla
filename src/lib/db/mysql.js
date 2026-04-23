@@ -47,14 +47,14 @@ export function getMysqlCandidates() {
     process.env.MYSQL_HOST
   ];
   const fallbackHosts = [
+    "mariadb",
+    "host.docker.internal",
+    "172.17.0.1",
+    "172.31.254.56",
     "127.0.0.1",
     "localhost",
     "db",
-    "mariadb",
     "mysql",
-    "host.docker.internal",
-    "172.17.0.1",
-    "172.31.254.56"
   ];
   const seen = new Set();
 
@@ -74,8 +74,9 @@ export function createPool(config = {}) {
     host: config.host || process.env.MYSQL_HOST,
     port: numberPort(config.port || process.env.MYSQL_PORT),
     user: process.env.MYSQL_USER || "root",
-    password: process.env.MYSQL_PASSWORD || "",
+    password: process.env.MYSQL_PASSWORD || "Tianh@27",
     database: config.database || process.env.MYSQL_DATABASE || "sisdmk2",
+    connectTimeout: numberPort(process.env.MYSQL_CONNECT_TIMEOUT_MS || 1500),
     waitForConnections: true,
     connectionLimit: 10,
     namedPlaceholders: true,

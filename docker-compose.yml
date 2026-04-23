@@ -32,11 +32,11 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3000
-      MYSQL_HOST: host.docker.internal
-      MYSQL_HOSTS: host.docker.internal
+      MYSQL_HOST: db
+      MYSQL_HOSTS: db,mariadb,mysql,host.docker.internal,172.17.0.1
       MYSQL_PORT: 3306
       MYSQL_USER: root
-      MYSQL_PASSWORD: Tianh@27
+      MYSQL_PASSWORD: ${MYSQL_ROOT_PASSWORD:-Tianh@7}
       MYSQL_DATABASE: si_data
       MYSQL_DATABASES: si_data,sisdmk2
       JWT_SECRET: ${JWT_SECRET:-sisdmk2-secret-ganti-nanti}

@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "check:mysql": "node scripts/check-mysql-connection.mjs",
     "import:usulan": "node scripts/import-usulan-sql.mjs"
   },
   "dependencies": {

@@ -11,88 +11,59 @@ npm run dev
 
 Aplikasi berjalan di `http://localhost:3000`.
 
-## Deploy ke CasaOS (Docker Compose)
+## Deploy ke CasaOS
 
-File utama untuk deploy:
+Ada dua skenario. Pilih salah satu, jangan dicampur:
 
-- `Dockerfile`
-- `docker-compose.yml`
-- `sql/ukpd_password_123.sql`
-- `sql/export_pegawai_ukpd.sql`
+- `docker-compose.casaos.yml`: app memakai MariaDB yang sudah ada di CasaOS/phpMyAdmin.
+- `docker-compose.yml`: app dan MySQL berjalan dalam satu stack compose baru.
 
-Branch deploy GitHub: `sisdmk2-casaos`.
+### Skenario A: Pakai MariaDB CasaOS yang sudah ada
 
-Contoh `docker-compose.yml` untuk CasaOS dengan MySQL satu stack:
+Screenshot phpMyAdmin menunjukkan database `si_data` bisa diakses dari container lewat `host.docker.internal:3306`. Untuk skenario ini, pakai `docker-compose.casaos.yml`.
 
-```yml
-services:
-  db:
-    image: mysql:8.0
-    container_name: sisdmk2-db
-    restart: unless-stopped
-    environment:
-      MYSQL_ROOT_PASSWORD: Tianh@27
-      MYSQL_DATABASE: si_data
-    ports:
-      - "3307:3306"
-    volumes:
-      - sisdmk2_mysql_data:/var/lib/mysql
-    healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p$${MYSQL_ROOT_PASSWORD} || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 20
+Di phpMyAdmin, jalankan/import sekali file ini agar app tidak perlu login sebagai root:
 
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: sisdmk2-app
-    restart: unless-stopped
-    depends_on:
-      db:
-        condition: service_healthy
-    environment:
-      NODE_ENV: production
-      PORT: 3000
-      MYSQL_HOST: db
-      MYSQL_HOSTS: db,mariadb,mysql,host.docker.internal,172.17.0.1,172.31.254.56,127.0.0.1
-      MYSQL_PORT: 3306
-      MYSQL_USER: root
-      MYSQL_PASSWORD: Tianh@27
-      MYSQL_DATABASE: si_data
-      JWT_SECRET: sisdmk2-jwt-secret-2026-ganti-nanti
-    ports:
-      - "8080:3000"
-
-volumes:
-  sisdmk2_mysql_data:
+```bash
+sql/create_app_user_casaos.sql
 ```
 
-Jalankan di folder project pada server CasaOS:
+Lalu deploy:
 
 ```bash
 git pull origin sisdmk2-casaos
+docker compose -f docker-compose.casaos.yml down
+docker compose -f docker-compose.casaos.yml build --no-cache app
+docker compose -f docker-compose.casaos.yml up -d
+```
+
+Tes koneksi dari container app:
+
+```bash
+docker exec sisdmk2-app npm run check:mysql
+```
+
+Jika `sisdmk2_app` belum dibuat, app akan gagal dengan pesan akses user. Jalankan/import `sql/create_app_user_casaos.sql` dari phpMyAdmin.
+
+### Skenario B: App dan MySQL satu stack compose
+
+Pakai `docker-compose.yml`. Dalam skenario ini host MySQL untuk app adalah `db:3306`, bukan `host.docker.internal`.
+
+```bash
 docker compose down
 docker compose build --no-cache app
 docker compose up -d
+docker exec -i sisdmk2-db mysql -uroot -p'Tianh@7' si_data < sql/ukpd_password_123.sql
+docker exec -i sisdmk2-db mysql -uroot -p'Tianh@7' si_data < sql/export_pegawai_ukpd.sql
+docker exec sisdmk2-app npm run check:mysql
 ```
 
-Setelah container hidup, import tabel akun UKPD dan data pegawai:
-
-```bash
-docker exec -i sisdmk2-db mysql -uroot -p'Tianh@27' si_data < sql/ukpd_password_123.sql
-docker exec -i sisdmk2-db mysql -uroot -p'Tianh@27' si_data < sql/export_pegawai_ukpd.sql
-```
-
-Setelah berjalan:
-
-- App: `http://IP-CASAOS:8080`
-- MySQL internal app: `db:3306`
-- MySQL dari host/phpMyAdmin: `IP-CASAOS:3307`
+Setelah berjalan, app tersedia di `http://IP-CASAOS:8080`.
 
 Catatan troubleshooting:
 
+- Di dalam container, `localhost` dan `127.0.0.1` menunjuk ke container itu sendiri. Untuk database di host/CasaOS, pakai `host.docker.internal` dengan `extra_hosts: host.docker.internal:host-gateway`.
+- Kalau database berada dalam compose yang sama, pakai nama service `db`.
 - Kolom `ukpd.password` bisa memakai hash bcrypt atau SHA-256 untuk password login `admin123`, bukan plaintext.
 - Login super admin awal: username `SUPER ADMIN`, password `admin123`.
 - Jika muncul pesan gagal konek database, cek `MYSQL_HOSTS`, `MYSQL_USER`, `MYSQL_PASSWORD`, `MYSQL_DATABASE`, dan `MYSQL_DATABASES` pada container app.

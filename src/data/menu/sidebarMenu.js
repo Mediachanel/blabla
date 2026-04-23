@@ -18,10 +18,10 @@ export const sidebarMenu = [
   {
     label: "Usulan",
     icon: ClipboardList,
-    roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN_WILAYAH],
+    roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN_WILAYAH, ROLES.ADMIN_UKPD],
     children: [
-      { label: "Usulan Mutasi", href: "/usulan/mutasi", icon: BriefcaseBusiness, roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN_WILAYAH] },
-      { label: "Usulan Putus JF", href: "/usulan/putus-jf", icon: ClipboardList, roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN_WILAYAH] }
+      { label: "Usulan Mutasi", href: "/usulan/mutasi", icon: BriefcaseBusiness, roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN_WILAYAH, ROLES.ADMIN_UKPD] },
+      { label: "Usulan Putus JF", href: "/usulan/putus-jf", icon: ClipboardList, roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN_WILAYAH, ROLES.ADMIN_UKPD] }
     ]
   },
   { label: "Import DRH", href: "/import-drh", icon: UploadCloud, roles: [ROLES.SUPER_ADMIN] },

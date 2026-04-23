@@ -11,6 +11,10 @@ function valueOrDash(value) {
   return value || "-";
 }
 
+function fullNameWithTitle(pegawai) {
+  return [pegawai.gelar_depan, pegawai.nama, pegawai.gelar_belakang].filter(Boolean).join(" ");
+}
+
 function parseDate(value) {
   if (!value) return null;
   const text = String(value).trim();
@@ -96,7 +100,7 @@ export default function DetailPegawaiPage({ params }) {
                 <StatusBadge status={pegawai.jenis_pegawai} />
                 <StatusBadge status={pegawai.kondisi} />
               </div>
-              <h1 className="break-words text-2xl font-extrabold tracking-normal text-slate-950">{pegawai.nama}</h1>
+              <h1 className="break-words text-2xl font-extrabold tracking-normal text-slate-950">{fullNameWithTitle(pegawai)}</h1>
               <p className="mt-1 text-base font-medium text-slate-600">{computed.jabatan}</p>
               <p className="mt-2 text-sm font-bold text-slate-900">Unit / UKPD: {valueOrDash(pegawai.nama_ukpd)}</p>
               <p className="mt-1 text-sm text-slate-600">Status Aktif: {valueOrDash(pegawai.kondisi)}</p>
@@ -111,6 +115,7 @@ export default function DetailPegawaiPage({ params }) {
 
       <ProfileSection title="Identitas" items={[
         { label: "NIP", value: pegawai.nip },
+        { label: "Nama Lengkap", value: fullNameWithTitle(pegawai) },
         { label: "Jenis Kelamin", value: pegawai.jenis_kelamin },
         { label: "Tempat / Tanggal Lahir", value: computed.tempatTanggalLahir },
         { label: "Umur", value: computed.umur },

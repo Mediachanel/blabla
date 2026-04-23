@@ -7,7 +7,19 @@ import StatusBadge from "@/components/ui/StatusBadge";
 
 export default function UsulanMutasiPage() {
   const [rows, setRows] = useState([]);
-  const emptyForm = { nip: "", nama_pegawai: "", nama_ukpd: "", ukpd_tujuan: "", jabatan: "", jabatan_baru: "", alasan: "" };
+  const emptyForm = {
+    nip: "",
+    nama_pegawai: "",
+    gelar_depan: "",
+    gelar_belakang: "",
+    pangkat_golongan: "",
+    nama_ukpd: "",
+    ukpd_tujuan: "",
+    jabatan: "",
+    jabatan_baru: "",
+    jenis_mutasi: "",
+    alasan: ""
+  };
   const [form, setForm] = useState(emptyForm);
 
   useEffect(() => {
@@ -33,10 +45,14 @@ export default function UsulanMutasiPage() {
           {[
             ["nip", "NIP"],
             ["nama_pegawai", "Nama Pegawai"],
+            ["gelar_depan", "Gelar Depan"],
+            ["gelar_belakang", "Gelar Belakang"],
+            ["pangkat_golongan", "Pangkat/Golongan"],
             ["nama_ukpd", "UKPD Asal"],
             ["ukpd_tujuan", "UKPD Tujuan"],
             ["jabatan", "Jabatan Lama"],
-            ["jabatan_baru", "Jabatan Baru"]
+            ["jabatan_baru", "Jabatan Baru"],
+            ["jenis_mutasi", "Jenis Mutasi"]
           ].map(([name, label]) => (
             <label key={name} className="space-y-2">
               <span className="label">{label}</span>
@@ -55,10 +71,12 @@ export default function UsulanMutasiPage() {
           columns={[
             { key: "nip", header: "NIP", render: (item) => item.nip || "-" },
             { key: "nama_pegawai", header: "Nama", render: (item) => item.nama_pegawai || item.nama || "-" },
+            { key: "pangkat_golongan", header: "Pangkat/Gol", render: (item) => item.pangkat_golongan || "-" },
             { key: "nama_ukpd", header: "UKPD Asal", render: (item) => item.nama_ukpd || item.asal || "-" },
             { key: "ukpd_tujuan", header: "UKPD Tujuan", render: (item) => item.ukpd_tujuan || item.tujuan || "-" },
             { key: "jabatan", header: "Jabatan Lama", render: (item) => item.jabatan || "-" },
             { key: "jabatan_baru", header: "Jabatan Baru", render: (item) => item.jabatan_baru || "-" },
+            { key: "jenis_mutasi", header: "Jenis Mutasi", render: (item) => item.jenis_mutasi || "-" },
             { key: "tanggal_usulan", header: "Tanggal", render: (item) => item.tanggal_usulan || "-" },
             { key: "status", header: "Status", render: (item) => <StatusBadge status={item.status} /> }
           ]}

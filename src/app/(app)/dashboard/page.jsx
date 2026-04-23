@@ -429,6 +429,20 @@ function UkpdDrillPanel({ query }) {
   const [pageByNode, setPageByNode] = useState({});
   const pageSize = 20;
   const getCount = (counts, key) => formatNumber(counts?.[key] || 0);
+  const groupedTree = useMemo(() => {
+    const groups = new Map();
+    for (const ukpd of tree) {
+      const wilayah = ukpd.wilayah || "Tidak Diketahui";
+      if (!groups.has(wilayah)) groups.set(wilayah, []);
+      groups.get(wilayah).push(ukpd);
+    }
+    return [...groups.entries()]
+      .sort(([a], [b]) => a.localeCompare(b, "id"))
+      .map(([wilayah, items]) => [
+        wilayah,
+        items.sort((a, b) => a.label.localeCompare(b.label, "id"))
+      ]);
+  }, [tree]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -476,6 +490,7 @@ function UkpdDrillPanel({ query }) {
         <table className="min-w-[1200px]">
           <thead className="border-b border-slate-200 bg-slate-50">
             <tr>
+              <th className="w-16 px-3 py-2 text-center text-xs font-semibold uppercase tracking-wide text-slate-600">No</th>
               <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Row Labels</th>
               <th className="px-3 py-2 text-right text-xs font-semibold uppercase tracking-wide text-slate-600">Total</th>
               <th className="px-3 py-2 text-right text-xs font-semibold uppercase tracking-wide text-slate-600">PNS/CPNS</th>
@@ -486,11 +501,20 @@ function UkpdDrillPanel({ query }) {
             </tr>
           </thead>
           <tbody>
-            {tree.map((ukpd) => {
+            {groupedTree.map(([wilayah, items]) => (
+              <Fragment key={wilayah}>
+                <tr className="border-b border-slate-200 bg-dinkes-50">
+                  <td className="px-3 py-2" />
+                  <td colSpan={7} className="px-3 py-2 text-sm font-bold text-slate-900">
+                    Wilayah {wilayah}
+                  </td>
+                </tr>
+                {items.map((ukpd, index) => {
               const isOpen1 = Boolean(open1[ukpd.label]);
               return (
                 <Fragment key={ukpd.label}>
                   <tr className="border-b border-slate-100 bg-slate-50/70">
+                    <td className="px-3 py-2 text-center text-sm font-semibold text-slate-700">{index + 1}</td>
                     <td className="px-3 py-2">
                       <button className="flex items-center gap-1 text-left text-sm font-semibold text-slate-900" onClick={() => setOpen1((s) => ({ ...s, [ukpd.label]: !s[ukpd.label] }))}>
                         {isOpen1 ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
@@ -510,6 +534,7 @@ function UkpdDrillPanel({ query }) {
                     return (
                       <Fragment key={key2}>
                         <tr className="border-b border-slate-100">
+                          <td className="px-3 py-2" />
                           <td className="px-3 py-2">
                             <button className="ml-6 flex items-center gap-1 text-left text-sm font-medium text-slate-800" onClick={() => setOpen2((s) => ({ ...s, [key2]: !s[key2] }))}>
                               {isOpen2 ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
@@ -531,6 +556,7 @@ function UkpdDrillPanel({ query }) {
                           return (
                             <Fragment key={key3}>
                               <tr className="border-b border-slate-100">
+                                <td className="px-3 py-2" />
                                 <td className="px-3 py-2">
                                   <button className="ml-12 flex items-center gap-1 text-left text-sm text-slate-700" onClick={async () => {
                                     const next = !open3[key3];
@@ -552,6 +578,7 @@ function UkpdDrillPanel({ query }) {
                                 <>
                                   {(employeeData?.items || []).map((employee) => (
                                     <tr key={employee.id_pegawai} className="border-b border-slate-100 hover:bg-dinkes-50/40">
+                                      <td className="px-3 py-1" />
                                       <td className="px-3 py-1 text-sm text-slate-700">
                                         <div className="ml-16 flex items-center justify-between gap-3">
                                           <span>{employee.nama}</span>
@@ -570,14 +597,14 @@ function UkpdDrillPanel({ query }) {
                                   ))}
                                   {loadingNode === key3 ? (
                                     <tr className="border-b border-slate-100">
-                                      <td className="px-3 py-2 text-xs text-slate-500" colSpan={7}>
+                                      <td className="px-3 py-2 text-xs text-slate-500" colSpan={8}>
                                         <span className="ml-16">Memuat pegawai...</span>
                                       </td>
                                     </tr>
                                   ) : null}
                                   {(employeeData?.total || 0) > pageSize ? (
                                     <tr className="border-b border-slate-100">
-                                      <td className="px-3 py-2" colSpan={7}>
+                                      <td className="px-3 py-2" colSpan={8}>
                                         <div className="ml-16 flex items-center gap-2 text-xs text-slate-600">
                                           <button className="rounded border border-slate-200 px-2 py-1 disabled:opacity-50" disabled={(employeeData?.page || 1) <= 1} onClick={() => loadEmployees(ukpd.label, rumpun.label, jabatan.label, Math.max(1, (employeeData?.page || 1) - 1))}>Prev</button>
                                           <span>Hal {(employeeData?.page || 1)} / {totalPages}</span>
@@ -597,6 +624,8 @@ function UkpdDrillPanel({ query }) {
                 </Fragment>
               );
             })}
+              </Fragment>
+            ))}
           </tbody>
         </table>
       </div>

@@ -102,16 +102,23 @@ function buildJabatanTree(data) {
     }));
 }
 
-function buildUkpdTree(data) {
+function resolveWilayah(item, ukpdByName) {
+  return item.wilayah || ukpdByName.get(item.nama_ukpd)?.wilayah || "Tidak Diketahui";
+}
+
+function buildUkpdTree(data, ukpdList = []) {
   const rootMap = new Map();
+  const ukpdByName = new Map(ukpdList.map((item) => [item.nama_ukpd, item]));
   for (const item of data) {
     const employee = mapEmployee(item);
     const group1 = employee.nama_ukpd || "Tidak Diketahui";
     const group2 = employee.rumpun_jabatan || "Tidak Diketahui";
     const group3 = employee.jabatan_kepmenpan_11 || "Tidak Diketahui";
+    const wilayah = resolveWilayah(item, ukpdByName);
 
-    if (!rootMap.has(group1)) rootMap.set(group1, { count: createCount(), children: new Map() });
+    if (!rootMap.has(group1)) rootMap.set(group1, { count: createCount(), children: new Map(), wilayah });
     const level1 = rootMap.get(group1);
+    if (!level1.wilayah || level1.wilayah === "Tidak Diketahui") level1.wilayah = wilayah;
     if (!level1.children.has(group2)) level1.children.set(group2, { count: createCount(), children: new Map() });
     const level2 = level1.children.get(group2);
     if (!level2.children.has(group3)) level2.children.set(group3, createCount());
@@ -126,6 +133,7 @@ function buildUkpdTree(data) {
     .sort(([a], [b]) => sortText(a, b))
     .map(([label, value]) => ({
       label,
+      wilayah: value.wilayah || "Tidak Diketahui",
       total: value.count.total,
       counts: value.count,
       children: [...value.children.entries()]
@@ -221,7 +229,7 @@ export async function GET(request) {
     return ok(data);
   }
 
-  const tree = mode === "jabatan" ? buildJabatanTree(filtered) : mode === "ukpd" ? buildUkpdTree(filtered) : buildRumpunTree(filtered);
+  const tree = mode === "jabatan" ? buildJabatanTree(filtered) : mode === "ukpd" ? buildUkpdTree(filtered, ukpdList) : buildRumpunTree(filtered);
   const data = { mode, total: filtered.length, tree };
   setCached(cacheKey, data);
   return ok(data);

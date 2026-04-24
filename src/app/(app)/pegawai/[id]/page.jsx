@@ -68,6 +68,42 @@ function ProfileSection({ title, items }) {
   );
 }
 
+function relationText(items, emptyText = "-") {
+  return items.filter(Boolean).join(" | ") || emptyText;
+}
+
+function buildKeluargaRows(pegawai) {
+  const rows = [];
+
+  if (pegawai?.pasangan?.status_punya === "Ya") {
+    rows.push({
+      key: `pasangan-${pegawai.pasangan.id || "main"}`,
+      hubungan: "Pasangan",
+      nama: pegawai.pasangan.nama || "-",
+      jenis_kelamin: "-",
+      tempatTanggalLahir: "-",
+      kontak: relationText([pegawai.pasangan.no_tlp, pegawai.pasangan.email]),
+      pekerjaan: pegawai.pasangan.pekerjaan || "-"
+    });
+  }
+
+  if (Array.isArray(pegawai?.anak)) {
+    pegawai.anak.forEach((item, index) => {
+      rows.push({
+        key: `anak-${item.id || index}`,
+        hubungan: `Anak ${index + 1}`,
+        nama: item.nama || "-",
+        jenis_kelamin: item.jenis_kelamin || "-",
+        tempatTanggalLahir: relationText([item.tempat_lahir, formatDate(item.tanggal_lahir)]),
+        kontak: "-",
+        pekerjaan: item.pekerjaan || "-"
+      });
+    });
+  }
+
+  return rows;
+}
+
 export default function DetailPegawaiPage({ params }) {
   const [pegawai, setPegawai] = useState(null);
 
@@ -77,11 +113,13 @@ export default function DetailPegawaiPage({ params }) {
 
   const computed = useMemo(() => {
     if (!pegawai) return null;
+    const keluargaRows = buildKeluargaRows(pegawai);
     return {
       tempatTanggalLahir: [pegawai.tempat_lahir, formatDate(pegawai.tanggal_lahir)].filter(Boolean).join(" / "),
       umur: durationFrom(pegawai.tanggal_lahir),
       tmtKerja: `${formatDate(pegawai.tmt_kerja_ukpd)} - ${durationFrom(pegawai.tmt_kerja_ukpd)}`,
-      jabatan: pegawai.nama_jabatan_menpan || pegawai.nama_jabatan_orb || "-"
+      jabatan: pegawai.nama_jabatan_menpan || pegawai.nama_jabatan_orb || "-",
+      keluargaRows
     };
   }, [pegawai]);
 
@@ -153,14 +191,65 @@ export default function DetailPegawaiPage({ params }) {
         <div className="mt-3 grid gap-3 lg:grid-cols-4">
           <InfoField label="Email" value={pegawai.email} />
           <InfoField label="Telepon" value={pegawai.no_hp_pegawai} />
-          <InfoField label="Alamat KTP" value={pegawai.alamat_ktp || pegawai.alamat || "-"} />
-          <InfoField label="Alamat Domisili" value={pegawai.alamat_domisili || pegawai.alamat || "-"} />
+          <InfoField label="Alamat KTP" value={pegawai.alamat_ktp || "-"} />
+          <InfoField label="Alamat Domisili" value={pegawai.alamat_domisili || "-"} />
         </div>
         <div className="mt-4 flex flex-wrap gap-3 text-sm text-slate-600">
           <span className="inline-flex items-center gap-2"><Mail className="h-4 w-4 text-teal-700" />{valueOrDash(pegawai.email)}</span>
           <span className="inline-flex items-center gap-2"><Phone className="h-4 w-4 text-teal-700" />{valueOrDash(pegawai.no_hp_pegawai)}</span>
           <span className="inline-flex items-center gap-2"><MapPin className="h-4 w-4 text-teal-700" />{valueOrDash(pegawai.wilayah)}</span>
         </div>
+      </section>
+
+      <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h2 className="text-lg font-extrabold text-slate-950">Keluarga</h2>
+            <p className="mt-1 text-sm text-slate-600">
+              Total anggota keluarga tercatat: {computed.keluargaRows.length}
+            </p>
+          </div>
+          <div className="grid gap-2 sm:grid-cols-2">
+            <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm">
+              <span className="font-semibold text-slate-700">Status pasangan:</span>{" "}
+              <span className="text-slate-900">{pegawai.pasangan?.status_punya === "Ya" ? "Ada" : "Tidak ada"}</span>
+            </div>
+            <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm">
+              <span className="font-semibold text-slate-700">Jumlah anak:</span>{" "}
+              <span className="text-slate-900">{Array.isArray(pegawai.anak) ? pegawai.anak.length : 0}</span>
+            </div>
+          </div>
+        </div>
+
+        {computed.keluargaRows.length ? (
+          <div className="mt-4 overflow-x-auto">
+            <table className="min-w-full divide-y divide-slate-200">
+              <thead className="bg-slate-50">
+                <tr>
+                  {["Hubungan", "Nama", "Jenis Kelamin", "Tempat / Tanggal Lahir", "Kontak", "Pekerjaan"].map((label) => (
+                    <th key={label} className="table-th" scope="col">{label}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 bg-white">
+                {computed.keluargaRows.map((item) => (
+                  <tr key={item.key} className="hover:bg-dinkes-50/40">
+                    <td className="table-td">{item.hubungan}</td>
+                    <td className="table-td font-medium text-slate-900">{item.nama}</td>
+                    <td className="table-td">{item.jenis_kelamin}</td>
+                    <td className="table-td">{item.tempatTanggalLahir}</td>
+                    <td className="table-td">{item.kontak}</td>
+                    <td className="table-td">{item.pekerjaan}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="mt-4 rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-5 text-sm text-slate-500">
+            Belum ada data keluarga yang tercatat untuk pegawai ini.
+          </div>
+        )}
       </section>
 
       <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">

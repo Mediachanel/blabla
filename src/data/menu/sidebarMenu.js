@@ -2,7 +2,6 @@ import {
   Bot,
   BriefcaseBusiness,
   ClipboardList,
-  Database,
   FileSpreadsheet,
   Home,
   LogOut,

@@ -8,7 +8,7 @@ CREATE TABLE ukpd (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE pegawai_master (
+CREATE TABLE pegawai (
   id_pegawai INT AUTO_INCREMENT PRIMARY KEY,
   id_ukpd INT NULL,
   nama VARCHAR(255) NOT NULL,
@@ -61,7 +61,7 @@ CREATE TABLE alamat (
   kode_kecamatan VARCHAR(20),
   kode_kelurahan VARCHAR(20),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (id_pegawai) REFERENCES pegawai_master(id_pegawai) ON DELETE CASCADE
+  FOREIGN KEY (id_pegawai) REFERENCES pegawai(id_pegawai) ON DELETE CASCADE
 );
 
 CREATE TABLE pasangan (
@@ -73,7 +73,7 @@ CREATE TABLE pasangan (
   email VARCHAR(255),
   pekerjaan VARCHAR(255),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (id_pegawai) REFERENCES pegawai_master(id_pegawai) ON DELETE CASCADE
+  FOREIGN KEY (id_pegawai) REFERENCES pegawai(id_pegawai) ON DELETE CASCADE
 );
 
 CREATE TABLE anak (
@@ -86,7 +86,30 @@ CREATE TABLE anak (
   tanggal_lahir DATE,
   pekerjaan VARCHAR(255),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (id_pegawai) REFERENCES pegawai_master(id_pegawai) ON DELETE CASCADE
+  FOREIGN KEY (id_pegawai) REFERENCES pegawai(id_pegawai) ON DELETE CASCADE
+);
+
+CREATE TABLE keluarga (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  id_pegawai INT NOT NULL,
+  hubungan ENUM('pasangan', 'anak') NOT NULL,
+  status_punya VARCHAR(30),
+  urutan TINYINT,
+  nama VARCHAR(255),
+  jenis_kelamin VARCHAR(30),
+  tempat_lahir VARCHAR(100),
+  tanggal_lahir DATE,
+  no_tlp VARCHAR(50),
+  email VARCHAR(255),
+  pekerjaan VARCHAR(255),
+  sumber_tabel VARCHAR(30),
+  sumber_id INT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uniq_keluarga_sumber (sumber_tabel, sumber_id),
+  INDEX idx_keluarga_pegawai (id_pegawai),
+  INDEX idx_keluarga_hubungan (hubungan),
+  FOREIGN KEY (id_pegawai) REFERENCES pegawai(id_pegawai) ON DELETE CASCADE
 );
 
 -- id_ukpd sudah disiapkan sebagai FK utama.

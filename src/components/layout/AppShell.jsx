@@ -1,10 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/layout/Sidebar";
 import Topbar from "@/components/layout/Topbar";
 import MobileSidebar from "@/components/layout/MobileSidebar";
+
+const IDLE_TIMEOUT_MS = 15 * 60 * 1000;
+const ACTIVITY_EVENTS = ["mousedown", "mousemove", "keydown", "scroll", "touchstart", "click"];
 
 export default function AppShell({ children }) {
   const router = useRouter();
@@ -12,12 +15,32 @@ export default function AppShell({ children }) {
   const [loading, setLoading] = useState(true);
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const idleTimerRef = useRef(null);
+  const loggedOutRef = useRef(false);
+
+  async function logout({ redirect = true, keepalive = false } = {}) {
+    if (loggedOutRef.current) return;
+    loggedOutRef.current = true;
+
+    try {
+      await fetch("/api/auth/logout", {
+        method: "POST",
+        keepalive
+      });
+    } catch {}
+
+    if (redirect) {
+      router.replace("/login");
+      router.refresh();
+    }
+  }
 
   useEffect(() => {
     fetch("/api/auth/me")
       .then((res) => res.json())
       .then((payload) => {
         if (!payload.success) {
+          loggedOutRef.current = true;
           router.replace("/login");
           return;
         }
@@ -25,6 +48,38 @@ export default function AppShell({ children }) {
       })
       .finally(() => setLoading(false));
   }, [router]);
+
+  useEffect(() => {
+    if (!user) return undefined;
+
+    const resetIdleTimer = () => {
+      if (loggedOutRef.current) return;
+      if (idleTimerRef.current) window.clearTimeout(idleTimerRef.current);
+      idleTimerRef.current = window.setTimeout(() => {
+        logout({ redirect: true, keepalive: true });
+      }, IDLE_TIMEOUT_MS);
+    };
+
+    const handleTabClose = () => {
+      if (loggedOutRef.current) return;
+      fetch("/api/auth/logout", { method: "POST", keepalive: true }).catch(() => {});
+    };
+
+    ACTIVITY_EVENTS.forEach((eventName) => {
+      window.addEventListener(eventName, resetIdleTimer, { passive: true });
+    });
+    window.addEventListener("beforeunload", handleTabClose);
+
+    resetIdleTimer();
+
+    return () => {
+      if (idleTimerRef.current) window.clearTimeout(idleTimerRef.current);
+      ACTIVITY_EVENTS.forEach((eventName) => {
+        window.removeEventListener(eventName, resetIdleTimer);
+      });
+      window.removeEventListener("beforeunload", handleTabClose);
+    };
+  }, [router, user]);
 
   if (loading) {
     return (

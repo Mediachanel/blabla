@@ -13,6 +13,8 @@ services:
       PORT: 3000
       JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
       APP_ORIGIN: ${APP_ORIGIN:-}
+      ALLOW_INSECURE_LOCAL_HTTP: ${ALLOW_INSECURE_LOCAL_HTTP:-false}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
       MYSQL_HOST: ${MYSQL_HOST:-mariadb}
       MYSQL_HOSTS: ${MYSQL_HOSTS:-mariadb,host.docker.internal,172.17.0.1,172.31.254.56,127.0.0.1}
       MYSQL_PORT: ${MYSQL_PORT:-3306}

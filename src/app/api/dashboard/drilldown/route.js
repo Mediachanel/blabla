@@ -1,6 +1,6 @@
-import { filterPegawaiByRole, getPegawaiWilayah } from "@/lib/auth/access";
+import { getPegawaiWilayah } from "@/lib/auth/access";
 import { requireAuth } from "@/lib/auth/requireAuth";
-import { getPegawaiData, getUkpdData } from "@/lib/data/pegawaiStore";
+import { getScopedDashboardData } from "@/lib/dashboardData";
 import { ok } from "@/lib/helpers/response";
 
 function sortText(a, b) {
@@ -34,8 +34,7 @@ export async function GET(request) {
   const ukpd = searchParams.get("ukpd") || "";
   const field = type === "jabatan" ? "nama_jabatan_menpan" : "status_rumpun";
 
-  const [pegawaiMaster, ukpdList] = await Promise.all([getPegawaiData(), getUkpdData()]);
-  const base = filterPegawaiByRole(pegawaiMaster, user, ukpdList);
+  const { data: base, ukpdList } = await getScopedDashboardData(user);
   const labels = uniqueSorted(base.map((item) => item[field] || "Tidak Diketahui"));
   const byLabel = label
     ? base.filter((item) => (item[field] || "Tidak Diketahui") === label)

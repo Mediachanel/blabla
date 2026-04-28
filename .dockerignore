@@ -1,9 +1,13 @@
 node_modules
 .next
 npm-debug.log
+.env
+.env.*
+*.log
+storage
+tmp
 .git
 .gitignore
 *.md
 sql
 database
-scripts

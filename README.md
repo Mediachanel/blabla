@@ -11,6 +11,47 @@ npm run dev
 
 Aplikasi berjalan di `http://localhost:3000`.
 
+## Pakai Database Offline Lokal
+
+Bisa. Untuk cek sistem sebelum deploy, pakai MySQL/MariaDB lokal saja selama nama database dan struktur tabel sama dengan server.
+
+Langkah yang disarankan untuk XAMPP/phpMyAdmin lokal:
+
+```bash
+copy .env.local.example .env.local
+npm run check:mysql:local
+npm run dev
+```
+
+Isi `.env.local` untuk koneksi lokal. Default project ini sudah cocok untuk phpMyAdmin lokal umum:
+
+```env
+MYSQL_HOST=127.0.0.1
+MYSQL_PORT=3306
+MYSQL_USER=root
+MYSQL_PASSWORD=
+MYSQL_DATABASE=si_data
+JWT_SECRET=dev-local-only-change-me
+APP_ORIGIN=http://localhost:3000
+```
+
+Lalu import SQL ke database lokal `si_data` dengan urutan:
+
+```bash
+sql/ukpd_password_generated.sql
+sql/export_pegawai_ukpd.sql
+sql/create_alamat_riwayat_tables.sql
+sql/import_alamat_generated_20_parts/import_alamat_part_01.sql s.d. part_20.sql
+sql/create_keluarga_from_existing.sql
+sql/import_keluarga_generated_parts/import_keluarga_part_01.sql s.d. part_20.sql
+```
+
+Catatan:
+
+- `create_keluarga_from_existing.sql` hanya membuat tabel `keluarga` dan seed dari tabel lama `pasangan` + `anak` jika tabel itu ada. Kalau lokal Anda hanya memakai hasil generate, lanjutkan juga dengan import file part `import_keluarga_generated_parts`.
+- App sudah mencoba host lokal otomatis seperti `127.0.0.1` dan `localhost`, plus database `si_data`, jadi untuk test offline ini memang didukung.
+- Jika `npm run check:mysql:local` sukses, aplikasi pada umumnya sudah bisa membaca database lokal yang sama polanya dengan server.
+
 ## Deploy ke CasaOS
 
 Ada dua skenario. Pilih salah satu, jangan dicampur:
@@ -53,8 +94,8 @@ Pakai `docker-compose.yml`. Dalam skenario ini host MySQL untuk app adalah `db:3
 docker compose down
 docker compose build --no-cache app
 docker compose up -d
-docker exec -i sisdmk2-db mysql -uroot -p'Tianh@7' si_data < sql/ukpd_password_123.sql
-docker exec -i sisdmk2-db mysql -uroot -p'Tianh@7' si_data < sql/export_pegawai_ukpd.sql
+docker exec -i sisdmk2-db mysql -uroot -p"$MYSQL_ROOT_PASSWORD" si_data < sql/ukpd_password_generated.sql
+docker exec -i sisdmk2-db mysql -uroot -p"$MYSQL_ROOT_PASSWORD" si_data < sql/export_pegawai_ukpd.sql
 docker exec sisdmk2-app npm run check:mysql
 ```
 
@@ -64,8 +105,8 @@ Catatan troubleshooting:
 
 - Di dalam container, `localhost` dan `127.0.0.1` menunjuk ke container itu sendiri. Untuk database di host/CasaOS, pakai `host.docker.internal` dengan `extra_hosts: host.docker.internal:host-gateway`.
 - Kalau database berada dalam compose yang sama, pakai nama service `db`.
-- Kolom `ukpd.password` bisa memakai hash bcrypt atau SHA-256 untuk password login `admin123`, bukan plaintext.
-- Login super admin awal: username `SUPER ADMIN`, password `admin123`.
+- Kolom `ukpd.password` harus memakai hash bcrypt atau SHA-256, bukan plaintext.
+- Jangan pakai password seed/default di production. Aplikasi production menolak password umum seperti `admin123` dan `password123`.
 - Jika muncul pesan gagal konek database, cek `MYSQL_HOSTS`, `MYSQL_USER`, `MYSQL_PASSWORD`, `MYSQL_DATABASE`, dan `MYSQL_DATABASES` pada container app.
 - Jika volume `sisdmk2_mysql_data` sudah pernah dibuat dengan password root lama, mengganti `MYSQL_ROOT_PASSWORD` di compose tidak otomatis mengubah password MySQL. Pakai password lama, ubah password root manual dari MySQL, atau buat volume baru bila data lama boleh dihapus.
 - Aplikasi mencoba beberapa host MySQL secara berurutan dari `MYSQL_HOSTS`, lalu fallback lokal/CasaOS: `127.0.0.1`, `localhost`, `db`, `mariadb`, `mysql`, `host.docker.internal`, `172.17.0.1`, dan `172.31.254.56`. Database yang dicoba berasal dari `MYSQL_DATABASES`/`MYSQL_DATABASE`, lalu fallback `sisdmk2` dan `si_data`.
@@ -153,16 +194,16 @@ Nilai asli tetap disimpan di `jenis_kelamin_raw`.
 
 ## Akun Login
 
-Jika MySQL aktif, login membaca tabel `ukpd`. Seed `sql/ukpd_password_123.sql` mengisi semua UKPD dengan hash bcrypt untuk password `admin123`.
+Jika MySQL aktif, login membaca tabel `ukpd`. Buat seed password dengan `UKPD_DEFAULT_PASSWORD="password-kuat-minimal-12" node scripts/generate-ukpd-password-sql.mjs`, lalu import `sql/ukpd_password_generated.sql`.
 
 | Role | Username / Nama UKPD | Password |
 | --- | --- | --- |
-| Super Admin | `SUPER ADMIN` | `admin123` |
-| Dinas Kesehatan | `Dinas Kesehatan` | `admin123` |
-| Admin UKPD | nama UKPD, contoh `Puskesmas Tebet` | `admin123` |
-| Admin UKPD | kode UKPD, contoh `4` | `admin123` |
+| Super Admin | `SUPER ADMIN` | password unik yang sudah diganti |
+| Dinas Kesehatan | `Dinas Kesehatan` | password unik yang sudah diganti |
+| Admin UKPD | nama UKPD, contoh `Puskesmas Tebet` | password unik yang sudah diganti |
+| Admin UKPD | kode UKPD, contoh `4` | password unik yang sudah diganti |
 
-Jika MySQL belum dikonfigurasi, aplikasi fallback ke akun demo lokal dengan password `password123`.
+Di production, `JWT_SECRET`, `MYSQL_PASSWORD`, dan password akun wajib diset kuat. Secret lokal/contoh tidak boleh dipakai untuk deploy.
 
 ## Struktur Utama
 

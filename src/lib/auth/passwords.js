@@ -2,8 +2,18 @@ import bcrypt from "bcryptjs";
 import crypto from "node:crypto";
 import { getConnectedPool } from "@/lib/db/mysql";
 
+const BLOCKED_PRODUCTION_PASSWORDS = new Set(["admin123", "password123", "123456", "12345678"]);
+
+function allowWeakLoginForLocalRun() {
+  return process.env.ALLOW_WEAK_PASSWORD_LOGIN === "true";
+}
+
 export async function verifyPassword(password, passwordHash) {
   if (!passwordHash) return false;
+  if (process.env.NODE_ENV === "production" && !allowWeakLoginForLocalRun() && BLOCKED_PRODUCTION_PASSWORDS.has(String(password))) {
+    return false;
+  }
+
   const storedPassword = String(passwordHash);
   if (storedPassword.startsWith("$2a$") || storedPassword.startsWith("$2b$") || storedPassword.startsWith("$2y$")) {
     return bcrypt.compare(password, storedPassword);
@@ -12,7 +22,12 @@ export async function verifyPassword(password, passwordHash) {
     const sha256 = crypto.createHash("sha256").update(String(password)).digest("hex");
     return crypto.timingSafeEqual(Buffer.from(sha256, "hex"), Buffer.from(storedPassword, "hex"));
   }
-  return String(password) === storedPassword;
+
+  if (process.env.NODE_ENV !== "production") {
+    return String(password) === storedPassword;
+  }
+
+  return false;
 }
 
 function normalizeLogin(value) {

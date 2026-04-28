@@ -197,6 +197,7 @@ const pegawai = [];
 const alamat = [];
 const pasangan = [];
 const anak = [];
+const keluarga = [];
 const wilayahAnomalies = new Map();
 
 for (const values of dataRows) {
@@ -272,7 +273,7 @@ for (const values of dataRows) {
 
   const pasanganNama = get("NAMA_SUAMI/ISTRI");
   if (pasanganNama || get("NO_TELP_SUAMI/ISTRI") || get("EMAIL_SUAMI/ISTRI")) {
-    pasangan.push({
+    const pasanganEntry = {
       id: pasangan.length + 1,
       id_pegawai: id,
       status_punya: pasanganNama ? "Ya" : "Tidak",
@@ -281,6 +282,26 @@ for (const values of dataRows) {
       email: get("EMAIL_SUAMI/ISTRI"),
       pekerjaan: get("PEKERJAAN"),
       created_at: new Date().toISOString().slice(0, 10)
+    };
+    pasangan.push(pasanganEntry);
+    keluarga.push({
+      id: keluarga.length + 1,
+      id_pegawai: id,
+      hubungan: "pasangan",
+      hubungan_detail: "",
+      status_punya: pasanganEntry.status_punya,
+      status_tunjangan: "",
+      urutan: "",
+      nama: pasanganEntry.nama,
+      jenis_kelamin: "",
+      tempat_lahir: "",
+      tanggal_lahir: "",
+      no_tlp: pasanganEntry.no_tlp,
+      email: pasanganEntry.email,
+      pekerjaan: pasanganEntry.pekerjaan,
+      sumber_tabel: "pasangan",
+      sumber_id: pasanganEntry.id,
+      created_at: pasanganEntry.created_at
     });
   }
 
@@ -289,7 +310,7 @@ for (const values of dataRows) {
     const tempatKey = urutan === 2 ? "TEMPAT LAHIR 2" : `TEMPAT LAHIR ANAK ${suffix}`;
     const nama = get(`NAMA ANAK ${suffix}`);
     if (!nama) continue;
-    anak.push({
+    const anakEntry = {
       id: anak.length + 1,
       id_pegawai: id,
       urutan,
@@ -299,6 +320,26 @@ for (const values of dataRows) {
       tanggal_lahir: normalizeDate(get(`TANGGAL LAHIR ANAK ${suffix}`)),
       pekerjaan: get(`PEKERJAAN ANAK ${suffix}`),
       created_at: new Date().toISOString().slice(0, 10)
+    };
+    anak.push(anakEntry);
+    keluarga.push({
+      id: keluarga.length + 1,
+      id_pegawai: id,
+      hubungan: "anak",
+      hubungan_detail: "",
+      status_punya: "",
+      status_tunjangan: "",
+      urutan: anakEntry.urutan,
+      nama: anakEntry.nama,
+      jenis_kelamin: anakEntry.jenis_kelamin,
+      tempat_lahir: anakEntry.tempat_lahir,
+      tanggal_lahir: anakEntry.tanggal_lahir,
+      no_tlp: "",
+      email: "",
+      pekerjaan: anakEntry.pekerjaan,
+      sumber_tabel: "anak",
+      sumber_id: anakEntry.id,
+      created_at: anakEntry.created_at
     });
   }
 }
@@ -307,22 +348,26 @@ fs.mkdirSync(outputDir, { recursive: true });
 fs.writeFileSync(path.join(outputDir, "pegawai.json"), JSON.stringify(pegawai));
 fs.writeFileSync(path.join(outputDir, "ukpd.json"), JSON.stringify(uniqueUkpdFromPegawai(pegawai)));
 fs.writeFileSync(path.join(outputDir, "alamat.json"), JSON.stringify(alamat));
-fs.writeFileSync(path.join(outputDir, "pasangan.json"), JSON.stringify(pasangan));
-fs.writeFileSync(path.join(outputDir, "anak.json"), JSON.stringify(anak));
+fs.writeFileSync(path.join(outputDir, "keluarga.json"), JSON.stringify(keluarga));
 fs.writeFileSync(path.join(outputDir, "import-summary.json"), JSON.stringify({
   source: inputPath,
   imported_at: new Date().toISOString(),
   total_rows: pegawai.length,
   total_ukpd: uniqueUkpdFromPegawai(pegawai).length,
   total_alamat: alamat.length,
+  total_keluarga: keluarga.length,
   total_pasangan: pasangan.length,
   total_anak: anak.length,
+  keluarga_breakdown: {
+    pasangan: pasangan.length,
+    anak: anak.length
+  },
   headers,
   wilayah_anomalies: Object.fromEntries(wilayahAnomalies)
 }, null, 2));
 
 console.log(`Imported ${pegawai.length} pegawai`);
-console.log(`Generated ${uniqueUkpdFromPegawai(pegawai).length} UKPD, ${alamat.length} alamat, ${pasangan.length} pasangan, ${anak.length} anak`);
+console.log(`Generated ${uniqueUkpdFromPegawai(pegawai).length} UKPD, ${alamat.length} alamat, ${keluarga.length} keluarga (${pasangan.length} pasangan + ${anak.length} anak)`);
 if (wilayahAnomalies.size) {
   console.log(`Wilayah anomalies: ${wilayahAnomalies.size}`);
 }

@@ -3,9 +3,10 @@ import path from "node:path";
 
 const generatedDir = path.resolve("src/data/generated");
 const outputPath = path.resolve("sql/import_keluarga_generated.sql");
+const partsDir = path.resolve("sql/import_keluarga_generated_parts");
+const totalParts = 20;
 
-const pasanganPath = path.join(generatedDir, "pasangan.json");
-const anakPath = path.join(generatedDir, "anak.json");
+const keluargaPath = path.join(generatedDir, "keluarga.json");
 
 function readJson(filePath) {
   return JSON.parse(fs.readFileSync(filePath, "utf8"));
@@ -40,96 +41,134 @@ function sqlValue(value) {
   return `'${text}'`;
 }
 
-const pasangan = readJson(pasanganPath);
-const anak = readJson(anakPath);
+function buildInsertLines(rows, commentLines) {
+  const lines = [
+    ...commentLines,
+    "SET NAMES utf8mb4;",
+    "USE `si_data`;",
+    "",
+    "INSERT INTO `keluarga` (`id_pegawai`, `hubungan`, `hubungan_detail`, `status_punya`, `status_tunjangan`, `urutan`, `nama`, `jenis_kelamin`, `tempat_lahir`, `tanggal_lahir`, `no_tlp`, `email`, `pekerjaan`, `sumber_tabel`, `sumber_id`, `created_at`) VALUES"
+  ];
 
-const keluarga = [
-  ...pasangan.map((item) => ({
-    id_pegawai: Number(item.id_pegawai),
-    hubungan: "pasangan",
-    status_punya: normalizeText(item.status_punya),
-    urutan: null,
-    nama: normalizeText(item.nama),
-    jenis_kelamin: null,
-    tempat_lahir: null,
-    tanggal_lahir: null,
-    no_tlp: normalizeText(item.no_tlp),
-    email: normalizeText(item.email),
-    pekerjaan: normalizeText(item.pekerjaan),
-    sumber_tabel: "pasangan",
-    sumber_id: Number(item.id),
-    created_at: normalizeDate(item.created_at)
-  })),
-  ...anak.map((item) => ({
-    id_pegawai: Number(item.id_pegawai),
-    hubungan: "anak",
-    status_punya: null,
-    urutan: Number(item.urutan),
-    nama: normalizeText(item.nama),
-    jenis_kelamin: normalizeText(item.jenis_kelamin),
-    tempat_lahir: normalizeText(item.tempat_lahir),
-    tanggal_lahir: normalizeDate(item.tanggal_lahir),
-    no_tlp: null,
-    email: null,
-    pekerjaan: normalizeText(item.pekerjaan),
-    sumber_tabel: "anak",
-    sumber_id: Number(item.id),
-    created_at: normalizeDate(item.created_at)
-  }))
-].sort((a, b) => {
+  rows.forEach((item, index) => {
+    const row = [
+      item.id_pegawai,
+      item.hubungan,
+      item.hubungan_detail,
+      item.status_punya,
+      item.status_tunjangan,
+      item.urutan,
+      item.nama,
+      item.jenis_kelamin,
+      item.tempat_lahir,
+      item.tanggal_lahir,
+      item.no_tlp,
+      item.email,
+      item.pekerjaan,
+      item.sumber_tabel,
+      item.sumber_id,
+      item.created_at
+    ];
+    lines.push(`(${row.map(sqlValue).join(", ")})${index === rows.length - 1 ? "" : ","}`);
+  });
+
+  lines.push(
+    "",
+    "ON DUPLICATE KEY UPDATE",
+    "  `id_pegawai` = VALUES(`id_pegawai`),",
+    "  `hubungan` = VALUES(`hubungan`),",
+    "  `hubungan_detail` = VALUES(`hubungan_detail`),",
+    "  `status_punya` = VALUES(`status_punya`),",
+    "  `status_tunjangan` = VALUES(`status_tunjangan`),",
+    "  `urutan` = VALUES(`urutan`),",
+    "  `nama` = VALUES(`nama`),",
+    "  `jenis_kelamin` = VALUES(`jenis_kelamin`),",
+    "  `tempat_lahir` = VALUES(`tempat_lahir`),",
+    "  `tanggal_lahir` = VALUES(`tanggal_lahir`),",
+    "  `no_tlp` = VALUES(`no_tlp`),",
+    "  `email` = VALUES(`email`),",
+    "  `pekerjaan` = VALUES(`pekerjaan`),",
+    "  `created_at` = VALUES(`created_at`);"
+  );
+
+  return lines;
+}
+
+let keluarga;
+let breakdown;
+const sourceLabel = "src/data/generated/keluarga.json";
+
+if (!fs.existsSync(keluargaPath)) {
+  throw new Error(`File keluarga tidak ditemukan: ${keluargaPath}`);
+}
+
+const keluargaRaw = readJson(keluargaPath);
+keluarga = keluargaRaw.map((item, index) => ({
+  id_pegawai: Number(item.id_pegawai),
+  hubungan: normalizeText(item.hubungan),
+  hubungan_detail: normalizeText(item.hubungan_detail),
+  status_punya: normalizeText(item.status_punya),
+  status_tunjangan: normalizeText(item.status_tunjangan),
+  urutan: item.urutan === "" || item.urutan === null || item.urutan === undefined ? null : Number(item.urutan),
+  nama: normalizeText(item.nama),
+  jenis_kelamin: normalizeText(item.jenis_kelamin),
+  tempat_lahir: normalizeText(item.tempat_lahir),
+  tanggal_lahir: normalizeDate(item.tanggal_lahir),
+  no_tlp: normalizeText(item.no_tlp),
+  email: normalizeText(item.email),
+  pekerjaan: normalizeText(item.pekerjaan),
+  sumber_tabel: normalizeText(item.sumber_tabel) || "keluarga",
+  sumber_id: Number(item.sumber_id ?? item.id ?? index + 1),
+  created_at: normalizeDate(item.created_at)
+}));
+breakdown = {
+  pasangan: keluarga.filter((item) => item.hubungan === "pasangan").length,
+  anak: keluarga.filter((item) => item.hubungan === "anak").length
+};
+
+keluarga = keluarga.sort((a, b) => {
   if (a.id_pegawai !== b.id_pegawai) return a.id_pegawai - b.id_pegawai;
   if (a.hubungan !== b.hubungan) return a.hubungan.localeCompare(b.hubungan);
   return (a.urutan || 0) - (b.urutan || 0);
 });
 
-const lines = [
-  "-- Import data keluarga gabungan dari src/data/generated/pasangan.json dan anak.json",
+const fullLines = buildInsertLines(keluarga, [
+  `-- Import data keluarga dari ${sourceLabel}`,
   "-- Jalankan setelah tabel `keluarga` dibuat. Aman dijalankan berulang.",
-  "SET NAMES utf8mb4;",
-  "USE `si_data`;",
-  "",
-  "INSERT INTO `keluarga` (`id_pegawai`, `hubungan`, `status_punya`, `urutan`, `nama`, `jenis_kelamin`, `tempat_lahir`, `tanggal_lahir`, `no_tlp`, `email`, `pekerjaan`, `sumber_tabel`, `sumber_id`, `created_at`) VALUES"
-];
+  `-- Versi terpecah tersedia di ${path.relative(process.cwd(), partsDir).replace(/\\/g, "/")}.`
+]);
 
-keluarga.forEach((item, index) => {
-  const row = [
-    item.id_pegawai,
-    item.hubungan,
-    item.status_punya,
-    item.urutan,
-    item.nama,
-    item.jenis_kelamin,
-    item.tempat_lahir,
-    item.tanggal_lahir,
-    item.no_tlp,
-    item.email,
-    item.pekerjaan,
-    item.sumber_tabel,
-    item.sumber_id,
-    item.created_at
-  ];
-  lines.push(`(${row.map(sqlValue).join(", ")})${index === keluarga.length - 1 ? "" : ","}`);
-});
-
-lines.push(
+fullLines.push(
   "",
-  "ON DUPLICATE KEY UPDATE",
-  "  `id_pegawai` = VALUES(`id_pegawai`),",
-  "  `hubungan` = VALUES(`hubungan`),",
-  "  `status_punya` = VALUES(`status_punya`),",
-  "  `urutan` = VALUES(`urutan`),",
-  "  `nama` = VALUES(`nama`),",
-  "  `jenis_kelamin` = VALUES(`jenis_kelamin`),",
-  "  `tempat_lahir` = VALUES(`tempat_lahir`),",
-  "  `tanggal_lahir` = VALUES(`tanggal_lahir`),",
-  "  `no_tlp` = VALUES(`no_tlp`),",
-  "  `email` = VALUES(`email`),",
-  "  `pekerjaan` = VALUES(`pekerjaan`),",
-  "  `created_at` = VALUES(`created_at`);",
-  "",
-  `SELECT ${keluarga.length} AS total_keluarga_generated, ${pasangan.length} AS total_pasangan_generated, ${anak.length} AS total_anak_generated;`,
+  `SELECT ${keluarga.length} AS total_keluarga_generated, ${breakdown.pasangan} AS total_pasangan_generated, ${breakdown.anak} AS total_anak_generated;`,
   ""
 );
 
-fs.writeFileSync(outputPath, lines.join("\n"));
-console.log(`Generated ${outputPath} with ${keluarga.length} rows (${pasangan.length} pasangan + ${anak.length} anak).`);
+fs.writeFileSync(outputPath, fullLines.join("\n"));
+
+fs.rmSync(partsDir, { recursive: true, force: true });
+fs.mkdirSync(partsDir, { recursive: true });
+
+const partSize = Math.ceil(keluarga.length / totalParts);
+
+for (let partIndex = 0; partIndex < totalParts; partIndex += 1) {
+  const start = partIndex * partSize;
+  const end = Math.min(start + partSize, keluarga.length);
+  const rows = keluarga.slice(start, end);
+  if (rows.length === 0) break;
+
+  const filename = `import_keluarga_part_${String(partIndex + 1).padStart(2, "0")}.sql`;
+  const partLines = buildInsertLines(rows, [
+    `-- Import data keluarga dari ${sourceLabel}`,
+    `-- Bagian ${partIndex + 1} dari ${totalParts}. Jalankan setelah tabel \`keluarga\` dibuat.`,
+    "-- Aman dijalankan berulang."
+  ]);
+  partLines.push("");
+
+  fs.writeFileSync(path.join(partsDir, filename), partLines.join("\n"));
+}
+
+console.log(
+  `Generated ${outputPath} and ${totalParts} split files in ${partsDir} ` +
+    `with ${keluarga.length} rows (${breakdown.pasangan} pasangan + ${breakdown.anak} anak).`
+);

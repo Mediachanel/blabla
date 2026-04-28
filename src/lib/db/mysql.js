@@ -5,6 +5,19 @@ function numberPort(value) {
   return Number.isFinite(port) ? port : 3306;
 }
 
+function getEnvValue(key, fallback) {
+  return process.env[key] === undefined ? fallback : process.env[key];
+}
+
+function getRequiredProductionEnvValue(key, fallback) {
+  const value = getEnvValue(key, fallback);
+  const allowEmptyMysqlPassword = key === "MYSQL_PASSWORD" && process.env.ALLOW_EMPTY_MYSQL_PASSWORD === "true";
+  if (process.env.NODE_ENV === "production" && !allowEmptyMysqlPassword && String(value || "") === "") {
+    throw new Error(`${key} wajib diset di production.`);
+  }
+  return value;
+}
+
 function splitList(value) {
   return String(value || "")
     .split(",")
@@ -71,11 +84,11 @@ export function getMysqlCandidates() {
 
 export function createPool(config = {}) {
   return mysql.createPool({
-    host: config.host || process.env.MYSQL_HOST,
+    host: config.host === undefined ? getRequiredProductionEnvValue("MYSQL_HOST", "127.0.0.1") : config.host,
     port: numberPort(config.port || process.env.MYSQL_PORT),
-    user: process.env.MYSQL_USER || "root",
-    password: process.env.MYSQL_PASSWORD || "Tianh@27",
-    database: config.database || process.env.MYSQL_DATABASE || "sisdmk2",
+    user: getRequiredProductionEnvValue("MYSQL_USER", "root"),
+    password: getRequiredProductionEnvValue("MYSQL_PASSWORD", ""),
+    database: config.database === undefined ? getRequiredProductionEnvValue("MYSQL_DATABASE", "sisdmk2") : config.database,
     connectTimeout: numberPort(process.env.MYSQL_CONNECT_TIMEOUT_MS || 1500),
     waitForConnections: true,
     connectionLimit: 10,
@@ -101,6 +114,39 @@ function getPoolMap() {
   return globalThis.__sisdmkMysqlPools;
 }
 
+function clearGlobalPoolReference(pool, key) {
+  if (globalThis.__sisdmkMysqlPool === pool) {
+    globalThis.__sisdmkMysqlPool = null;
+  }
+  if (!key || globalThis.__sisdmkMysqlHost === key) {
+    globalThis.__sisdmkMysqlHost = null;
+  }
+}
+
+function isPoolClosed(pool) {
+  return Boolean(pool?._closed || pool?.pool?._closed);
+}
+
+async function disposePool(pools, key, pool) {
+  pools.delete(key);
+  clearGlobalPoolReference(pool, key);
+  await pool.end().catch(() => {});
+}
+
+export function isClosedConnectionError(error) {
+  const message = String(error?.message || "").toLowerCase();
+  return message.includes("closed state") || message.includes("pool is closed") || message.includes("connection is closed");
+}
+
+export async function resetMysqlPools() {
+  const pools = getPoolMap();
+  const entries = [...pools.entries()];
+  pools.clear();
+  globalThis.__sisdmkMysqlPool = null;
+  globalThis.__sisdmkMysqlHost = null;
+  await Promise.all(entries.map(([, pool]) => pool.end().catch(() => {})));
+}
+
 export async function getConnectedPool() {
   if (!hasMysqlConfig()) return null;
 
@@ -112,21 +158,30 @@ export async function getConnectedPool() {
   for (const candidate of candidates) {
     for (const database of databases) {
       const key = `${candidate.host}:${candidate.port}/${database}`;
-      let pool = pools.get(key);
-      if (!pool) {
-        pool = createPool({ ...candidate, database });
-        pools.set(key, pool);
-      }
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        let pool = pools.get(key);
+        if (pool && isPoolClosed(pool)) {
+          pools.delete(key);
+          clearGlobalPoolReference(pool, key);
+          pool = null;
+        }
+        if (!pool) {
+          pool = createPool({ ...candidate, database });
+          pools.set(key, pool);
+        }
 
-      try {
-        await pool.query("SELECT 1");
-        globalThis.__sisdmkMysqlPool = pool;
-        globalThis.__sisdmkMysqlHost = key;
-        return pool;
-      } catch (error) {
-        lastError = `host=${key} -> ${error.message}`;
-        pools.delete(key);
-        await pool.end().catch(() => {});
+        try {
+          await pool.query("SELECT 1");
+          globalThis.__sisdmkMysqlPool = pool;
+          globalThis.__sisdmkMysqlHost = key;
+          return pool;
+        } catch (error) {
+          lastError = `host=${key} -> ${error.message}`;
+          await disposePool(pools, key, pool);
+          if (attempt === 0) {
+            continue;
+          }
+        }
       }
     }
   }

@@ -1,22 +1,45 @@
 "use client";
 
 import { Fragment, useEffect, useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { BriefcaseMedical, ChevronDown, ChevronRight, Download, FilePlus2, Search, ShieldCheck, UserRoundCheck, UsersRound } from "lucide-react";
 import PageHeader from "@/components/layout/PageHeader";
 import KpiCard from "@/components/cards/KpiCard";
-import DashboardChartCard from "@/components/charts/DashboardChartCard";
 import DataTable from "@/components/tables/DataTable";
 import StatusBadge from "@/components/ui/StatusBadge";
+import ErrorState from "@/components/ui/ErrorState";
+
+const DashboardChartCard = dynamic(() => import("@/components/charts/DashboardChartCard"), {
+  ssr: false,
+  loading: () => <div className="h-80 animate-pulse rounded-2xl bg-white" />
+});
 
 const analyticsTabs = [
   { id: "ukpd", label: "Daftar UKPD" },
   { id: "rumpun", label: "Rumpun Jabatan" },
-  { id: "kepmenpan", label: "Jabatan Kepmenpan 11" }
+  { id: "jabatan", label: "Jabatan" },
+  { id: "pendidikan", label: "Pendidikan-Jurusan" },
+  { id: "masa-kerja", label: "Masa Kerja" }
 ];
+
+const pivotHeadCell = "bg-slate-50 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-600";
+const pivotLabelHeadCell = `${pivotHeadCell} sticky left-0 z-20 text-left`;
+const pivotNumberHeadCell = `${pivotHeadCell} text-right`;
+const pivotLabelCell = "sticky left-0 z-10 border-r border-slate-100 px-3 py-2";
+const pivotNumberCell = "px-3 py-2 text-right text-sm tabular-nums";
 
 function formatNumber(value) {
   return Number(value || 0).toLocaleString("id-ID");
+}
+
+function formatPercent(value, total) {
+  const denominator = Number(total || 0);
+  if (!denominator) return "0%";
+  return `${((Number(value || 0) / denominator) * 100).toLocaleString("id-ID", {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1
+  })}%`;
 }
 
 function escapeCsv(value) {
@@ -70,161 +93,9 @@ function buildPivotAggregates(rows, labelKey) {
   return [...map.values()].sort((a, b) => a.label.localeCompare(b.label));
 }
 
-function AnalyticsTable({ columns, rows, rowKey }) {
-  return (
-    <div className="overflow-x-auto rounded-2xl border border-slate-200">
-      <table className="min-w-full divide-y divide-slate-200">
-        <thead className="bg-slate-50">
-          <tr>
-            {columns.map((column) => (
-              <th key={column.key} className="table-th" scope="col">{column.header}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-slate-100 bg-white">
-          {rows.map((row, index) => (
-            <tr key={`${row[rowKey] || row.label || "row"}-${index}`} className="hover:bg-dinkes-50/40">
-              {columns.map((column) => (
-                <td key={column.key} className="table-td">{column.render ? column.render(row, index) : row[column.key]}</td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      {!rows.length ? <p className="bg-white px-4 py-8 text-center text-sm text-slate-500">Data tidak ditemukan.</p> : null}
-    </div>
-  );
-}
-
-function GroupedUkpdKpiTable({ rows }) {
-  const groupedRows = useMemo(() => {
-    const groups = new Map();
-    for (const row of rows) {
-      const wilayah = row.wilayah || "Tidak Diketahui";
-      if (!groups.has(wilayah)) groups.set(wilayah, []);
-      groups.get(wilayah).push(row);
-    }
-    return [...groups.entries()]
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([wilayah, items]) => [
-        wilayah,
-        items.sort((a, b) => a.nama_ukpd.localeCompare(b.nama_ukpd))
-      ]);
-  }, [rows]);
-
-  return (
-    <div className="overflow-x-auto rounded-2xl border border-slate-200">
-      <table className="min-w-full divide-y divide-slate-200">
-        <thead className="bg-white">
-          <tr>
-            <th className="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-600">NO</th>
-            <th className="min-w-72 px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-600">Nama UKPD</th>
-            <th className="px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-wide text-slate-600">Total Pegawai</th>
-            <th className="px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-wide text-slate-600">PNS/CPNS</th>
-            <th className="px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-wide text-slate-600">PPPK</th>
-            <th className="px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-wide text-slate-600">PPPK Paruh Waktu</th>
-            <th className="px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-wide text-slate-600">NON PNS</th>
-            <th className="px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-wide text-slate-600">PJLP</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-slate-100 bg-white">
-          {groupedRows.map(([wilayah, items]) => (
-            <Fragment key={wilayah}>
-              <tr className="bg-slate-50">
-                <td colSpan={8} className="px-4 py-3 text-sm font-bold text-slate-900">
-                  <span className="mr-2 inline-block h-1.5 w-1.5 rounded-full bg-rose-500 align-middle" />
-                  Wilayah {wilayah}
-                </td>
-              </tr>
-              {items.map((row, index) => {
-                const pnsCpns = (row.byJenisPegawai?.PNS || 0) + (row.byJenisPegawai?.CPNS || 0);
-                return (
-                  <tr key={row.id_ukpd || row.nama_ukpd} className="hover:bg-dinkes-50/40">
-                    <td className="whitespace-nowrap px-3 py-3 text-center text-sm text-slate-700">{index + 1}</td>
-                    <td className="whitespace-nowrap px-3 py-3 text-sm font-medium text-slate-700">{row.nama_ukpd}</td>
-                    <td className="whitespace-nowrap px-3 py-3 text-right text-sm font-bold text-slate-900">{formatNumber(row.total)}</td>
-                    <td className="whitespace-nowrap px-3 py-3 text-right text-sm text-slate-700">{formatNumber(pnsCpns)}</td>
-                    <td className="whitespace-nowrap px-3 py-3 text-right text-sm text-slate-700">{formatNumber(row.byJenisPegawai?.PPPK)}</td>
-                    <td className="whitespace-nowrap px-3 py-3 text-right text-sm text-slate-700">{formatNumber(row.byJenisPegawai?.["PPPK Paruh Waktu"])}</td>
-                    <td className="whitespace-nowrap px-3 py-3 text-right text-sm text-slate-700">{formatNumber(row.byJenisPegawai?.["NON PNS"])}</td>
-                    <td className="whitespace-nowrap px-3 py-3 text-right text-sm text-slate-700">{formatNumber(row.byJenisPegawai?.PJLP)}</td>
-                  </tr>
-                );
-              })}
-            </Fragment>
-          ))}
-        </tbody>
-      </table>
-      {!rows.length ? <p className="bg-white px-4 py-8 text-center text-sm text-slate-500">Data UKPD tidak ditemukan.</p> : null}
-    </div>
-  );
-}
-
-function PivotCountTable({ rows, labelKey, labelTitle }) {
-  const pivotRows = useMemo(() => {
-    const map = new Map();
-    for (const row of rows) {
-      const label = row[labelKey] || "Tidak Diketahui";
-      if (!map.has(label)) {
-        map.set(label, {
-          label,
-          total: 0,
-          pnsCpns: 0,
-          pppk: 0,
-          pppkParuhWaktu: 0,
-          nonPns: 0,
-          pjlp: 0
-        });
-      }
-      const target = map.get(label);
-      const jumlah = Number(row.jumlah || 0);
-      target.total += jumlah;
-      if (row.jenis_pegawai === "PNS" || row.jenis_pegawai === "CPNS") target.pnsCpns += jumlah;
-      if (row.jenis_pegawai === "PPPK") target.pppk += jumlah;
-      if (row.jenis_pegawai === "PPPK Paruh Waktu") target.pppkParuhWaktu += jumlah;
-      if (row.jenis_pegawai === "NON PNS") target.nonPns += jumlah;
-      if (row.jenis_pegawai === "PJLP") target.pjlp += jumlah;
-    }
-    return [...map.values()].sort((a, b) => a.label.localeCompare(b.label));
-  }, [labelKey, rows]);
-
-  return (
-    <div className="overflow-x-auto rounded-2xl border border-slate-200">
-      <table className="min-w-full divide-y divide-slate-200">
-        <thead className="bg-white">
-          <tr>
-            <th className="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-600">NO</th>
-            <th className="min-w-[32rem] px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-600">{labelTitle}</th>
-            <th className="px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-wide text-slate-600">Total Pegawai</th>
-            <th className="px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-wide text-slate-600">PNS/CPNS</th>
-            <th className="px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-wide text-slate-600">PPPK</th>
-            <th className="px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-wide text-slate-600">PPPK Paruh Waktu</th>
-            <th className="px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-wide text-slate-600">NON PNS</th>
-            <th className="px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-wide text-slate-600">PJLP</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-slate-100 bg-white">
-          {pivotRows.map((row, index) => (
-            <tr key={row.label} className="hover:bg-dinkes-50/40">
-              <td className="whitespace-nowrap px-3 py-3 text-center text-sm text-slate-700">{index + 1}</td>
-              <td className="px-3 py-3 text-sm font-medium text-slate-700">{row.label}</td>
-              <td className="whitespace-nowrap px-3 py-3 text-right text-sm font-bold text-slate-900">{formatNumber(row.total)}</td>
-              <td className="whitespace-nowrap px-3 py-3 text-right text-sm text-slate-700">{formatNumber(row.pnsCpns)}</td>
-              <td className="whitespace-nowrap px-3 py-3 text-right text-sm text-slate-700">{formatNumber(row.pppk)}</td>
-              <td className="whitespace-nowrap px-3 py-3 text-right text-sm text-slate-700">{formatNumber(row.pppkParuhWaktu)}</td>
-              <td className="whitespace-nowrap px-3 py-3 text-right text-sm text-slate-700">{formatNumber(row.nonPns)}</td>
-              <td className="whitespace-nowrap px-3 py-3 text-right text-sm text-slate-700">{formatNumber(row.pjlp)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      {!pivotRows.length ? <p className="bg-white px-4 py-8 text-center text-sm text-slate-500">Data tidak ditemukan.</p> : null}
-    </div>
-  );
-}
-
 function PivotDrillPanel({ mode, query }) {
   const [loadingTree, setLoadingTree] = useState(false);
+  const [treeError, setTreeError] = useState("");
   const [tree, setTree] = useState([]);
   const [open1, setOpen1] = useState({});
   const [open2, setOpen2] = useState({});
@@ -232,7 +103,13 @@ function PivotDrillPanel({ mode, query }) {
   const [loadingNode, setLoadingNode] = useState("");
   const [pageByNode, setPageByNode] = useState({});
   const pageSize = 20;
-  const title = mode === "jabatan" ? "Jabatan -> UKPD -> Pegawai" : "Rumpun -> Jabatan -> Pegawai";
+  const title = mode === "jabatan"
+    ? "Jabatan -> UKPD -> Pegawai"
+    : mode === "pendidikan"
+      ? "Jenjang Pendidikan -> Jurusan -> Pegawai"
+      : mode === "masa-kerja"
+        ? "Masa Kerja -> Jabatan -> Pegawai"
+      : "Rumpun -> Jabatan -> Pegawai";
   const getCount = (counts, key) => formatNumber(counts?.[key] || 0);
 
   useEffect(() => {
@@ -240,15 +117,21 @@ function PivotDrillPanel({ mode, query }) {
       const params = new URLSearchParams({ mode });
       if (query) params.set("q", query);
       setLoadingTree(true);
+      setTreeError("");
       fetch(`/api/dashboard/pivot-tree?${params.toString()}`)
         .then((res) => res.json())
         .then((payload) => {
+          if (!payload?.success) throw new Error(payload?.message || "Struktur pivot gagal dimuat.");
           const nextTree = payload?.data?.tree || [];
           setTree(nextTree);
           setOpen1({});
           setOpen2({});
           setEmployeesByNode({});
           setPageByNode({});
+        })
+        .catch((error) => {
+          setTree([]);
+          setTreeError(error.message || "Struktur pivot gagal dimuat.");
         })
         .finally(() => setLoadingTree(false));
     }, 350);
@@ -268,6 +151,7 @@ function PivotDrillPanel({ mode, query }) {
     try {
       const response = await fetch(`/api/dashboard/pivot-tree?${params.toString()}`);
       const payload = await response.json();
+      if (!payload?.success) throw new Error(payload?.message || "Data pegawai gagal dimuat.");
       setEmployeesByNode((current) => ({
         ...current,
         [nodeKey]: {
@@ -277,6 +161,8 @@ function PivotDrillPanel({ mode, query }) {
         }
       }));
       setPageByNode((current) => ({ ...current, [nodeKey]: page }));
+    } catch (error) {
+      setTreeError(error.message || "Data pegawai gagal dimuat.");
     } finally {
       setLoadingNode("");
     }
@@ -294,20 +180,30 @@ function PivotDrillPanel({ mode, query }) {
 
   return (
     <section className="mb-4 rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
-      <h3 className="text-sm font-semibold text-slate-900">Pivot Drilldown: {title}</h3>
+      <h3 className="text-sm font-semibold text-slate-900">Rincian Pivot: {title}</h3>
       {loadingTree ? <p className="mt-3 text-sm text-slate-500">Memuat struktur...</p> : null}
+      {treeError ? <p className="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700" role="alert">{treeError}</p> : null}
       <p className="mt-2 text-xs text-slate-500">Geser horizontal untuk melihat kolom jumlah per jenis pegawai.</p>
-      <div className="mt-3 overflow-x-auto rounded-xl border border-slate-200 bg-white">
-        <table className="min-w-[1200px]">
+      <div className="mt-3 max-w-[1100px] overflow-auto rounded-xl border border-slate-200 bg-white">
+        <table className="w-full min-w-[860px] table-fixed">
+          <colgroup>
+            <col className="w-[300px]" />
+            <col className="w-[96px]" />
+            <col className="w-[112px]" />
+            <col className="w-[96px]" />
+            <col className="w-[150px]" />
+            <col className="w-[112px]" />
+            <col className="w-[96px]" />
+          </colgroup>
           <thead className="border-b border-slate-200 bg-slate-50">
             <tr>
-              <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Row Labels</th>
-              <th className="px-3 py-2 text-right text-xs font-semibold uppercase tracking-wide text-slate-600">Total</th>
-              <th className="px-3 py-2 text-right text-xs font-semibold uppercase tracking-wide text-slate-600">PNS/CPNS</th>
-              <th className="px-3 py-2 text-right text-xs font-semibold uppercase tracking-wide text-slate-600">PPPK</th>
-              <th className="px-3 py-2 text-right text-xs font-semibold uppercase tracking-wide text-slate-600">PPPK Paruh Waktu</th>
-              <th className="px-3 py-2 text-right text-xs font-semibold uppercase tracking-wide text-slate-600">NON PNS</th>
-              <th className="px-3 py-2 text-right text-xs font-semibold uppercase tracking-wide text-slate-600">PJLP</th>
+              <th className={pivotLabelHeadCell}>Label Baris</th>
+              <th className={pivotNumberHeadCell}>Total</th>
+              <th className={pivotNumberHeadCell}>PNS/CPNS</th>
+              <th className={pivotNumberHeadCell}>PPPK</th>
+              <th className={pivotNumberHeadCell}>PPPK Paruh Waktu</th>
+              <th className={pivotNumberHeadCell}>NON PNS</th>
+              <th className={pivotNumberHeadCell}>PJLP</th>
             </tr>
           </thead>
           <tbody>
@@ -316,18 +212,18 @@ function PivotDrillPanel({ mode, query }) {
               return (
                 <Fragment key={group1.label}>
                   <tr className="border-b border-slate-100 bg-slate-50/70">
-                    <td className="px-3 py-2">
-                      <button className="flex items-center gap-1 text-left text-sm font-semibold text-slate-900" onClick={() => toggleLevel1(group1.label)}>
+                    <td className={`${pivotLabelCell} bg-slate-50/95`}>
+                      <button className="flex w-full min-w-0 items-center gap-1 text-left text-sm font-semibold text-slate-900" onClick={() => toggleLevel1(group1.label)}>
                         {isOpen1 ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                        <span>{group1.label}</span>
+                        <span className="truncate">{group1.label}</span>
                       </button>
                     </td>
-                    <td className="px-3 py-2 text-right text-sm font-semibold text-slate-900">{formatNumber(group1.total)}</td>
-                    <td className="px-3 py-2 text-right text-sm text-slate-700">{getCount(group1.counts, "pnsCpns")}</td>
-                    <td className="px-3 py-2 text-right text-sm text-slate-700">{getCount(group1.counts, "pppk")}</td>
-                    <td className="px-3 py-2 text-right text-sm text-slate-700">{getCount(group1.counts, "pppkParuhWaktu")}</td>
-                    <td className="px-3 py-2 text-right text-sm text-slate-700">{getCount(group1.counts, "nonPns")}</td>
-                    <td className="px-3 py-2 text-right text-sm text-slate-700">{getCount(group1.counts, "pjlp")}</td>
+                    <td className={`${pivotNumberCell} font-semibold text-slate-900`}>{formatNumber(group1.total)}</td>
+                    <td className={`${pivotNumberCell} text-slate-700`}>{getCount(group1.counts, "pnsCpns")}</td>
+                    <td className={`${pivotNumberCell} text-slate-700`}>{getCount(group1.counts, "pppk")}</td>
+                    <td className={`${pivotNumberCell} text-slate-700`}>{getCount(group1.counts, "pppkParuhWaktu")}</td>
+                    <td className={`${pivotNumberCell} text-slate-700`}>{getCount(group1.counts, "nonPns")}</td>
+                    <td className={`${pivotNumberCell} text-slate-700`}>{getCount(group1.counts, "pjlp")}</td>
                   </tr>
                   {isOpen1
                     ? group1.children.map((group2) => {
@@ -338,27 +234,27 @@ function PivotDrillPanel({ mode, query }) {
                       return (
                         <Fragment key={nodeKey}>
                           <tr className="border-b border-slate-100">
-                            <td className="px-3 py-2">
-                              <button className="ml-6 flex items-center gap-1 text-left text-sm font-medium text-slate-800" onClick={() => toggleLevel2(group1.label, group2.label)}>
+                            <td className={`${pivotLabelCell} bg-white`}>
+                              <button className="ml-6 flex max-w-[230px] items-center gap-1 text-left text-sm font-medium text-slate-800" onClick={() => toggleLevel2(group1.label, group2.label)}>
                                 {isOpen2 ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                                <span>{group2.label}</span>
+                                <span className="truncate">{group2.label}</span>
                               </button>
                             </td>
-                            <td className="px-3 py-2 text-right text-sm font-medium text-slate-900">{formatNumber(group2.total)}</td>
-                            <td className="px-3 py-2 text-right text-sm text-slate-700">{getCount(group2.counts, "pnsCpns")}</td>
-                            <td className="px-3 py-2 text-right text-sm text-slate-700">{getCount(group2.counts, "pppk")}</td>
-                            <td className="px-3 py-2 text-right text-sm text-slate-700">{getCount(group2.counts, "pppkParuhWaktu")}</td>
-                            <td className="px-3 py-2 text-right text-sm text-slate-700">{getCount(group2.counts, "nonPns")}</td>
-                            <td className="px-3 py-2 text-right text-sm text-slate-700">{getCount(group2.counts, "pjlp")}</td>
+                            <td className={`${pivotNumberCell} font-medium text-slate-900`}>{formatNumber(group2.total)}</td>
+                            <td className={`${pivotNumberCell} text-slate-700`}>{getCount(group2.counts, "pnsCpns")}</td>
+                            <td className={`${pivotNumberCell} text-slate-700`}>{getCount(group2.counts, "pppk")}</td>
+                            <td className={`${pivotNumberCell} text-slate-700`}>{getCount(group2.counts, "pppkParuhWaktu")}</td>
+                            <td className={`${pivotNumberCell} text-slate-700`}>{getCount(group2.counts, "nonPns")}</td>
+                            <td className={`${pivotNumberCell} text-slate-700`}>{getCount(group2.counts, "pjlp")}</td>
                           </tr>
                           {isOpen2 ? (
                             <>
                               {(employeeData?.items || []).map((employee) => (
                                 <tr key={employee.id_pegawai} className="border-b border-slate-100 hover:bg-dinkes-50/40">
-                                  <td className="px-3 py-1 text-sm text-slate-700">
-                                    <div className="ml-12 flex items-center justify-between gap-3">
-                                      <span>{employee.nama} <span className="text-xs text-slate-500">({employee.jenis_pegawai || "-"})</span></span>
-                                      <Link className="shrink-0 text-xs font-semibold text-dinkes-700 hover:text-dinkes-900" href={`/pegawai/${employee.id_pegawai}`} target="_blank" rel="noopener noreferrer">
+                                  <td className={`${pivotLabelCell} bg-white py-1 text-sm text-slate-700`}>
+                                    <div className="ml-12 flex min-w-0 items-center justify-between gap-3">
+                                      <span className="truncate">{employee.nama} <span className="text-xs text-slate-500">({employee.jenis_pegawai || "-"})</span></span>
+                                      <Link className="shrink-0 text-xs font-semibold text-dinkes-700 hover:text-dinkes-900" href={`/pegawai/${employee.id_pegawai}`}>
                                         Lihat Profil
                                       </Link>
                                     </div>
@@ -387,7 +283,7 @@ function PivotDrillPanel({ mode, query }) {
                                         disabled={(employeeData?.page || 1) <= 1}
                                         onClick={() => loadEmployees(group1.label, group2.label, Math.max(1, (employeeData?.page || 1) - 1))}
                                       >
-                                        Prev
+                                        Sebelumnya
                                       </button>
                                       <span>Hal {(employeeData?.page || 1)} / {totalPages}</span>
                                       <button
@@ -395,7 +291,7 @@ function PivotDrillPanel({ mode, query }) {
                                         disabled={(employeeData?.page || 1) >= totalPages}
                                         onClick={() => loadEmployees(group1.label, group2.label, Math.min(totalPages, (employeeData?.page || 1) + 1))}
                                       >
-                                        Next
+                                        Berikutnya
                                       </button>
                                     </div>
                                   </td>
@@ -420,6 +316,7 @@ function PivotDrillPanel({ mode, query }) {
 
 function UkpdDrillPanel({ query }) {
   const [loadingTree, setLoadingTree] = useState(false);
+  const [treeError, setTreeError] = useState("");
   const [tree, setTree] = useState([]);
   const [open1, setOpen1] = useState({});
   const [open2, setOpen2] = useState({});
@@ -449,15 +346,21 @@ function UkpdDrillPanel({ query }) {
       const params = new URLSearchParams({ mode: "ukpd" });
       if (query) params.set("q", query);
       setLoadingTree(true);
+      setTreeError("");
       fetch(`/api/dashboard/pivot-tree?${params.toString()}`)
         .then((res) => res.json())
         .then((payload) => {
+          if (!payload?.success) throw new Error(payload?.message || "Struktur pivot gagal dimuat.");
           setTree(payload?.data?.tree || []);
           setOpen1({});
           setOpen2({});
           setOpen3({});
           setEmployeesByNode({});
           setPageByNode({});
+        })
+        .catch((error) => {
+          setTree([]);
+          setTreeError(error.message || "Struktur pivot gagal dimuat.");
         })
         .finally(() => setLoadingTree(false));
     }, 350);
@@ -472,11 +375,14 @@ function UkpdDrillPanel({ query }) {
     try {
       const response = await fetch(`/api/dashboard/pivot-tree?${params.toString()}`);
       const payload = await response.json();
+      if (!payload?.success) throw new Error(payload?.message || "Data pegawai gagal dimuat.");
       setEmployeesByNode((current) => ({
         ...current,
         [nodeKey]: { items: payload?.data?.employees || [], total: payload?.data?.total || 0, page: payload?.data?.page || page }
       }));
       setPageByNode((current) => ({ ...current, [nodeKey]: page }));
+    } catch (error) {
+      setTreeError(error.message || "Data pegawai gagal dimuat.");
     } finally {
       setLoadingNode("");
     }
@@ -484,20 +390,31 @@ function UkpdDrillPanel({ query }) {
 
   return (
     <section className="mb-4 rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
-      <h3 className="text-sm font-semibold text-slate-900">Pivot Drilldown: UKPD -&gt; Rumpun -&gt; Jabatan -&gt; Pegawai</h3>
+      <h3 className="text-sm font-semibold text-slate-900">Rincian Pivot: UKPD -&gt; Rumpun -&gt; Jabatan -&gt; Pegawai</h3>
       {loadingTree ? <p className="mt-3 text-sm text-slate-500">Memuat struktur...</p> : null}
-      <div className="mt-3 overflow-x-auto rounded-xl border border-slate-200 bg-white">
-        <table className="min-w-[1200px]">
+      {treeError ? <p className="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700" role="alert">{treeError}</p> : null}
+      <div className="mt-3 max-w-[1180px] overflow-auto rounded-xl border border-slate-200 bg-white">
+        <table className="w-full min-w-[940px] table-fixed">
+          <colgroup>
+            <col className="w-[64px]" />
+            <col className="w-[300px]" />
+            <col className="w-[96px]" />
+            <col className="w-[112px]" />
+            <col className="w-[96px]" />
+            <col className="w-[150px]" />
+            <col className="w-[112px]" />
+            <col className="w-[96px]" />
+          </colgroup>
           <thead className="border-b border-slate-200 bg-slate-50">
             <tr>
-              <th className="w-16 px-3 py-2 text-center text-xs font-semibold uppercase tracking-wide text-slate-600">No</th>
-              <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Row Labels</th>
-              <th className="px-3 py-2 text-right text-xs font-semibold uppercase tracking-wide text-slate-600">Total</th>
-              <th className="px-3 py-2 text-right text-xs font-semibold uppercase tracking-wide text-slate-600">PNS/CPNS</th>
-              <th className="px-3 py-2 text-right text-xs font-semibold uppercase tracking-wide text-slate-600">PPPK</th>
-              <th className="px-3 py-2 text-right text-xs font-semibold uppercase tracking-wide text-slate-600">PPPK Paruh Waktu</th>
-              <th className="px-3 py-2 text-right text-xs font-semibold uppercase tracking-wide text-slate-600">NON PNS</th>
-              <th className="px-3 py-2 text-right text-xs font-semibold uppercase tracking-wide text-slate-600">PJLP</th>
+              <th className={`${pivotHeadCell} text-center`}>No</th>
+              <th className={pivotLabelHeadCell}>Label Baris</th>
+              <th className={pivotNumberHeadCell}>Total</th>
+              <th className={pivotNumberHeadCell}>PNS/CPNS</th>
+              <th className={pivotNumberHeadCell}>PPPK</th>
+              <th className={pivotNumberHeadCell}>PPPK Paruh Waktu</th>
+              <th className={pivotNumberHeadCell}>NON PNS</th>
+              <th className={pivotNumberHeadCell}>PJLP</th>
             </tr>
           </thead>
           <tbody>
@@ -515,18 +432,18 @@ function UkpdDrillPanel({ query }) {
                 <Fragment key={ukpd.label}>
                   <tr className="border-b border-slate-100 bg-slate-50/70">
                     <td className="px-3 py-2 text-center text-sm font-semibold text-slate-700">{index + 1}</td>
-                    <td className="px-3 py-2">
-                      <button className="flex items-center gap-1 text-left text-sm font-semibold text-slate-900" onClick={() => setOpen1((s) => ({ ...s, [ukpd.label]: !s[ukpd.label] }))}>
+                    <td className={`${pivotLabelCell} bg-slate-50/95`}>
+                      <button className="flex w-full min-w-0 items-center gap-1 text-left text-sm font-semibold text-slate-900" onClick={() => setOpen1((s) => ({ ...s, [ukpd.label]: !s[ukpd.label] }))}>
                         {isOpen1 ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                        <span>{ukpd.label}</span>
+                        <span className="truncate">{ukpd.label}</span>
                       </button>
                     </td>
-                    <td className="px-3 py-2 text-right text-sm font-semibold text-slate-900">{formatNumber(ukpd.total)}</td>
-                    <td className="px-3 py-2 text-right text-sm text-slate-700">{getCount(ukpd.counts, "pnsCpns")}</td>
-                    <td className="px-3 py-2 text-right text-sm text-slate-700">{getCount(ukpd.counts, "pppk")}</td>
-                    <td className="px-3 py-2 text-right text-sm text-slate-700">{getCount(ukpd.counts, "pppkParuhWaktu")}</td>
-                    <td className="px-3 py-2 text-right text-sm text-slate-700">{getCount(ukpd.counts, "nonPns")}</td>
-                    <td className="px-3 py-2 text-right text-sm text-slate-700">{getCount(ukpd.counts, "pjlp")}</td>
+                    <td className={`${pivotNumberCell} font-semibold text-slate-900`}>{formatNumber(ukpd.total)}</td>
+                    <td className={`${pivotNumberCell} text-slate-700`}>{getCount(ukpd.counts, "pnsCpns")}</td>
+                    <td className={`${pivotNumberCell} text-slate-700`}>{getCount(ukpd.counts, "pppk")}</td>
+                    <td className={`${pivotNumberCell} text-slate-700`}>{getCount(ukpd.counts, "pppkParuhWaktu")}</td>
+                    <td className={`${pivotNumberCell} text-slate-700`}>{getCount(ukpd.counts, "nonPns")}</td>
+                    <td className={`${pivotNumberCell} text-slate-700`}>{getCount(ukpd.counts, "pjlp")}</td>
                   </tr>
                   {isOpen1 ? ukpd.children.map((rumpun) => {
                     const key2 = `${ukpd.label}::${rumpun.label}`;
@@ -535,18 +452,18 @@ function UkpdDrillPanel({ query }) {
                       <Fragment key={key2}>
                         <tr className="border-b border-slate-100">
                           <td className="px-3 py-2" />
-                          <td className="px-3 py-2">
-                            <button className="ml-6 flex items-center gap-1 text-left text-sm font-medium text-slate-800" onClick={() => setOpen2((s) => ({ ...s, [key2]: !s[key2] }))}>
+                          <td className={`${pivotLabelCell} bg-white`}>
+                            <button className="ml-6 flex max-w-[230px] items-center gap-1 text-left text-sm font-medium text-slate-800" onClick={() => setOpen2((s) => ({ ...s, [key2]: !s[key2] }))}>
                               {isOpen2 ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                              <span>{rumpun.label}</span>
+                              <span className="truncate">{rumpun.label}</span>
                             </button>
                           </td>
-                          <td className="px-3 py-2 text-right text-sm font-medium text-slate-900">{formatNumber(rumpun.total)}</td>
-                          <td className="px-3 py-2 text-right text-sm text-slate-700">{getCount(rumpun.counts, "pnsCpns")}</td>
-                          <td className="px-3 py-2 text-right text-sm text-slate-700">{getCount(rumpun.counts, "pppk")}</td>
-                          <td className="px-3 py-2 text-right text-sm text-slate-700">{getCount(rumpun.counts, "pppkParuhWaktu")}</td>
-                          <td className="px-3 py-2 text-right text-sm text-slate-700">{getCount(rumpun.counts, "nonPns")}</td>
-                          <td className="px-3 py-2 text-right text-sm text-slate-700">{getCount(rumpun.counts, "pjlp")}</td>
+                          <td className={`${pivotNumberCell} font-medium text-slate-900`}>{formatNumber(rumpun.total)}</td>
+                          <td className={`${pivotNumberCell} text-slate-700`}>{getCount(rumpun.counts, "pnsCpns")}</td>
+                          <td className={`${pivotNumberCell} text-slate-700`}>{getCount(rumpun.counts, "pppk")}</td>
+                          <td className={`${pivotNumberCell} text-slate-700`}>{getCount(rumpun.counts, "pppkParuhWaktu")}</td>
+                          <td className={`${pivotNumberCell} text-slate-700`}>{getCount(rumpun.counts, "nonPns")}</td>
+                          <td className={`${pivotNumberCell} text-slate-700`}>{getCount(rumpun.counts, "pjlp")}</td>
                         </tr>
                         {isOpen2 ? rumpun.children.map((jabatan) => {
                           const key3 = `${ukpd.label}::${rumpun.label}::${jabatan.label}`;
@@ -557,32 +474,32 @@ function UkpdDrillPanel({ query }) {
                             <Fragment key={key3}>
                               <tr className="border-b border-slate-100">
                                 <td className="px-3 py-2" />
-                                <td className="px-3 py-2">
-                                  <button className="ml-12 flex items-center gap-1 text-left text-sm text-slate-700" onClick={async () => {
+                                <td className={`${pivotLabelCell} bg-white`}>
+                                  <button className="ml-12 flex max-w-[210px] items-center gap-1 text-left text-sm text-slate-700" onClick={async () => {
                                     const next = !open3[key3];
                                     setOpen3((s) => ({ ...s, [key3]: next }));
                                     if (next) await loadEmployees(ukpd.label, rumpun.label, jabatan.label, pageByNode[key3] || 1);
                                   }}>
                                     {isOpen3 ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                                    <span>{jabatan.label}</span>
+                                    <span className="truncate">{jabatan.label}</span>
                                   </button>
                                 </td>
-                                <td className="px-3 py-2 text-right text-sm font-medium text-slate-900">{formatNumber(jabatan.total)}</td>
-                                <td className="px-3 py-2 text-right text-sm text-slate-700">{getCount(jabatan.counts, "pnsCpns")}</td>
-                                <td className="px-3 py-2 text-right text-sm text-slate-700">{getCount(jabatan.counts, "pppk")}</td>
-                                <td className="px-3 py-2 text-right text-sm text-slate-700">{getCount(jabatan.counts, "pppkParuhWaktu")}</td>
-                                <td className="px-3 py-2 text-right text-sm text-slate-700">{getCount(jabatan.counts, "nonPns")}</td>
-                                <td className="px-3 py-2 text-right text-sm text-slate-700">{getCount(jabatan.counts, "pjlp")}</td>
+                                <td className={`${pivotNumberCell} font-medium text-slate-900`}>{formatNumber(jabatan.total)}</td>
+                                <td className={`${pivotNumberCell} text-slate-700`}>{getCount(jabatan.counts, "pnsCpns")}</td>
+                                <td className={`${pivotNumberCell} text-slate-700`}>{getCount(jabatan.counts, "pppk")}</td>
+                                <td className={`${pivotNumberCell} text-slate-700`}>{getCount(jabatan.counts, "pppkParuhWaktu")}</td>
+                                <td className={`${pivotNumberCell} text-slate-700`}>{getCount(jabatan.counts, "nonPns")}</td>
+                                <td className={`${pivotNumberCell} text-slate-700`}>{getCount(jabatan.counts, "pjlp")}</td>
                               </tr>
                               {isOpen3 ? (
                                 <>
                                   {(employeeData?.items || []).map((employee) => (
                                     <tr key={employee.id_pegawai} className="border-b border-slate-100 hover:bg-dinkes-50/40">
                                       <td className="px-3 py-1" />
-                                      <td className="px-3 py-1 text-sm text-slate-700">
-                                        <div className="ml-16 flex items-center justify-between gap-3">
-                                          <span>{employee.nama}</span>
-                                          <Link className="shrink-0 text-xs font-semibold text-dinkes-700 hover:text-dinkes-900" href={`/pegawai/${employee.id_pegawai}`} target="_blank" rel="noopener noreferrer">
+                                      <td className={`${pivotLabelCell} bg-white py-1 text-sm text-slate-700`}>
+                                        <div className="ml-16 flex min-w-0 items-center justify-between gap-3">
+                                          <span className="truncate">{employee.nama}</span>
+                                          <Link className="shrink-0 text-xs font-semibold text-dinkes-700 hover:text-dinkes-900" href={`/pegawai/${employee.id_pegawai}`}>
                                             Lihat Profil
                                           </Link>
                                         </div>
@@ -606,9 +523,9 @@ function UkpdDrillPanel({ query }) {
                                     <tr className="border-b border-slate-100">
                                       <td className="px-3 py-2" colSpan={8}>
                                         <div className="ml-16 flex items-center gap-2 text-xs text-slate-600">
-                                          <button className="rounded border border-slate-200 px-2 py-1 disabled:opacity-50" disabled={(employeeData?.page || 1) <= 1} onClick={() => loadEmployees(ukpd.label, rumpun.label, jabatan.label, Math.max(1, (employeeData?.page || 1) - 1))}>Prev</button>
+                                          <button className="rounded border border-slate-200 px-2 py-1 disabled:opacity-50" disabled={(employeeData?.page || 1) <= 1} onClick={() => loadEmployees(ukpd.label, rumpun.label, jabatan.label, Math.max(1, (employeeData?.page || 1) - 1))}>Sebelumnya</button>
                                           <span>Hal {(employeeData?.page || 1)} / {totalPages}</span>
-                                          <button className="rounded border border-slate-200 px-2 py-1 disabled:opacity-50" disabled={(employeeData?.page || 1) >= totalPages} onClick={() => loadEmployees(ukpd.label, rumpun.label, jabatan.label, Math.min(totalPages, (employeeData?.page || 1) + 1))}>Next</button>
+                                          <button className="rounded border border-slate-200 px-2 py-1 disabled:opacity-50" disabled={(employeeData?.page || 1) >= totalPages} onClick={() => loadEmployees(ukpd.label, rumpun.label, jabatan.label, Math.min(totalPages, (employeeData?.page || 1) + 1))}>Berikutnya</button>
                                         </div>
                                       </td>
                                     </tr>
@@ -637,27 +554,39 @@ function DashboardAnalyticsPanel({ analytics }) {
   const [activeTab, setActiveTab] = useState("ukpd");
   const [query, setQuery] = useState("");
   const normalizedQuery = query.toLowerCase();
+  const masaKerjaRows = analytics?.masaKerjaByJenisPegawai || [];
+  const pendidikanJurusanRows = analytics?.pendidikanJurusanByJenisPegawai || [];
+  const rumpunRows = analytics?.rumpunByJenisPegawai || [];
+  const jabatanRows = analytics?.jabatanMenpanByJenisPegawai || [];
+  const ukpdRows = analytics?.ukpdSummary || [];
 
   const rows = useMemo(() => {
     if (!analytics) return [];
-    if (activeTab === "ukpd" || activeTab === "jenis-ukpd") {
-      return analytics.ukpdSummary.filter((row) => [row.nama_ukpd, row.wilayah, row.jenis_ukpd].join(" ").toLowerCase().includes(normalizedQuery));
+    if (activeTab === "ukpd") {
+      return ukpdRows.filter((row) => [row.nama_ukpd, row.wilayah, row.jenis_ukpd].join(" ").toLowerCase().includes(normalizedQuery));
+    }
+    if (activeTab === "pendidikan") {
+      return pendidikanJurusanRows.filter((row) => [row.jenis_pegawai, row.pendidikan_jurusan].join(" ").toLowerCase().includes(normalizedQuery));
     }
     if (activeTab === "rumpun") {
-      return analytics.rumpunByJenisPegawai.filter((row) => {
+      return rumpunRows.filter((row) => {
         const matchQuery = [row.jenis_pegawai, row.rumpun_jabatan].join(" ").toLowerCase().includes(normalizedQuery);
         return matchQuery;
       });
     }
-    return analytics.jabatanMenpanByJenisPegawai.filter((row) => {
-      const matchQuery = [row.jenis_pegawai, row.jabatan_kepmenpan_11].join(" ").toLowerCase().includes(normalizedQuery);
-      return matchQuery;
+    if (activeTab === "jabatan") {
+      return jabatanRows.filter((row) => {
+        const matchQuery = [row.jenis_pegawai, row.jabatan_kepmenpan_11].join(" ").toLowerCase().includes(normalizedQuery);
+        return matchQuery;
+      });
+    }
+    return masaKerjaRows.filter((row) => {
+      return [row.jenis_pegawai, row.masa_kerja_rentang].join(" ").toLowerCase().includes(normalizedQuery);
     });
-  }, [activeTab, analytics, normalizedQuery]);
+  }, [activeTab, analytics, jabatanRows, masaKerjaRows, normalizedQuery, pendidikanJurusanRows, rumpunRows, ukpdRows]);
 
-  const limitedRows = rows.slice(0, activeTab === "kepmenpan" ? 500 : 200);
   const exportRows = useMemo(() => {
-    if (activeTab === "ukpd" || activeTab === "jenis-ukpd") {
+    if (activeTab === "ukpd") {
       const grouped = new Map();
       for (const row of rows) {
         const wilayah = row.wilayah || "Tidak Diketahui";
@@ -689,11 +618,48 @@ function DashboardAnalyticsPanel({ analytics }) {
       };
     }
 
-    const isRumpun = activeTab === "rumpun";
-    const aggregated = buildPivotAggregates(rows, isRumpun ? "rumpun_jabatan" : "jabatan_kepmenpan_11");
+    if (activeTab === "masa-kerja") {
+      return {
+        filename: "masa-kerja.csv",
+        headers: ["No", "Rentang Masa Kerja", "Total Pegawai", "PNS/CPNS", "PPPK", "PPPK Paruh Waktu", "NON PNS", "PJLP"],
+        rows: buildPivotAggregates(rows, "masa_kerja_rentang").map((item, index) => [
+          index + 1,
+          item.label,
+          item.total,
+          item.pnsCpns,
+          item.pppk,
+          item.pppkParuhWaktu,
+          item.nonPns,
+          item.pjlp
+        ])
+      };
+    }
+
+    const labelKey = activeTab === "rumpun"
+      ? "rumpun_jabatan"
+      : activeTab === "pendidikan"
+        ? "pendidikan_jurusan"
+        : activeTab === "masa-kerja"
+          ? "masa_kerja_rentang"
+          : "jabatan_kepmenpan_11";
+    const labelTitle = activeTab === "rumpun"
+      ? "Rumpun Jabatan"
+      : activeTab === "pendidikan"
+        ? "Pendidikan-Jurusan"
+        : activeTab === "masa-kerja"
+          ? "Masa Kerja"
+          : "Jabatan";
+    const filename = activeTab === "rumpun"
+      ? "rumpun-jabatan.csv"
+      : activeTab === "pendidikan"
+        ? "pendidikan-jurusan.csv"
+        : activeTab === "masa-kerja"
+          ? "masa-kerja.csv"
+          : "jabatan.csv";
+    const aggregated = buildPivotAggregates(rows, labelKey);
     return {
-      filename: isRumpun ? "rumpun-jabatan.csv" : "jabatan-kepmenpan-11.csv",
-      headers: ["No", isRumpun ? "Rumpun Jabatan" : "Jabatan Kepmenpan 11", "Total Pegawai", "PNS/CPNS", "PPPK", "PPPK Paruh Waktu", "NON PNS", "PJLP"],
+      filename,
+      headers: ["No", labelTitle, "Total Pegawai", "PNS/CPNS", "PPPK", "PPPK Paruh Waktu", "NON PNS", "PJLP"],
       rows: aggregated.map((item, index) => [
         index + 1,
         item.label,
@@ -706,19 +672,20 @@ function DashboardAnalyticsPanel({ analytics }) {
       ])
     };
   }, [activeTab, rows]);
-  const columnsByTab = {
-    ukpd: [],
-    "jenis-ukpd": [],
-    rumpun: [
-      { key: "jenis_pegawai", header: "Jenis Pegawai", render: (row) => <StatusBadge status={row.jenis_pegawai} /> },
-      { key: "rumpun_jabatan", header: "Rumpun Jabatan" },
-      { key: "jumlah", header: "Jumlah", render: (row) => formatNumber(row.jumlah) }
-    ],
-    kepmenpan: [
-      { key: "jenis_pegawai", header: "Jenis Pegawai", render: (row) => <StatusBadge status={row.jenis_pegawai} /> },
-      { key: "jabatan_kepmenpan_11", header: "Jabatan Kepmenpan 11" },
-      { key: "jumlah", header: "Jumlah", render: (row) => formatNumber(row.jumlah) }
-    ]
+  const titleByTab = {
+    ukpd: "Daftar UKPD (Aktif)",
+    pendidikan: "Daftar Pendidikan-Jurusan",
+    rumpun: "Daftar Rumpun Jabatan",
+    jabatan: "Daftar Jabatan",
+    "masa-kerja": "Daftar Masa Kerja"
+  };
+
+  const placeholderByTab = {
+    ukpd: "Cari UKPD/Wilayah...",
+    pendidikan: "Cari jenjang pendidikan atau jurusan...",
+    rumpun: "Cari rumpun jabatan...",
+    jabatan: "Cari jabatan...",
+    "masa-kerja": "Cari rentang masa kerja..."
   };
 
   return (
@@ -740,7 +707,7 @@ function DashboardAnalyticsPanel({ analytics }) {
 
       <div className="rounded-2xl rounded-tl-none border border-slate-200 bg-white p-4 shadow-soft">
         <header className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <h2 className="text-sm font-bold text-slate-900">{activeTab === "ukpd" ? "Daftar UKPD (Aktif)" : activeTab === "rumpun" ? "Daftar Rumpun Jabatan" : "Daftar Jabatan Kepmenpan 11"}</h2>
+          <h2 className="text-sm font-bold text-slate-900">{titleByTab[activeTab]}</h2>
           <div className="flex flex-col gap-3 sm:flex-row">
           <button
             className="btn-secondary"
@@ -748,30 +715,33 @@ function DashboardAnalyticsPanel({ analytics }) {
             type="button"
           >
             <Download className="h-4 w-4" />
-            Export Excel
+            Export CSV
           </button>
           <label className="relative min-w-64">
             <span className="sr-only">Cari analitik</span>
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-            <input className="input py-2 pl-9" value={query} onChange={(event) => setQuery(event.target.value)} placeholder={activeTab === "ukpd" || activeTab === "jenis-ukpd" ? "Cari UKPD/Wilayah..." : "Cari rumpun atau jabatan..."} />
+            <input className="input py-2 pl-9" value={query} onChange={(event) => setQuery(event.target.value)} placeholder={placeholderByTab[activeTab]} />
           </label>
         </div>
       </header>
 
       <div>
-        {activeTab === "ukpd" || activeTab === "jenis-ukpd" ? (
+        {activeTab === "ukpd" ? (
           <>
             <UkpdDrillPanel query={query} />
           </>
+        ) : activeTab === "pendidikan" ? (
+          <PivotDrillPanel mode="pendidikan" query={query} />
         ) : activeTab === "rumpun" ? (
           <PivotDrillPanel mode="rumpun" query={query} />
-        ) : activeTab === "kepmenpan" ? (
-          <PivotDrillPanel mode="jabatan" query={query} />        ) : (
-          <AnalyticsTable columns={columnsByTab[activeTab]} rows={limitedRows} rowKey="label" />
-        )}
+        ) : activeTab === "jabatan" ? (
+          <PivotDrillPanel mode="jabatan" query={query} />
+        ) : activeTab === "masa-kerja" ? (
+          <PivotDrillPanel mode="masa-kerja" query={query} />
+        ) : null}
       </div>
       <footer className="mt-3 text-sm text-slate-500">
-        Menampilkan {formatNumber(limitedRows.length)} dari {formatNumber(rows.length)} baris. Gunakan pencarian untuk mempersempit daftar.
+        Ditemukan {formatNumber(rows.length)} baris. Gunakan pencarian untuk mempersempit daftar.
       </footer>
       </div>
     </section>
@@ -780,19 +750,49 @@ function DashboardAnalyticsPanel({ analytics }) {
 
 export default function DashboardPage() {
   const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [refreshKey, setRefreshKey] = useState(0);
   const [chartView, setChartView] = useState("statusPegawai");
+  const [showAllCharts, setShowAllCharts] = useState(false);
 
   useEffect(() => {
-    fetch("/api/dashboard").then((res) => res.json()).then((payload) => setData(payload.data));
-  }, []);
+    let active = true;
+    setLoading(true);
+    setErrorMessage("");
+    fetch("/api/dashboard", { cache: "no-store" })
+      .then((res) => res.json())
+      .then((payload) => {
+        if (!payload?.success) throw new Error(payload?.message || "Dashboard gagal dimuat.");
+        if (active) setData(payload.data);
+      })
+      .catch((error) => {
+        if (active) {
+          setData(null);
+          setErrorMessage(error.message || "Dashboard gagal dimuat.");
+        }
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [refreshKey]);
 
-  if (!data) {
+  if (loading) {
     return (
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {[1, 2, 3, 4].map((item) => <div key={item} className="h-32 animate-pulse rounded-2xl bg-white" />)}
       </section>
     );
   }
+
+  if (errorMessage) {
+    return <ErrorState description={errorMessage} onRetry={() => setRefreshKey((value) => value + 1)} />;
+  }
+
+  if (!data) return null;
 
   const columns = [
     { key: "nama", header: "Nama" },
@@ -802,6 +802,7 @@ export default function DashboardPage() {
     { key: "nama_ukpd", header: "UKPD" }
   ];
   const activeChartView = data.chartViews?.[chartView] || data.chartViews?.statusPegawai;
+  const totalPegawai = Number(data.summary.total || 0);
 
   return (
     <>
@@ -812,17 +813,18 @@ export default function DashboardPage() {
       />
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
-        <KpiCard title="Total Pegawai" value={data.summary.total} helper="Jumlah Pegawai Seluruh UKPD" icon={UsersRound} />
-        <KpiCard title="PNS/CPNS" value={data.summary.pnsCpns} helper="ASN aktif" icon={ShieldCheck} tone="green" />
-        <KpiCard title="PPPK" value={data.summary.pppk} helper="Penuh waktu" icon={UserRoundCheck} tone="gold" />
-        <KpiCard title="PPPK Paruh Waktu" value={data.summary.pppkParuhWaktu} helper="Paruh waktu" icon={UserRoundCheck} tone="gold" />
-        <KpiCard title="NON PNS" value={data.summary.nonPns} helper="Pegawai Profesional" icon={BriefcaseMedical} tone="slate" />
-        <KpiCard title="PJLP" value={data.summary.pjlp} helper="PJLP" icon={UsersRound} />
+        <KpiCard title="Total Pegawai" value={data.summary.total} percentage="100%" helper="Jumlah Pegawai Seluruh UKPD" icon={UsersRound} />
+        <KpiCard title="PNS/CPNS" value={data.summary.pnsCpns} percentage={formatPercent(data.summary.pnsCpns, totalPegawai)} helper="ASN aktif" icon={ShieldCheck} tone="green" />
+        <KpiCard title="PPPK" value={data.summary.pppk} percentage={formatPercent(data.summary.pppk, totalPegawai)} helper="Penuh waktu" icon={UserRoundCheck} tone="gold" />
+        <KpiCard title="PPPK Paruh Waktu" value={data.summary.pppkParuhWaktu} percentage={formatPercent(data.summary.pppkParuhWaktu, totalPegawai)} helper="Paruh waktu" icon={UserRoundCheck} tone="gold" />
+        <KpiCard title="NON PNS" value={data.summary.nonPns} percentage={formatPercent(data.summary.nonPns, totalPegawai)} helper="Pegawai Profesional" icon={BriefcaseMedical} tone="slate" />
+        <KpiCard title="PJLP" value={data.summary.pjlp} percentage={formatPercent(data.summary.pjlp, totalPegawai)} helper="PJLP" icon={UsersRound} />
       </section>
 
       {activeChartView ? (
         <>
           <div className="mt-6 flex justify-end">
+            <div className="flex flex-wrap items-center justify-end gap-3">
             <label className="flex items-center gap-3 text-sm text-slate-600">
               <span>Tampilan chart:</span>
               <select className="input min-w-44 py-2" value={chartView} onChange={(event) => setChartView(event.target.value)}>
@@ -831,13 +833,21 @@ export default function DashboardPage() {
                 ))}
               </select>
             </label>
+            <button className="btn-secondary" type="button" onClick={() => setShowAllCharts((value) => !value)}>
+              {showAllCharts ? "Ringkas chart" : "Tampilkan semua chart"}
+            </button>
+            </div>
           </div>
 
           <section className="mt-3 grid gap-5 xl:grid-cols-2">
             <DashboardChartCard title={activeChartView.titles.distribution} type="doughnut" heightClass="h-80" {...activeChartView.distribution} />
             <DashboardChartCard title={activeChartView.titles.ukpd} stacked heightClass="h-80" {...activeChartView.ukpd} />
-            <DashboardChartCard title={activeChartView.titles.pendidikan} horizontal stacked heightClass="h-80" {...activeChartView.pendidikan} />
-            <DashboardChartCard title={activeChartView.titles.rumpun} stacked heightClass="h-80" {...activeChartView.rumpun} />
+            {showAllCharts ? (
+              <>
+                <DashboardChartCard title={activeChartView.titles.pendidikan} horizontal stacked heightClass="h-80" {...activeChartView.pendidikan} />
+                <DashboardChartCard title={activeChartView.titles.rumpun} stacked heightClass="h-80" {...activeChartView.rumpun} />
+              </>
+            ) : null}
           </section>
         </>
       ) : null}

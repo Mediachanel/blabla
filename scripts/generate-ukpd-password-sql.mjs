@@ -1,11 +1,18 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import bcrypt from "bcryptjs";
 
 const rootDir = process.cwd();
 const sourcePath = path.join(rootDir, "src", "data", "generated", "ukpd.json");
-const outputPath = path.join(rootDir, "sql", "ukpd_password_123.sql");
-const DEFAULT_PASSWORD_LABEL = "admin123";
-const DEFAULT_PASSWORD_HASH = "$2b$10$.VgTG22czHv9lIJUkYiDCuggux2JDK/gsaVxxgnSOajPJnz.G/p6G";
+const outputPath = path.join(rootDir, "sql", process.env.UKPD_PASSWORD_SQL_FILE || "ukpd_password_generated.sql");
+const DEFAULT_PASSWORD_LABEL = String(process.env.UKPD_DEFAULT_PASSWORD || "");
+const BLOCKED_PASSWORDS = new Set(["admin123", "password123", "123456", "12345678"]);
+
+if (DEFAULT_PASSWORD_LABEL.length < 12 || BLOCKED_PASSWORDS.has(DEFAULT_PASSWORD_LABEL)) {
+  throw new Error("Set UKPD_DEFAULT_PASSWORD minimal 12 karakter dan jangan pakai password default/lemah.");
+}
+
+const DEFAULT_PASSWORD_HASH = await bcrypt.hash(DEFAULT_PASSWORD_LABEL, 12);
 
 const columns = [
   "id_ukpd",

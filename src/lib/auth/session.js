@@ -1,8 +1,8 @@
 import { jwtVerify, SignJWT } from "jose";
 import { cookies } from "next/headers";
+import { getJwtSecret } from "@/lib/auth/sessionConfig";
 
 const COOKIE_NAME = "sdm_session";
-const secret = new TextEncoder().encode(process.env.JWT_SECRET || "dev-secret-change-me");
 
 export async function signSession(user) {
   return new SignJWT({
@@ -15,13 +15,13 @@ export async function signSession(user) {
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime("8h")
-    .sign(secret);
+    .sign(getJwtSecret());
 }
 
 export async function verifySession(token) {
   if (!token) return null;
   try {
-    const { payload } = await jwtVerify(token, secret);
+    const { payload } = await jwtVerify(token, getJwtSecret());
     return payload;
   } catch {
     return null;

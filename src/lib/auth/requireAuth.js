@@ -1,7 +1,11 @@
 import { getCurrentUser } from "@/lib/auth/session";
+import { validateSameOrigin } from "@/lib/auth/requestGuards";
 import { fail } from "@/lib/helpers/response";
 
-export async function requireAuth(allowedRoles = []) {
+export async function requireAuth(allowedRoles = [], request = null) {
+  const originError = validateSameOrigin(request);
+  if (originError) return { error: originError };
+
   const user = await getCurrentUser();
   if (!user) {
     return { error: fail("Sesi tidak valid. Silakan login kembali.", 401) };

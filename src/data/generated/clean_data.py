@@ -52,5 +52,5 @@ def process_data(input_path):
 
 if __name__ == "__main__":
     # Sesuaikan path jika berbeda di environment Anda
-    target_file = r"d:\Sistem Informasi\src\data\generated\anak.json"
+    target_file = r"d:\Sistem Informasi\src\data\generated\keluarga.json"
     process_data(target_file)

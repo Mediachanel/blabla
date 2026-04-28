@@ -14,7 +14,9 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000
 
-COPY --from=builder /app ./
+COPY --from=builder --chown=node:node /app ./
+RUN mkdir -p storage && chown -R node:node storage
+USER node
 
 EXPOSE 3000
 CMD ["npm", "run", "start"]

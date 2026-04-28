@@ -1,7 +1,7 @@
-import { filterPegawaiByRole } from "@/lib/auth/access";
 import { requireAuth } from "@/lib/auth/requireAuth";
-import { getPegawaiData, getUkpdData } from "@/lib/data/pegawaiStore";
+import { getScopedDashboardData } from "@/lib/dashboardData";
 import { ok } from "@/lib/helpers/response";
+import { normalizeJenisPegawai } from "@/lib/helpers/pegawaiStatus";
 
 const CACHE_TTL_MS = 5 * 60 * 1000;
 const responseCache = new Map();
@@ -15,10 +15,12 @@ function mapEmployee(item) {
     id_pegawai: item.id_pegawai,
     nama: item.nama || "-",
     nip: item.nip || "-",
-    jenis_pegawai: item.jenis_pegawai || "Tidak Diketahui",
+    jenis_pegawai: normalizeJenisPegawai(item.jenis_pegawai),
     nama_ukpd: item.nama_ukpd || "-",
     rumpun_jabatan: item.status_rumpun || "Tidak Diketahui",
-    jabatan_kepmenpan_11: item.nama_jabatan_menpan || item.nama_jabatan_orb || "Tidak Diketahui"
+    jabatan_kepmenpan_11: item.nama_jabatan_menpan || item.nama_jabatan_orb || "Tidak Diketahui",
+    jenjang_pendidikan: item.jenjang_pendidikan || "Tidak Diketahui",
+    program_studi: item.program_studi || "Tidak Diketahui"
   };
 }
 
@@ -88,6 +90,118 @@ function buildJabatanTree(data) {
 
   return [...rootMap.entries()]
     .sort(([a], [b]) => sortText(a, b))
+    .map(([label, value]) => ({
+      label,
+      total: value.count.total,
+      counts: value.count,
+      children: [...value.children.entries()]
+        .sort(([a], [b]) => sortText(a, b))
+        .map(([label2, count]) => ({
+          label: label2,
+          total: count.total,
+          counts: count
+        }))
+    }));
+}
+
+function buildPendidikanTree(data) {
+  const rootMap = new Map();
+  for (const item of data) {
+    const employee = mapEmployee(item);
+    const group1 = employee.jenjang_pendidikan;
+    const group2 = employee.program_studi;
+    if (!rootMap.has(group1)) rootMap.set(group1, { count: createCount(), children: new Map() });
+    const level1 = rootMap.get(group1);
+    if (!level1.children.has(group2)) level1.children.set(group2, createCount());
+    const level2Count = level1.children.get(group2);
+    bumpCount(level1.count, employee.jenis_pegawai);
+    bumpCount(level2Count, employee.jenis_pegawai);
+  }
+
+  return [...rootMap.entries()]
+    .sort(([a], [b]) => sortText(a, b))
+    .map(([label, value]) => ({
+      label,
+      total: value.count.total,
+      counts: value.count,
+      children: [...value.children.entries()]
+        .sort(([a], [b]) => sortText(a, b))
+        .map(([label2, count]) => ({
+          label: label2,
+          total: count.total,
+          counts: count
+        }))
+    }));
+}
+
+function parseLooseDate(value) {
+  const raw = String(value || "").trim();
+  if (!raw || raw.includes("#")) return null;
+  const cleaned = raw.replace(/^'+/, "").replace(/\s+/g, "").replace(/-/g, "/");
+  const match = cleaned.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+  if (!match) return null;
+
+  const day = Number(match[1]);
+  const month = Number(match[2]);
+  let year = Number(match[3]);
+  if (year < 100) year += 2000;
+  if (day < 1 || day > 31 || month < 1 || month > 12 || year < 1900) return null;
+
+  const date = new Date(year, month - 1, day);
+  if (
+    Number.isNaN(date.getTime()) ||
+    date.getFullYear() !== year ||
+    date.getMonth() !== month - 1 ||
+    date.getDate() !== day
+  ) {
+    return null;
+  }
+  return date;
+}
+
+function getYearsOfService(date) {
+  if (!date) return null;
+  const today = new Date();
+  let years = today.getFullYear() - date.getFullYear();
+  const beforeAnniversary = (today.getMonth() < date.getMonth())
+    || (today.getMonth() === date.getMonth() && today.getDate() < date.getDate());
+  if (beforeAnniversary) years -= 1;
+  return Math.max(0, years);
+}
+
+function getMasaKerjaRange(value) {
+  const years = getYearsOfService(parseLooseDate(value));
+  if (years === null || years === undefined) return "Tidak Diketahui";
+  if (years >= 30) return "30+ tahun";
+  return `${years}-${years + 1} tahun`;
+}
+
+function buildMasaKerjaTree(data) {
+  const rootMap = new Map();
+  for (const item of data) {
+    const employee = mapEmployee(item);
+    const group1 = getMasaKerjaRange(item.tmt_kerja_ukpd);
+    const group2 = employee.jabatan_kepmenpan_11;
+    if (!rootMap.has(group1)) rootMap.set(group1, { count: createCount(), children: new Map() });
+    const level1 = rootMap.get(group1);
+    if (!level1.children.has(group2)) level1.children.set(group2, createCount());
+    const level2Count = level1.children.get(group2);
+    bumpCount(level1.count, employee.jenis_pegawai);
+    bumpCount(level2Count, employee.jenis_pegawai);
+  }
+
+  const sortRange = (a, b) => {
+    if (a === "Tidak Diketahui") return 1;
+    if (b === "Tidak Diketahui") return -1;
+    if (a === "30+ tahun") return 1;
+    if (b === "30+ tahun") return -1;
+    const startA = Number(String(a).split("-")[0]);
+    const startB = Number(String(b).split("-")[0]);
+    return startA - startB;
+  };
+
+  return [...rootMap.entries()]
+    .sort(([a], [b]) => sortRange(a, b))
     .map(([label, value]) => ({
       label,
       total: value.count.total,
@@ -173,7 +287,15 @@ export async function GET(request) {
 
   const { searchParams } = new URL(request.url);
   const modeParam = searchParams.get("mode");
-  const mode = modeParam === "jabatan" ? "jabatan" : modeParam === "ukpd" ? "ukpd" : "rumpun";
+  const mode = modeParam === "jabatan"
+    ? "jabatan"
+    : modeParam === "ukpd"
+      ? "ukpd"
+      : modeParam === "pendidikan"
+        ? "pendidikan"
+        : modeParam === "masa-kerja"
+          ? "masa-kerja"
+        : "rumpun";
   const q = (searchParams.get("q") || "").toLowerCase();
   const group1 = searchParams.get("group1") || "";
   const group2 = searchParams.get("group2") || "";
@@ -184,8 +306,7 @@ export async function GET(request) {
   const cached = getCached(cacheKey);
   if (cached) return ok(cached);
 
-  const [pegawaiMaster, ukpdList] = await Promise.all([getPegawaiData(), getUkpdData()]);
-  const scoped = filterPegawaiByRole(pegawaiMaster, user, ukpdList);
+  const { data: scoped, ukpdList } = await getScopedDashboardData(user);
   const filtered = q
     ? scoped.filter((item) =>
       [
@@ -216,6 +337,16 @@ export async function GET(request) {
           const ukpd = item.nama_ukpd || "Tidak Diketahui";
           return jabatan === group1 && ukpd === group2;
         }
+        if (mode === "pendidikan") {
+          const jenjang = item.jenjang_pendidikan || "Tidak Diketahui";
+          const jurusan = item.program_studi || "Tidak Diketahui";
+          return jenjang === group1 && jurusan === group2;
+        }
+        if (mode === "masa-kerja") {
+          const masaKerja = getMasaKerjaRange(item.tmt_kerja_ukpd);
+          const jabatan = item.nama_jabatan_menpan || item.nama_jabatan_orb || "Tidak Diketahui";
+          return masaKerja === group1 && jabatan === group2;
+        }
         const rumpun = item.status_rumpun || "Tidak Diketahui";
         const jabatan = item.nama_jabatan_menpan || item.nama_jabatan_orb || "Tidak Diketahui";
         return rumpun === group1 && jabatan === group2;
@@ -229,7 +360,15 @@ export async function GET(request) {
     return ok(data);
   }
 
-  const tree = mode === "jabatan" ? buildJabatanTree(filtered) : mode === "ukpd" ? buildUkpdTree(filtered, ukpdList) : buildRumpunTree(filtered);
+  const tree = mode === "jabatan"
+      ? buildJabatanTree(filtered)
+      : mode === "ukpd"
+      ? buildUkpdTree(filtered, ukpdList)
+      : mode === "pendidikan"
+        ? buildPendidikanTree(filtered)
+        : mode === "masa-kerja"
+          ? buildMasaKerjaTree(filtered)
+        : buildRumpunTree(filtered);
   const data = { mode, total: filtered.length, tree };
   setCached(cacheKey, data);
   return ok(data);

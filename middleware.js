@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { jwtVerify } from "jose";
+import { getJwtSecret } from "@/lib/auth/sessionConfig";
 
 const protectedRoutes = ["/dashboard", "/pegawai", "/usulan", "/import-drh", "/duk", "/qna-admin", "/profil"];
 const roleRules = {
@@ -10,8 +11,7 @@ const roleRules = {
 
 async function verify(token) {
   try {
-    const secret = new TextEncoder().encode(process.env.JWT_SECRET || "dev-secret-change-me");
-    const { payload } = await jwtVerify(token, secret);
+    const { payload } = await jwtVerify(token, getJwtSecret());
     return payload;
   } catch {
     return null;

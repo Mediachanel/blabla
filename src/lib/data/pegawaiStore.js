@@ -1,5 +1,5 @@
 import { ROLES } from "@/lib/constants/roles";
-import { getConnectedPool } from "@/lib/db/mysql";
+import { getConnectedPool, isClosedConnectionError, resetMysqlPools } from "@/lib/db/mysql";
 
 const PEGAWAI_COLUMNS = [
   "id_pegawai",
@@ -44,6 +44,26 @@ const PEGAWAI_COLUMNS = [
 
 const PEGAWAI_MUTABLE_COLUMNS = PEGAWAI_COLUMNS.filter((column) => column !== "id_pegawai");
 
+const PEGAWAI_DASHBOARD_COLUMNS = [
+  "id_pegawai",
+  "nama",
+  "nip",
+  "jenis_kelamin",
+  "status_perkawinan",
+  "nama_ukpd",
+  "id_ukpd",
+  "jenis_ukpd",
+  "wilayah",
+  "jenis_pegawai",
+  "status_rumpun",
+  "nama_jabatan_orb",
+  "nama_jabatan_menpan",
+  "jenjang_pendidikan",
+  "program_studi",
+  "kondisi",
+  "tmt_kerja_ukpd"
+];
+
 const ADDRESS_FIELDS = [
   "jalan",
   "kelurahan",
@@ -59,6 +79,64 @@ const ADDRESS_FIELDS = [
 const PASANGAN_FIELDS = ["status_punya", "nama", "no_tlp", "email", "pekerjaan"];
 
 const ANAK_FIELDS = ["nama", "jenis_kelamin", "tempat_lahir", "tanggal_lahir", "pekerjaan"];
+
+const RIWAYAT_TABLE_CONFIG = {
+  riwayat_pendidikan: {
+    orderBy: "COALESCE(`tanggal_ijazah`, `tahun_lulus`, '') DESC, `id` DESC",
+    fields: ["jenis_riwayat", "jenjang_pendidikan", "program_studi", "nama_institusi", "nama_universitas", "kota_institusi", "tahun_lulus", "nomor_ijazah", "tanggal_ijazah", "keterangan"],
+    dateFields: ["tanggal_ijazah"]
+  },
+  riwayat_jabatan: {
+    orderBy: "COALESCE(`tmt_jabatan`, `tanggal_sk`, '') DESC, `id` DESC",
+    fields: ["jenis_jabatan", "lokasi", "nama_jabatan_orb", "nama_jabatan_menpan", "struktur_atasan_langsung", "nama_ukpd", "wilayah", "jenis_pegawai", "status_rumpun", "pangkat_golongan", "eselon", "tmt_jabatan", "nomor_sk", "tanggal_sk", "keterangan"],
+    dateFields: ["tmt_jabatan", "tanggal_sk"]
+  },
+  riwayat_gaji_pokok: {
+    orderBy: "COALESCE(`tmt_gaji`, `tanggal_sk`, '') DESC, `id` DESC",
+    fields: ["tmt_gaji", "pangkat_golongan", "gaji_pokok", "nomor_sk", "tanggal_sk", "keterangan"],
+    dateFields: ["tmt_gaji", "tanggal_sk"]
+  },
+  riwayat_pangkat: {
+    orderBy: "COALESCE(`tmt_pangkat`, `tanggal_sk`, '') DESC, `id` DESC",
+    fields: ["pangkat_golongan", "tmt_pangkat", "lokasi", "nomor_sk", "tanggal_sk", "keterangan"],
+    dateFields: ["tmt_pangkat", "tanggal_sk"]
+  },
+  riwayat_penghargaan: {
+    orderBy: "COALESCE(`tanggal_sk`, '') DESC, `id` DESC",
+    fields: ["nama_penghargaan", "asal_penghargaan", "nomor_sk", "tanggal_sk", "keterangan"],
+    dateFields: ["tanggal_sk"]
+  },
+  riwayat_skp: {
+    orderBy: "COALESCE(`tahun`, '') DESC, `id` DESC",
+    fields: ["tahun", "nilai_skp", "nilai_perilaku", "nilai_prestasi", "keterangan_prestasi", "keterangan"],
+    dateFields: []
+  },
+  riwayat_hukuman_disiplin: {
+    orderBy: "COALESCE(`tanggal_mulai`, `tanggal_sk`, '') DESC, `id` DESC",
+    fields: ["tanggal_mulai", "tanggal_akhir", "hukuman_disiplin", "nomor_sk", "tanggal_sk", "keterangan"],
+    dateFields: ["tanggal_mulai", "tanggal_akhir", "tanggal_sk"]
+  },
+  riwayat_prestasi_pendidikan: {
+    orderBy: "`id` DESC",
+    fields: ["kategori", "jenjang_pendidikan", "prestasi"],
+    dateFields: []
+  },
+  riwayat_narasumber: {
+    orderBy: "`id` DESC",
+    fields: ["kegiatan", "judul_materi", "lembaga_penyelenggara"],
+    dateFields: []
+  },
+  riwayat_kegiatan_strategis: {
+    orderBy: "COALESCE(`tahun_anggaran`, '') DESC, `id` DESC",
+    fields: ["kegiatan", "tahun_anggaran", "jumlah_anggaran", "kedudukan_dalam_kegiatan"],
+    dateFields: []
+  },
+  riwayat_keberhasilan: {
+    orderBy: "COALESCE(`tahun`, '') DESC, `id` DESC",
+    fields: ["jabatan", "tahun", "keberhasilan", "kendala_yang_dihadapi", "solusi_yang_dilakukan"],
+    dateFields: []
+  }
+};
 
 function toDateString(value) {
   if (!value || typeof value !== "object" || !("toISOString" in value)) return value;
@@ -90,6 +168,14 @@ function normalizeDateInput(value) {
   return text || null;
 }
 
+function normalizeNumberInput(value) {
+  const text = normalizeText(value);
+  if (!text) return null;
+  const normalized = text.replace(/\./g, "").replace(/,/g, ".");
+  const number = Number(normalized);
+  return Number.isFinite(number) ? number : null;
+}
+
 function buildAlamatLengkap(row) {
   const jalan = normalizeText(row.jalan);
   const jalanLower = jalan.toLowerCase();
@@ -103,9 +189,56 @@ function buildAlamatLengkap(row) {
 }
 
 async function queryRows(sql, params = []) {
-  const pool = await getConnectedPool();
-  const [rows] = await pool.query(sql, params);
-  return rows.map(normalizeRow);
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      const pool = await getConnectedPool();
+      const [rows] = await pool.query(sql, params);
+      return rows.map(normalizeRow);
+    } catch (error) {
+      if (attempt === 0 && isClosedConnectionError(error)) {
+        await resetMysqlPools();
+        continue;
+      }
+      throw error;
+    }
+  }
+  return [];
+}
+
+function getTableAvailabilityCache() {
+  if (!globalThis.__sisdmkTableAvailability) {
+    globalThis.__sisdmkTableAvailability = new Map();
+  }
+  return globalThis.__sisdmkTableAvailability;
+}
+
+async function hasTable(table) {
+  const cache = getTableAvailabilityCache();
+  if (cache.has(table)) return cache.get(table);
+
+  const rows = await queryRows(
+    `SELECT COUNT(*) AS total
+     FROM information_schema.tables
+     WHERE table_schema = DATABASE() AND table_name = ?`,
+    [table]
+  );
+  const available = Number(rows[0]?.total || 0) > 0;
+  cache.set(table, available);
+  return available;
+}
+
+async function queryRowsIfTableExists(table, sql, params = []) {
+  if (!(await hasTable(table))) return [];
+  return queryRows(sql, params);
+}
+
+async function getPegawaiSectionRows(id, table, orderBy = "`id` DESC") {
+  return queryRows(
+    `SELECT * FROM \`${table}\`
+     WHERE \`id_pegawai\` = ?
+     ORDER BY ${orderBy}`,
+    [Number(id)]
+  );
 }
 
 async function nextTableId(connection, table) {
@@ -181,6 +314,18 @@ function hasPasanganContent(entry) {
   return PASANGAN_FIELDS.some((field) => normalizeText(entry?.[field])) && String(entry?.status_punya || "").toLowerCase() !== "tidak";
 }
 
+function normalizeLegacyPasanganRow(row) {
+  if (!row) return defaultPasangan();
+  return normalizePasanganEntry({
+    id: row.id,
+    status_punya: row.status_punya,
+    nama: row.nama,
+    no_tlp: row.no_tlp,
+    email: row.email,
+    pekerjaan: row.pekerjaan
+  });
+}
+
 function normalizeAnakEntries(entries) {
   if (!Array.isArray(entries)) return [];
   return entries
@@ -195,6 +340,123 @@ function normalizeAnakEntries(entries) {
       pekerjaan: normalizeText(entry.pekerjaan)
     }))
     .filter((entry) => ANAK_FIELDS.some((field) => normalizeText(entry[field])));
+}
+
+function normalizeLegacyAnakRows(rows) {
+  return normalizeAnakEntries(
+    rows.map((row, index) => ({
+      id: row.id,
+      urutan: row.urutan || index + 1,
+      nama: row.nama,
+      jenis_kelamin: row.jenis_kelamin,
+      tempat_lahir: row.tempat_lahir,
+      tanggal_lahir: row.tanggal_lahir,
+      pekerjaan: row.pekerjaan
+    }))
+  );
+}
+
+function buildLegacyKeluargaRows(pasanganRows, anakRows) {
+  const keluarga = [];
+  const pasangan = pasanganRows[0];
+  if (pasangan) {
+    keluarga.push({
+      id: pasangan.id || null,
+      hubungan: "pasangan",
+      hubungan_detail: "Pasangan",
+      status_punya: pasangan.status_punya || null,
+      status_tunjangan: pasangan.status_tunjangan || null,
+      urutan: null,
+      nama: pasangan.nama || null,
+      jenis_kelamin: pasangan.jenis_kelamin || null,
+      tempat_lahir: pasangan.tempat_lahir || null,
+      tanggal_lahir: pasangan.tanggal_lahir || null,
+      no_tlp: pasangan.no_tlp || null,
+      email: pasangan.email || null,
+      pekerjaan: pasangan.pekerjaan || null,
+      sumber_tabel: "pasangan",
+      sumber_id: pasangan.id || null
+    });
+  }
+
+  anakRows.forEach((anak, index) => {
+    keluarga.push({
+      id: anak.id || null,
+      hubungan: "anak",
+      hubungan_detail: anak.hubungan_detail || `Anak ${index + 1}`,
+      status_punya: anak.status_punya || null,
+      status_tunjangan: anak.status_tunjangan || null,
+      urutan: anak.urutan || index + 1,
+      nama: anak.nama || null,
+      jenis_kelamin: anak.jenis_kelamin || null,
+      tempat_lahir: anak.tempat_lahir || null,
+      tanggal_lahir: anak.tanggal_lahir || null,
+      no_tlp: anak.no_tlp || null,
+      email: anak.email || null,
+      pekerjaan: anak.pekerjaan || null,
+      sumber_tabel: "anak",
+      sumber_id: anak.id || null
+    });
+  });
+
+  return keluarga.map(normalizeRow);
+}
+
+function normalizeKeluargaEntries(entries) {
+  if (!Array.isArray(entries)) return [];
+  return entries
+    .filter((entry) => entry && typeof entry === "object")
+    .map((entry, index) => ({
+      id: entry.id ? Number(entry.id) : null,
+      hubungan: normalizeText(entry.hubungan).toLowerCase() === "anak" ? "anak" : "pasangan",
+      hubungan_detail: normalizeText(entry.hubungan_detail),
+      status_punya: normalizeText(entry.status_punya),
+      status_tunjangan: normalizeText(entry.status_tunjangan),
+      urutan: entry.urutan ? Number(entry.urutan) : (normalizeText(entry.hubungan).toLowerCase() === "anak" ? index + 1 : null),
+      nama: normalizeText(entry.nama),
+      jenis_kelamin: normalizeText(entry.jenis_kelamin),
+      tempat_lahir: normalizeText(entry.tempat_lahir),
+      tanggal_lahir: normalizeText(entry.tanggal_lahir),
+      no_tlp: normalizeText(entry.no_tlp),
+      email: normalizeText(entry.email),
+      pekerjaan: normalizeText(entry.pekerjaan)
+    }))
+    .filter((entry) => entry.nama || entry.hubungan_detail || entry.pekerjaan || entry.status_punya || entry.status_tunjangan);
+}
+
+function hasKeluargaContent(entry) {
+  return ["nama", "hubungan_detail", "status_punya", "status_tunjangan", "pekerjaan", "no_tlp", "email", "tempat_lahir", "tanggal_lahir"].some((field) => normalizeText(entry?.[field]));
+}
+
+function normalizeRiwayatEntries(entries, config) {
+  if (!Array.isArray(entries) || !config) return [];
+  return entries
+    .filter((entry) => entry && typeof entry === "object")
+    .map((entry) =>
+      Object.fromEntries(
+        config.fields.map((field) => {
+          if (config.dateFields.includes(field)) return [field, normalizeDateInput(entry[field])];
+          if (["gaji_pokok", "nilai_skp", "nilai_perilaku", "nilai_prestasi", "jumlah_anggaran"].includes(field)) {
+            return [field, normalizeNumberInput(entry[field])];
+          }
+          return [field, normalizeText(entry[field])];
+        })
+      )
+    )
+    .filter((entry) => config.fields.some((field) => {
+      const value = entry[field];
+      return value !== null && value !== undefined && String(value).trim() !== "";
+    }));
+}
+
+function buildSourceId(connectionId, table, item, index) {
+  const raw = `${connectionId}|${table}|${index}|${JSON.stringify(item)}`;
+  let hash = 0;
+  for (let i = 0; i < raw.length; i += 1) {
+    hash = ((hash << 5) - hash) + raw.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash) || (index + 1);
 }
 
 async function savePegawaiAlamat(connection, idPegawai, alamatInput) {
@@ -249,7 +511,7 @@ async function savePegawaiAlamat(connection, idPegawai, alamatInput) {
 async function savePegawaiPasangan(connection, idPegawai, pasanganInput) {
   const pasangan = normalizePasanganEntry(pasanganInput);
   const [rows] = await connection.query(
-    "SELECT * FROM `pasangan` WHERE `id_pegawai` = ? ORDER BY `id` ASC",
+    "SELECT * FROM `keluarga` WHERE `id_pegawai` = ? AND `hubungan` = 'pasangan' ORDER BY `id` ASC",
     [Number(idPegawai)]
   );
   const existing = rows[0] || null;
@@ -257,7 +519,7 @@ async function savePegawaiPasangan(connection, idPegawai, pasanganInput) {
 
   if (!hasPasanganContent(pasangan)) {
     if (rows.length) {
-      await connection.query("DELETE FROM `pasangan` WHERE `id_pegawai` = ?", [Number(idPegawai)]);
+      await connection.query("DELETE FROM `keluarga` WHERE `id_pegawai` = ? AND `hubungan` = 'pasangan'", [Number(idPegawai)]);
     }
     return;
   }
@@ -266,54 +528,136 @@ async function savePegawaiPasangan(connection, idPegawai, pasanganInput) {
 
   if (existing) {
     await connection.query(
-      `UPDATE \`pasangan\`
-       SET ${PASANGAN_FIELDS.map((field) => `\`${field}\` = ?`).join(", ")}
+      `UPDATE \`keluarga\`
+       SET \`status_punya\` = ?, \`nama\` = ?, \`no_tlp\` = ?, \`email\` = ?, \`pekerjaan\` = ?
        WHERE \`id\` = ?`,
       [...values, Number(existing.id)]
     );
     if (extraRows.length) {
       await connection.query(
-        `DELETE FROM \`pasangan\` WHERE \`id\` IN (${extraRows.map(() => "?").join(", ")})`,
+        `DELETE FROM \`keluarga\` WHERE \`id\` IN (${extraRows.map(() => "?").join(", ")})`,
         extraRows.map((row) => Number(row.id))
       );
     }
     return;
   }
 
-  const nextId = await nextTableId(connection, "pasangan");
   await connection.query(
-    `INSERT INTO \`pasangan\` (\`id\`, \`id_pegawai\`, ${PASANGAN_FIELDS.map((field) => `\`${field}\``).join(", ")}, \`created_at\`)
-     VALUES (?, ?, ${PASANGAN_FIELDS.map(() => "?").join(", ")}, ?)`,
-    [nextId, Number(idPegawai), ...values, new Date().toISOString().slice(0, 10)]
+    `INSERT INTO \`keluarga\`
+     (\`id_pegawai\`, \`hubungan\`, \`hubungan_detail\`, \`status_punya\`, \`status_tunjangan\`, \`urutan\`, \`nama\`, \`jenis_kelamin\`, \`tempat_lahir\`, \`tanggal_lahir\`, \`no_tlp\`, \`email\`, \`pekerjaan\`, \`sumber_tabel\`, \`sumber_id\`, \`created_at\`)
+     VALUES (?, 'pasangan', NULL, ?, NULL, NULL, ?, NULL, NULL, NULL, ?, ?, ?, 'keluarga_pasangan', ?, ?)`,
+    [Number(idPegawai), ...values, Number(idPegawai), new Date()]
   );
 }
 
 async function savePegawaiAnak(connection, idPegawai, anakInput) {
   const anak = normalizeAnakEntries(anakInput);
-  await connection.query("DELETE FROM `anak` WHERE `id_pegawai` = ?", [Number(idPegawai)]);
+  await connection.query("DELETE FROM `keluarga` WHERE `id_pegawai` = ? AND `hubungan` = 'anak'", [Number(idPegawai)]);
   if (!anak.length) return;
 
-  let nextId = await nextTableId(connection, "anak");
+  let nextSourceId = await nextTableId(connection, "keluarga");
   for (const [index, item] of anak.entries()) {
     await connection.query(
-      `INSERT INTO \`anak\` (\`id\`, \`id_pegawai\`, \`urutan\`, ${ANAK_FIELDS.map((field) => `\`${field}\``).join(", ")}, \`created_at\`)
-       VALUES (?, ?, ?, ${ANAK_FIELDS.map(() => "?").join(", ")}, ?)`,
+      `INSERT INTO \`keluarga\`
+       (\`id_pegawai\`, \`hubungan\`, \`hubungan_detail\`, \`status_punya\`, \`status_tunjangan\`, \`urutan\`, \`nama\`, \`jenis_kelamin\`, \`tempat_lahir\`, \`tanggal_lahir\`, \`no_tlp\`, \`email\`, \`pekerjaan\`, \`sumber_tabel\`, \`sumber_id\`, \`created_at\`)
+       VALUES (?, 'anak', NULL, NULL, NULL, ?, ?, ?, ?, ?, NULL, NULL, ?, 'keluarga_anak', ?, ?)`,
       [
-        nextId,
         Number(idPegawai),
         index + 1,
-        ...ANAK_FIELDS.map((field) => field === "tanggal_lahir" ? normalizeDateInput(item[field]) : normalizeNullableText(item[field])),
-        new Date().toISOString().slice(0, 10)
+        normalizeNullableText(item.nama),
+        normalizeNullableText(item.jenis_kelamin),
+        normalizeNullableText(item.tempat_lahir),
+        normalizeDateInput(item.tanggal_lahir),
+        normalizeNullableText(item.pekerjaan),
+        nextSourceId,
+        new Date()
       ]
     );
-    nextId += 1;
+    nextSourceId += 1;
+  }
+}
+
+async function savePegawaiKeluarga(connection, idPegawai, keluargaInput) {
+  const keluarga = normalizeKeluargaEntries(keluargaInput);
+  await connection.query("DELETE FROM `keluarga` WHERE `id_pegawai` = ? AND `sumber_tabel` IN ('keluarga_form', 'keluarga_form_pasangan', 'keluarga_form_anak', 'drh_pdf_keluarga')", [Number(idPegawai)]);
+  if (!keluarga.length) return;
+
+  let childIndex = 1;
+  for (const [index, item] of keluarga.entries()) {
+    if (!hasKeluargaContent(item)) continue;
+    const hubungan = item.hubungan === "anak" ? "anak" : "pasangan";
+    const urutan = hubungan === "anak" ? (item.urutan || childIndex) : null;
+    if (hubungan === "anak") childIndex += 1;
+    const sourceTable = hubungan === "anak" ? "keluarga_form_anak" : "keluarga_form_pasangan";
+
+    await connection.query(
+      `INSERT INTO \`keluarga\`
+       (\`id_pegawai\`, \`hubungan\`, \`hubungan_detail\`, \`status_punya\`, \`status_tunjangan\`, \`urutan\`, \`nama\`, \`jenis_kelamin\`, \`tempat_lahir\`, \`tanggal_lahir\`, \`no_tlp\`, \`email\`, \`pekerjaan\`, \`sumber_tabel\`, \`sumber_id\`, \`created_at\`)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        Number(idPegawai),
+        hubungan,
+        normalizeNullableText(item.hubungan_detail),
+        normalizeNullableText(item.status_punya),
+        normalizeNullableText(item.status_tunjangan),
+        urutan,
+        normalizeNullableText(item.nama),
+        normalizeNullableText(item.jenis_kelamin),
+        normalizeNullableText(item.tempat_lahir),
+        normalizeDateInput(item.tanggal_lahir),
+        normalizeNullableText(item.no_tlp),
+        normalizeNullableText(item.email),
+        normalizeNullableText(item.pekerjaan),
+        sourceTable,
+        buildSourceId(idPegawai, sourceTable, item, index),
+        new Date()
+      ]
+    );
+  }
+}
+
+async function savePegawaiRiwayatTable(connection, idPegawai, table, entriesInput, identity = {}) {
+  const config = RIWAYAT_TABLE_CONFIG[table];
+  if (!config) return;
+  const entries = normalizeRiwayatEntries(entriesInput, config);
+  await connection.query(`DELETE FROM \`${table}\` WHERE \`id_pegawai\` = ? AND \`sumber\` IN ('form_manual', 'drh_pdf')`, [Number(idPegawai)]);
+  if (!entries.length) return;
+
+  for (const [index, entry] of entries.entries()) {
+    const row = {
+      id_pegawai: Number(idPegawai),
+      nip: normalizeNullableText(identity.nip),
+      nama_pegawai: normalizeNullableText(identity.nama) || `Pegawai ${idPegawai}`,
+      ...Object.fromEntries(config.fields.map((field) => [field, entry[field] ?? null])),
+      sumber: "form_manual",
+      source_key: `${table}:form_manual:${idPegawai}:${buildSourceId(idPegawai, table, entry, index)}`
+    };
+    const columns = Object.keys(row);
+    await connection.query(
+      `INSERT INTO \`${table}\` (${columns.map((column) => `\`${column}\``).join(", ")})
+       VALUES (${columns.map(() => "?").join(", ")})`,
+      columns.map((column) => row[column])
+    );
   }
 }
 
 async function savePegawaiRelations(connection, idPegawai, relations = {}) {
   await savePegawaiAlamat(connection, idPegawai, relations.alamat);
-  await savePegawaiPasangan(connection, idPegawai, relations.pasangan);
-  await savePegawaiAnak(connection, idPegawai, relations.anak);
+  if (Array.isArray(relations.keluarga)) {
+    await savePegawaiKeluarga(connection, idPegawai, relations.keluarga);
+  } else {
+    await savePegawaiPasangan(connection, idPegawai, relations.pasangan);
+    await savePegawaiAnak(connection, idPegawai, relations.anak);
+  }
+
+  const identity = {
+    nip: relations.nip,
+    nama: relations.nama
+  };
+
+  for (const table of Object.keys(RIWAYAT_TABLE_CONFIG)) {
+    await savePegawaiRiwayatTable(connection, idPegawai, table, relations[table], identity);
+  }
 }
 
 export async function getUkpdData() {
@@ -323,6 +667,19 @@ export async function getUkpdData() {
 
 export async function getPegawaiData() {
   return queryRows("SELECT * FROM `pegawai` ORDER BY `id_pegawai` DESC");
+}
+
+export async function getPegawaiDashboardData() {
+  return queryRows(
+    `SELECT ${PEGAWAI_DASHBOARD_COLUMNS.map((column) => `\`${column}\``).join(", ")}
+     FROM \`pegawai\`
+     ORDER BY \`id_pegawai\` DESC`
+  );
+}
+
+export async function getPegawaiById(id) {
+  const rows = await queryRows("SELECT * FROM `pegawai` WHERE `id_pegawai` = ? LIMIT 1", [Number(id)]);
+  return rows[0] || null;
 }
 
 export async function getPegawaiAlamat(id) {
@@ -344,26 +701,134 @@ export async function getPegawaiAlamat(id) {
 }
 
 export async function getPegawaiPasangan(id) {
-  const rows = await queryRows(
+  const rows = await queryRowsIfTableExists(
+    "keluarga",
+    `SELECT * FROM \`keluarga\`
+     WHERE \`id_pegawai\` = ?
+       AND \`hubungan\` = 'pasangan'
+     ORDER BY CASE WHEN \`sumber_tabel\` = 'drh_pdf_keluarga' THEN 0 ELSE 1 END, \`id\` ASC
+     LIMIT 1`,
+    [Number(id)]
+  );
+
+  if (rows[0]) return normalizePasanganEntry(rows[0]);
+
+  const legacyRows = await queryRowsIfTableExists(
+    "pasangan",
     `SELECT * FROM \`pasangan\`
      WHERE \`id_pegawai\` = ?
      ORDER BY \`id\` ASC
      LIMIT 1`,
     [Number(id)]
   );
-
-  return rows[0] ? normalizePasanganEntry(rows[0]) : defaultPasangan();
+  return legacyRows[0] ? normalizeLegacyPasanganRow(legacyRows[0]) : defaultPasangan();
 }
 
 export async function getPegawaiAnak(id) {
-  const rows = await queryRows(
+  const rows = await queryRowsIfTableExists(
+    "keluarga",
+    `SELECT * FROM \`keluarga\`
+     WHERE \`id_pegawai\` = ?
+       AND \`hubungan\` = 'anak'
+     ORDER BY CASE WHEN \`sumber_tabel\` = 'drh_pdf_keluarga' THEN 0 ELSE 1 END, \`urutan\` ASC, \`id\` ASC`,
+    [Number(id)]
+  );
+
+  if (rows.length) {
+    const preferredRows = rows.some((row) => row.sumber_tabel === "drh_pdf_keluarga")
+      ? rows.filter((row) => row.sumber_tabel === "drh_pdf_keluarga")
+      : rows;
+
+    return normalizeAnakEntries(preferredRows);
+  }
+
+  const legacyRows = await queryRowsIfTableExists(
+    "anak",
     `SELECT * FROM \`anak\`
      WHERE \`id_pegawai\` = ?
      ORDER BY \`urutan\` ASC, \`id\` ASC`,
     [Number(id)]
   );
+  return normalizeLegacyAnakRows(legacyRows);
+}
 
-  return normalizeAnakEntries(rows);
+export async function getPegawaiKeluarga(id) {
+  const rows = await queryRowsIfTableExists(
+    "keluarga",
+    `SELECT * FROM \`keluarga\`
+     WHERE \`id_pegawai\` = ?
+     ORDER BY CASE WHEN \`sumber_tabel\` = 'drh_pdf_keluarga' THEN 0 ELSE 1 END, \`hubungan\` ASC, \`urutan\` ASC, \`id\` ASC`,
+    [Number(id)]
+  );
+
+  if (rows.length) {
+    return rows.some((row) => row.sumber_tabel === "drh_pdf_keluarga")
+      ? rows.filter((row) => row.sumber_tabel === "drh_pdf_keluarga")
+      : rows;
+  }
+
+  const [legacyPasanganRows, legacyAnakRows] = await Promise.all([
+    queryRowsIfTableExists(
+      "pasangan",
+      `SELECT * FROM \`pasangan\`
+       WHERE \`id_pegawai\` = ?
+       ORDER BY \`id\` ASC`,
+      [Number(id)]
+    ),
+    queryRowsIfTableExists(
+      "anak",
+      `SELECT * FROM \`anak\`
+       WHERE \`id_pegawai\` = ?
+       ORDER BY \`urutan\` ASC, \`id\` ASC`,
+      [Number(id)]
+    )
+  ]);
+
+  return buildLegacyKeluargaRows(legacyPasanganRows, legacyAnakRows);
+}
+
+export async function getPegawaiRiwayatPendidikan(id) {
+  return getPegawaiSectionRows(id, "riwayat_pendidikan", "COALESCE(`tanggal_ijazah`, `tahun_lulus`, '') DESC, `id` DESC");
+}
+
+export async function getPegawaiRiwayatJabatan(id) {
+  return getPegawaiSectionRows(id, "riwayat_jabatan", "COALESCE(`tmt_jabatan`, `tanggal_sk`, '') DESC, `id` DESC");
+}
+
+export async function getPegawaiRiwayatGajiPokok(id) {
+  return getPegawaiSectionRows(id, "riwayat_gaji_pokok", "COALESCE(`tmt_gaji`, `tanggal_sk`, '') DESC, `id` DESC");
+}
+
+export async function getPegawaiRiwayatPangkat(id) {
+  return getPegawaiSectionRows(id, "riwayat_pangkat", "COALESCE(`tmt_pangkat`, `tanggal_sk`, '') DESC, `id` DESC");
+}
+
+export async function getPegawaiRiwayatPenghargaan(id) {
+  return getPegawaiSectionRows(id, "riwayat_penghargaan", "COALESCE(`tanggal_sk`, '') DESC, `id` DESC");
+}
+
+export async function getPegawaiRiwayatSkp(id) {
+  return getPegawaiSectionRows(id, "riwayat_skp", "COALESCE(`tahun`, '') DESC, `id` DESC");
+}
+
+export async function getPegawaiRiwayatHukumanDisiplin(id) {
+  return getPegawaiSectionRows(id, "riwayat_hukuman_disiplin", "COALESCE(`tanggal_mulai`, `tanggal_sk`, '') DESC, `id` DESC");
+}
+
+export async function getPegawaiRiwayatPrestasiPendidikan(id) {
+  return getPegawaiSectionRows(id, "riwayat_prestasi_pendidikan", "`id` DESC");
+}
+
+export async function getPegawaiRiwayatNarasumber(id) {
+  return getPegawaiSectionRows(id, "riwayat_narasumber", "`id` DESC");
+}
+
+export async function getPegawaiRiwayatKegiatanStrategis(id) {
+  return getPegawaiSectionRows(id, "riwayat_kegiatan_strategis", "COALESCE(`tahun_anggaran`, '') DESC, `id` DESC");
+}
+
+export async function getPegawaiRiwayatKeberhasilan(id) {
+  return getPegawaiSectionRows(id, "riwayat_keberhasilan", "COALESCE(`tahun`, '') DESC, `id` DESC");
 }
 
 export async function createPegawaiData(data) {
@@ -376,7 +841,21 @@ export async function createPegawaiData(data) {
     const relations = {
       alamat: data.alamat,
       pasangan: data.pasangan,
-      anak: data.anak
+      anak: data.anak,
+      keluarga: data.keluarga,
+      nip: data.nip,
+      nama: data.nama,
+      riwayat_pendidikan: data.riwayat_pendidikan,
+      riwayat_jabatan: data.riwayat_jabatan,
+      riwayat_gaji_pokok: data.riwayat_gaji_pokok,
+      riwayat_pangkat: data.riwayat_pangkat,
+      riwayat_penghargaan: data.riwayat_penghargaan,
+      riwayat_skp: data.riwayat_skp,
+      riwayat_hukuman_disiplin: data.riwayat_hukuman_disiplin,
+      riwayat_prestasi_pendidikan: data.riwayat_prestasi_pendidikan,
+      riwayat_narasumber: data.riwayat_narasumber,
+      riwayat_kegiatan_strategis: data.riwayat_kegiatan_strategis,
+      riwayat_keberhasilan: data.riwayat_keberhasilan
     };
     const item = {
       id_pegawai: Number(maxRow.next_id),
@@ -417,7 +896,21 @@ export async function updatePegawaiData(id, data) {
     await savePegawaiRelations(connection, Number(id), {
       alamat: data.alamat,
       pasangan: data.pasangan,
-      anak: data.anak
+      anak: data.anak,
+      keluarga: data.keluarga,
+      nip: data.nip ?? data.current_nip,
+      nama: data.nama ?? data.current_nama,
+      riwayat_pendidikan: data.riwayat_pendidikan,
+      riwayat_jabatan: data.riwayat_jabatan,
+      riwayat_gaji_pokok: data.riwayat_gaji_pokok,
+      riwayat_pangkat: data.riwayat_pangkat,
+      riwayat_penghargaan: data.riwayat_penghargaan,
+      riwayat_skp: data.riwayat_skp,
+      riwayat_hukuman_disiplin: data.riwayat_hukuman_disiplin,
+      riwayat_prestasi_pendidikan: data.riwayat_prestasi_pendidikan,
+      riwayat_narasumber: data.riwayat_narasumber,
+      riwayat_kegiatan_strategis: data.riwayat_kegiatan_strategis,
+      riwayat_keberhasilan: data.riwayat_keberhasilan
     });
     const [rows] = await connection.query("SELECT * FROM `pegawai` WHERE `id_pegawai` = ? LIMIT 1", [Number(id)]);
     await connection.commit();
@@ -437,8 +930,10 @@ export async function deletePegawaiData(id) {
   try {
     await connection.beginTransaction();
     await connection.query("DELETE FROM `alamat` WHERE `id_pegawai` = ?", [Number(id)]);
-    await connection.query("DELETE FROM `pasangan` WHERE `id_pegawai` = ?", [Number(id)]);
-    await connection.query("DELETE FROM `anak` WHERE `id_pegawai` = ?", [Number(id)]);
+    await connection.query("DELETE FROM `keluarga` WHERE `id_pegawai` = ?", [Number(id)]);
+    for (const table of Object.keys(RIWAYAT_TABLE_CONFIG)) {
+      await connection.query(`DELETE FROM \`${table}\` WHERE \`id_pegawai\` = ?`, [Number(id)]);
+    }
     await connection.query("DELETE FROM `pegawai` WHERE `id_pegawai` = ?", [Number(id)]);
     await connection.commit();
     return { id_pegawai: Number(id) };

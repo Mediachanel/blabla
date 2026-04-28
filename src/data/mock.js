@@ -2,8 +2,7 @@ import { ROLES } from "@/lib/constants/roles";
 import generatedPegawai from "@/data/generated/pegawai.json";
 import generatedUkpd from "@/data/generated/ukpd.json";
 import generatedAlamat from "@/data/generated/alamat.json";
-import generatedPasangan from "@/data/generated/pasangan.json";
-import generatedAnak from "@/data/generated/anak.json";
+import generatedKeluarga from "@/data/generated/keluarga.json";
 import generatedUsulanMutasi from "@/data/generated/usulan-mutasi.json";
 import generatedUsulanPutusJf from "@/data/generated/usulan-putus-jf.json";
 
@@ -171,11 +170,38 @@ const fallbackAlamat = [
 
 export const alamat = generatedAlamat.length ? generatedAlamat : fallbackAlamat;
 
+const generatedPasangan = generatedKeluarga
+  .filter((item) => item.hubungan === "pasangan")
+  .map((item, index) => ({
+    id: item.id || item.sumber_id || index + 1,
+    id_pegawai: item.id_pegawai,
+    status_punya: item.status_punya || "Tidak",
+    nama: item.nama || "",
+    no_tlp: item.no_tlp || "",
+    email: item.email || "",
+    pekerjaan: item.pekerjaan || "",
+    created_at: item.created_at || ""
+  }));
+
 const fallbackPasangan = [
   { id: 1, id_pegawai: 101, status_punya: "Ya", nama: "Ahmad Fauzi", no_tlp: "081299999001", email: "ahmad@example.com", pekerjaan: "ASN", created_at: "2026-01-10" }
 ];
 
 export const pasangan = generatedPasangan.length ? generatedPasangan : fallbackPasangan;
+
+const generatedAnak = generatedKeluarga
+  .filter((item) => item.hubungan === "anak")
+  .map((item, index) => ({
+    id: item.id || item.sumber_id || index + 1,
+    id_pegawai: item.id_pegawai,
+    urutan: item.urutan || index + 1,
+    nama: item.nama || "",
+    jenis_kelamin: item.jenis_kelamin || "",
+    tempat_lahir: item.tempat_lahir || "",
+    tanggal_lahir: item.tanggal_lahir || "",
+    pekerjaan: item.pekerjaan || "",
+    created_at: item.created_at || ""
+  }));
 
 const fallbackAnak = [
   { id: 1, id_pegawai: 101, urutan: 1, nama: "Nadia Fauzia", jenis_kelamin: "Perempuan", tempat_lahir: "Jakarta", tanggal_lahir: "2015-05-12", pekerjaan: "Pelajar", created_at: "2026-01-10" }

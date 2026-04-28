@@ -60,15 +60,9 @@ export default function AppShell({ children }) {
       }, IDLE_TIMEOUT_MS);
     };
 
-    const handleTabClose = () => {
-      if (loggedOutRef.current) return;
-      fetch("/api/auth/logout", { method: "POST", keepalive: true }).catch(() => {});
-    };
-
     ACTIVITY_EVENTS.forEach((eventName) => {
       window.addEventListener(eventName, resetIdleTimer, { passive: true });
     });
-    window.addEventListener("beforeunload", handleTabClose);
 
     resetIdleTimer();
 
@@ -77,7 +71,6 @@ export default function AppShell({ children }) {
       ACTIVITY_EVENTS.forEach((eventName) => {
         window.removeEventListener(eventName, resetIdleTimer);
       });
-      window.removeEventListener("beforeunload", handleTabClose);
     };
   }, [router, user]);
 

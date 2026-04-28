@@ -1,19 +1,20 @@
-import { filterPegawaiByRole, getPegawaiWilayah } from "@/lib/auth/access";
+import { getPegawaiWilayah } from "@/lib/auth/access";
 import { requireAuth } from "@/lib/auth/requireAuth";
-import { getPegawaiData, getUkpdData } from "@/lib/data/pegawaiStore";
+import { getScopedDashboardData } from "@/lib/dashboardData";
 import { ok } from "@/lib/helpers/response";
-import { JENIS_PEGAWAI_OPTIONS, isJenisPegawai, normalizeJenisPegawai } from "@/lib/helpers/pegawaiStatus";
+import { JENIS_PEGAWAI_OPTIONS, normalizeJenisPegawai } from "@/lib/helpers/pegawaiStatus";
 
-function countBy(items, keyFn) {
-  return items.reduce((acc, item) => {
-    const key = keyFn(item) || "-";
-    acc[key] = (acc[key] || 0) + 1;
-    return acc;
-  }, {});
+const DASHBOARD_CACHE_TTL = 60_000;
+
+function getDashboardCache() {
+  if (!globalThis.__sisdmkDashboardCache) {
+    globalThis.__sisdmkDashboardCache = new Map();
+  }
+  return globalThis.__sisdmkDashboardCache;
 }
 
-function toChart(obj) {
-  return { labels: Object.keys(obj), values: Object.values(obj) };
+function getDashboardCacheKey(user) {
+  return [user?.role, user?.wilayah || "", user?.nama_ukpd || "", user?.username || ""].join("|");
 }
 
 const CHART_VIEW_CONFIGS = {
@@ -124,7 +125,7 @@ function buildChartViews(items) {
         rumpun: `Rumpun A - ${config.titleSuffix} Pegawai`
       },
       distribution: buildDistributionChart(items, config),
-      ukpd: buildGroupedChart(items, (item) => item.nama_ukpd, config, false),
+      ukpd: buildGroupedChart(items, (item) => item.nama_ukpd, config),
       pendidikan: buildGroupedChart(items, (item) => item.jenjang_pendidikan, config),
       rumpun: buildGroupedChart(items, (item) => item.status_rumpun, config)
     }
@@ -135,10 +136,53 @@ function sortByCount(rows) {
   return rows.sort((a, b) => b.jumlah - a.jumlah || String(a.label || a.nama_ukpd).localeCompare(String(b.label || b.nama_ukpd)));
 }
 
+function parseLooseDate(value) {
+  const raw = String(value || "").trim();
+  if (!raw || raw.includes("#")) return null;
+  const cleaned = raw.replace(/^'+/, "").replace(/\s+/g, "").replace(/-/g, "/");
+  const match = cleaned.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+  if (!match) return null;
+
+  const day = Number(match[1]);
+  const month = Number(match[2]);
+  let year = Number(match[3]);
+  if (year < 100) year += 2000;
+  if (day < 1 || day > 31 || month < 1 || month > 12 || year < 1900) return null;
+
+  const date = new Date(year, month - 1, day);
+  if (
+    Number.isNaN(date.getTime()) ||
+    date.getFullYear() !== year ||
+    date.getMonth() !== month - 1 ||
+    date.getDate() !== day
+  ) {
+    return null;
+  }
+  return date;
+}
+
+function getYearsOfService(date) {
+  if (!date) return null;
+  const today = new Date();
+  let years = today.getFullYear() - date.getFullYear();
+  const beforeAnniversary = (today.getMonth() < date.getMonth())
+    || (today.getMonth() === date.getMonth() && today.getDate() < date.getDate());
+  if (beforeAnniversary) years -= 1;
+  return Math.max(0, years);
+}
+
+function getMasaKerjaRange(years) {
+  if (years === null || years === undefined) return "Tidak Diketahui";
+  if (years >= 30) return "30+ tahun";
+  return `${years}-${years + 1} tahun`;
+}
+
 function buildDashboardAnalytics(data, ukpdList) {
   const ukpdMap = new Map();
   const rumpunMap = new Map();
   const jabatanMenpanMap = new Map();
+  const pendidikanJurusanMap = new Map();
+  const masaKerjaMap = new Map();
   const officialUkpdById = new Map(ukpdList.map((ukpd) => [Number(ukpd.id_ukpd), ukpd]));
   const officialUkpdByName = new Map(ukpdList.map((ukpd) => [ukpd.nama_ukpd, ukpd]));
 
@@ -178,52 +222,84 @@ function buildDashboardAnalytics(data, ukpdList) {
       jabatan_kepmenpan_11: jabatan,
       jumlah: (jabatanMenpanMap.get(jabatanKey)?.jumlah || 0) + 1
     });
+
+    const pendidikanJurusan = [item.jenjang_pendidikan || "Tidak Diketahui", item.program_studi || "Tidak Diketahui"]
+      .filter(Boolean)
+      .join(" - ");
+    const pendidikanJurusanKey = `${jenisPegawai}||${pendidikanJurusan}`;
+    pendidikanJurusanMap.set(pendidikanJurusanKey, {
+      jenis_pegawai: jenisPegawai,
+      pendidikan_jurusan: pendidikanJurusan,
+      jumlah: (pendidikanJurusanMap.get(pendidikanJurusanKey)?.jumlah || 0) + 1
+    });
+
+    const masaKerjaTahun = getYearsOfService(parseLooseDate(item.tmt_kerja_ukpd));
+    const masaKerjaRange = getMasaKerjaRange(masaKerjaTahun);
+    const masaKerjaKey = `${jenisPegawai}||${masaKerjaRange}`;
+    masaKerjaMap.set(masaKerjaKey, {
+      jenis_pegawai: jenisPegawai,
+      masa_kerja_rentang: masaKerjaRange,
+      jumlah: (masaKerjaMap.get(masaKerjaKey)?.jumlah || 0) + 1
+    });
   }
 
   return {
     jenisPegawaiOptions: JENIS_PEGAWAI_OPTIONS,
     ukpdSummary: [...ukpdMap.values()].sort((a, b) => b.total - a.total || a.nama_ukpd.localeCompare(b.nama_ukpd)),
     rumpunByJenisPegawai: sortByCount([...rumpunMap.values()].map((row) => ({ ...row, label: row.rumpun_jabatan }))),
-    jabatanMenpanByJenisPegawai: sortByCount([...jabatanMenpanMap.values()].map((row) => ({ ...row, label: row.jabatan_kepmenpan_11 })))
+    jabatanMenpanByJenisPegawai: sortByCount([...jabatanMenpanMap.values()].map((row) => ({ ...row, label: row.jabatan_kepmenpan_11 }))),
+    pendidikanJurusanByJenisPegawai: sortByCount([...pendidikanJurusanMap.values()].map((row) => ({ ...row, label: row.pendidikan_jurusan }))),
+    masaKerjaByJenisPegawai: sortByCount([...masaKerjaMap.values()].map((row) => ({ ...row, label: row.masa_kerja_rentang })))
   };
+}
+
+function buildSummary(data) {
+  return data.reduce((summary, item) => {
+    const jenisPegawai = normalizeJenisPegawai(item.jenis_pegawai);
+    summary.total += 1;
+    if (jenisPegawai === "PNS" || jenisPegawai === "CPNS") summary.pnsCpns += 1;
+    if (jenisPegawai === "PPPK") summary.pppk += 1;
+    if (jenisPegawai === "PPPK Paruh Waktu") summary.pppkParuhWaktu += 1;
+    if (jenisPegawai === "NON PNS") summary.nonPns += 1;
+    if (jenisPegawai === "PJLP") summary.pjlp += 1;
+    return summary;
+  }, {
+    total: 0,
+    pnsCpns: 0,
+    pppk: 0,
+    pppkParuhWaktu: 0,
+    nonPns: 0,
+    pjlp: 0
+  });
 }
 
 export async function GET() {
   const { user, error } = await requireAuth();
   if (error) return error;
 
-  const [pegawaiMaster, ukpdList] = await Promise.all([getPegawaiData(), getUkpdData()]);
-  const data = filterPegawaiByRole(pegawaiMaster, user, ukpdList);
-  const summary = {
-    total: data.length,
-    pnsCpns: data.filter((item) => ["PNS", "CPNS"].includes(normalizeJenisPegawai(item.jenis_pegawai))).length,
-    pppk: data.filter((item) => isJenisPegawai(item, "PPPK")).length,
-    pppkParuhWaktu: data.filter((item) => isJenisPegawai(item, "PPPK Paruh Waktu")).length,
-    nonPns: data.filter((item) => isJenisPegawai(item, "NON PNS")).length,
-    pjlp: data.filter((item) => isJenisPegawai(item, "PJLP")).length
-  };
+  const cache = getDashboardCache();
+  const cacheKey = getDashboardCacheKey(user);
+  const cached = cache.get(cacheKey);
+  if (cached && Date.now() - cached.createdAt < DASHBOARD_CACHE_TTL) {
+    return ok(cached.data);
+  }
 
-  const visibleUkpd = [...new Set(data.map((item) => item.nama_ukpd))];
-  const wilayahUkpd = ukpdList.filter((item) => visibleUkpd.includes(item.nama_ukpd));
+  const { data, ukpdList } = await getScopedDashboardData(user);
+  const summary = buildSummary(data);
   const activeData = data.filter((item) => String(item.kondisi || "").toUpperCase() === "AKTIF");
 
-  return ok({
+  const payload = {
     user,
     summary,
-    charts: {
-      gender: toChart(countBy(data, (item) => item.jenis_kelamin)),
-      pendidikan: toChart(countBy(data, (item) => item.jenjang_pendidikan)),
-      rumpun: toChart(countBy(data, (item) => item.status_rumpun)),
-      wilayah: toChart(countBy(data, getPegawaiWilayah)),
-      ukpd: toChart(countBy(data, (item) => item.nama_ukpd))
-    },
     chartViews: buildChartViews(activeData.length ? activeData : data),
     latestEmployees: data.slice(0, 5),
-    visibleUkpd: wilayahUkpd,
     analytics: buildDashboardAnalytics(data, ukpdList),
     usulanSummary: {
       mutasi: 0,
       putusJf: 0
     }
-  });
+  };
+
+  cache.set(cacheKey, { createdAt: Date.now(), data: payload });
+  return ok(payload);
 }

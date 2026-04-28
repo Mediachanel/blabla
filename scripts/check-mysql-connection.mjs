@@ -44,6 +44,10 @@ function uniqBy(items, keyFn) {
   });
 }
 
+function getEnvValue(key, fallback) {
+  return process.env[key] === undefined ? fallback : process.env[key];
+}
+
 readEnvFile(process.argv[2] || ".env.casaos");
 readEnvFile(".env");
 
@@ -70,8 +74,8 @@ const databases = uniqBy(
   [...splitList(process.env.MYSQL_DATABASES), process.env.MYSQL_DATABASE, "si_data", "sisdmk2"].filter(Boolean),
   (item) => item
 );
-const user = process.env.MYSQL_USER || "root";
-const password = process.env.MYSQL_PASSWORD || "Tianh@27";
+const user = getEnvValue("MYSQL_USER", "root");
+const password = getEnvValue("MYSQL_PASSWORD", "");
 
 let lastError = "";
 for (const host of hosts) {

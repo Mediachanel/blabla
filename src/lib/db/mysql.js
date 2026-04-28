@@ -40,7 +40,7 @@ export function getMysqlDatabaseCandidates() {
     ...splitList(process.env.MYSQL_DATABASES),
     process.env.MYSQL_DATABASE
   ];
-  const fallbackDatabases = ["sisdmk2", "si_data"];
+  const fallbackDatabases = ["si_data"];
   const seen = new Set();
 
   return [...configuredDatabases, ...fallbackDatabases]
@@ -88,7 +88,7 @@ export function createPool(config = {}) {
     port: numberPort(config.port || process.env.MYSQL_PORT),
     user: getRequiredProductionEnvValue("MYSQL_USER", "root"),
     password: getRequiredProductionEnvValue("MYSQL_PASSWORD", ""),
-    database: config.database === undefined ? getRequiredProductionEnvValue("MYSQL_DATABASE", "sisdmk2") : config.database,
+    database: config.database === undefined ? getRequiredProductionEnvValue("MYSQL_DATABASE", "si_data") : config.database,
     connectTimeout: numberPort(process.env.MYSQL_CONNECT_TIMEOUT_MS || 1500),
     waitForConnections: true,
     connectionLimit: 10,

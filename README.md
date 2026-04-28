@@ -109,7 +109,7 @@ Catatan troubleshooting:
 - Jangan pakai password seed/default di production. Aplikasi production menolak password umum seperti `admin123` dan `password123`.
 - Jika muncul pesan gagal konek database, cek `MYSQL_HOSTS`, `MYSQL_USER`, `MYSQL_PASSWORD`, `MYSQL_DATABASE`, dan `MYSQL_DATABASES` pada container app.
 - Jika volume `sisdmk2_mysql_data` sudah pernah dibuat dengan password root lama, mengganti `MYSQL_ROOT_PASSWORD` di compose tidak otomatis mengubah password MySQL. Pakai password lama, ubah password root manual dari MySQL, atau buat volume baru bila data lama boleh dihapus.
-- Aplikasi mencoba beberapa host MySQL secara berurutan dari `MYSQL_HOSTS`, lalu fallback lokal/CasaOS: `127.0.0.1`, `localhost`, `db`, `mariadb`, `mysql`, `host.docker.internal`, `172.17.0.1`, dan `172.31.254.56`. Database yang dicoba berasal dari `MYSQL_DATABASES`/`MYSQL_DATABASE`, lalu fallback `sisdmk2` dan `si_data`.
+- Aplikasi mencoba beberapa host MySQL secara berurutan dari `MYSQL_HOSTS`, lalu fallback lokal/CasaOS: `127.0.0.1`, `localhost`, `db`, `mariadb`, `mysql`, `host.docker.internal`, `172.17.0.1`, dan `172.31.254.56`. Database yang dicoba berasal dari `MYSQL_DATABASES`/`MYSQL_DATABASE`, dengan fallback ke `si_data`.
 
 ## Import CSV Master Pegawai
 

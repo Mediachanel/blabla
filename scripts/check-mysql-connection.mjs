@@ -71,7 +71,7 @@ const hosts = uniqBy(
   (item) => `${item.host}:${item.port}`
 );
 const databases = uniqBy(
-  [...splitList(process.env.MYSQL_DATABASES), process.env.MYSQL_DATABASE, "si_data", "sisdmk2"].filter(Boolean),
+  [...splitList(process.env.MYSQL_DATABASES), process.env.MYSQL_DATABASE, "si_data"].filter(Boolean),
   (item) => item
 );
 const user = getEnvValue("MYSQL_USER", "root");

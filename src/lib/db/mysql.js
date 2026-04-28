@@ -46,6 +46,7 @@ export function getMysqlDatabaseCandidates() {
   return [...configuredDatabases, ...fallbackDatabases]
     .map((database) => String(database || "").trim())
     .filter(Boolean)
+    .filter((database) => database.toLowerCase() !== "sisdmk2")
     .filter((database) => {
       if (seen.has(database)) return false;
       seen.add(database);

@@ -839,18 +839,19 @@ function DashboardMenuCharts({
         <DashboardMiniStats cards={activeView.statCards || []} />
         <section className="mt-4 grid gap-5 xl:grid-cols-2">
           {(activeView.charts || []).map((chart) => (
-            <DashboardChartCard
-              key={chart.id || chart.title}
-              title={chart.title}
-              type={chart.type || "bar"}
-              labels={chart.labels || []}
-              values={chart.values || []}
-              colors={chart.colors}
-              datasets={chart.datasets}
-              horizontal={Boolean(chart.horizontal)}
-              stacked={Boolean(chart.stacked)}
-              heightClass={chart.heightClass || "h-80"}
-            />
+            <div key={chart.id || chart.title} className={chart.fullWidth ? "xl:col-span-2" : ""}>
+              <DashboardChartCard
+                title={chart.title}
+                type={chart.type || "bar"}
+                labels={chart.labels || []}
+                values={chart.values || []}
+                colors={chart.colors}
+                datasets={chart.datasets}
+                horizontal={Boolean(chart.horizontal)}
+                stacked={Boolean(chart.stacked)}
+                heightClass={chart.heightClass || "h-80"}
+              />
+            </div>
           ))}
         </section>
       </div>

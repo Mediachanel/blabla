@@ -3,6 +3,7 @@ import { requireAuth } from "@/lib/auth/requireAuth";
 import { getScopedDashboardData } from "@/lib/dashboardData";
 import { fail, ok } from "@/lib/helpers/response";
 import { JENIS_PEGAWAI_OPTIONS, normalizeJenisPegawai } from "@/lib/helpers/pegawaiStatus";
+import { ROLES } from "@/lib/constants/roles";
 import { PANGKAT_GOLONGAN_OPTIONS, normalizePangkatGolonganOption } from "@/lib/pegawaiReferenceOptions";
 
 const DASHBOARD_CACHE_TTL = 60_000;
@@ -471,38 +472,43 @@ function buildPensionProjection(items) {
   };
 }
 
-function buildDashboardMenus(items, summary) {
+function buildDashboardMenus(items, summary, options = {}) {
   const pensionProjection = buildPensionProjection(items);
+  const dashboardCharts = [
+    {
+      id: "status-pegawai",
+      title: "Berdasarkan Status Pegawai",
+      type: "doughnut",
+      heightClass: "h-80",
+      ...buildDistributionChart(items, CHART_VIEW_CONFIGS.statusPegawai)
+    },
+    {
+      id: "jenis-kelamin",
+      title: "Berdasarkan Jenis Kelamin",
+      type: "doughnut",
+      heightClass: "h-80",
+      ...buildDistributionChart(items, CHART_VIEW_CONFIGS.jenisKelamin)
+    }
+  ];
+
+  if (options.includeUkpdStatusChart) {
+    dashboardCharts.push({
+      id: "ukpd-status",
+      title: "Status Pegawai per UKPD",
+      horizontal: true,
+      stacked: true,
+      fullWidth: true,
+      heightClass: "h-[420px] lg:h-[520px]",
+      ...buildGroupedChart(items, (item) => item.nama_ukpd, CHART_VIEW_CONFIGS.statusPegawai)
+    });
+  }
 
   return {
     dashboard: {
       label: "Dashboard",
       title: "Data Pegawai Aktif",
       subtitle: "Ringkasan status pegawai, jenis kelamin, dan sebaran UKPD.",
-      charts: [
-        {
-          id: "status-pegawai",
-          title: "Berdasarkan Status Pegawai",
-          type: "doughnut",
-          heightClass: "h-80",
-          ...buildDistributionChart(items, CHART_VIEW_CONFIGS.statusPegawai)
-        },
-        {
-          id: "jenis-kelamin",
-          title: "Berdasarkan Jenis Kelamin",
-          type: "doughnut",
-          heightClass: "h-80",
-          ...buildDistributionChart(items, CHART_VIEW_CONFIGS.jenisKelamin)
-        },
-        {
-          id: "ukpd-status",
-          title: "Status Pegawai per UKPD",
-          horizontal: true,
-          stacked: true,
-          heightClass: "h-96",
-          ...buildGroupedChart(items, (item) => item.nama_ukpd, CHART_VIEW_CONFIGS.statusPegawai)
-        }
-      ],
+      charts: dashboardCharts,
       statCards: [
         { label: "Total Pegawai", value: summary.total, helper: "Seluruh data sesuai akses" },
         { label: "PNS/CPNS", value: summary.pnsCpns, helper: "Pegawai ASN" },
@@ -609,24 +615,24 @@ function buildDashboardMenus(items, summary) {
   };
 }
 
-function buildDashboardMenuStatusVariants(items) {
+function buildDashboardMenuStatusVariants(items, menuOptions = {}) {
   const totalSummary = buildSummary(items);
   const variants = {
-    total: buildDashboardMenus(items, totalSummary)
+    total: buildDashboardMenus(items, totalSummary, menuOptions)
   };
 
-  const options = [
+  const statusOptions = [
     { value: "total", label: "Total Pegawai", total: totalSummary.total }
   ];
 
   for (const status of JENIS_PEGAWAI_OPTIONS) {
     const filtered = items.filter((item) => normalizeJenisPegawai(item.jenis_pegawai) === status);
     const summary = buildSummary(filtered);
-    variants[status] = buildDashboardMenus(filtered, summary);
-    options.push({ value: status, label: status, total: summary.total });
+    variants[status] = buildDashboardMenus(filtered, summary, menuOptions);
+    statusOptions.push({ value: status, label: status, total: summary.total });
   }
 
-  return { variants, options };
+  return { variants, options: statusOptions };
 }
 
 function buildDashboardAnalytics(data, ukpdList) {
@@ -741,7 +747,9 @@ export async function GET() {
     const summary = buildSummary(data);
     const activeData = data.filter((item) => String(item.kondisi || "").toUpperCase() === "AKTIF");
     const chartItems = activeData.length ? activeData : data;
-    const dashboardMenuStatus = buildDashboardMenuStatusVariants(chartItems);
+    const dashboardMenuStatus = buildDashboardMenuStatusVariants(chartItems, {
+      includeUkpdStatusChart: [ROLES.SUPER_ADMIN, ROLES.ADMIN_WILAYAH].includes(user.role)
+    });
 
     const payload = {
       user,

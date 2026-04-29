@@ -495,10 +495,9 @@ function buildDashboardMenus(items, summary, options = {}) {
     dashboardCharts.push({
       id: "ukpd-status",
       title: "Status Pegawai per UKPD",
-      horizontal: true,
       stacked: true,
       fullWidth: true,
-      heightClass: "h-[420px] lg:h-[520px]",
+      heightClass: "h-[460px] lg:h-[560px]",
       ...buildGroupedChart(items, (item) => item.nama_ukpd, CHART_VIEW_CONFIGS.statusPegawai)
     });
   }

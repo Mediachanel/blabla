@@ -696,6 +696,31 @@ export async function getPegawaiData() {
   return queryRows("SELECT * FROM `pegawai` ORDER BY `id_pegawai` DESC");
 }
 
+async function getLatestEselonByPegawai({
+  hasRiwayatJabatan,
+  hasRiwayatEselon,
+  hasRiwayatIdPegawai,
+  riwayatOrderBy
+}) {
+  if (!hasRiwayatJabatan || !hasRiwayatEselon || !hasRiwayatIdPegawai) return new Map();
+
+  const rows = await queryRows(
+    `SELECT rj.\`id_pegawai\`, rj.\`eselon\`
+     FROM \`riwayat_jabatan\` rj
+     WHERE rj.\`id_pegawai\` IS NOT NULL
+     ORDER BY rj.\`id_pegawai\` ASC${riwayatOrderBy ? `, ${riwayatOrderBy}` : ""}`
+  );
+  const eselonByPegawai = new Map();
+
+  for (const row of rows) {
+    const id = String(row.id_pegawai || "");
+    if (!id || eselonByPegawai.has(id)) continue;
+    eselonByPegawai.set(id, row.eselon || null);
+  }
+
+  return eselonByPegawai;
+}
+
 export async function getPegawaiDashboardData() {
   const selectColumns = (await Promise.all(PEGAWAI_DASHBOARD_COLUMNS.map(async (column) => (
     await hasColumn("pegawai", column)
@@ -714,22 +739,25 @@ export async function getPegawaiDashboardData() {
     riwayatOrderColumns.length ? `COALESCE(${riwayatOrderColumns.join(", ")}, '') DESC` : "",
     hasRiwayatId ? "rj.`id` DESC" : ""
   ].filter(Boolean).join(", ");
-  const eselonSelect = hasRiwayatEselon && hasRiwayatIdPegawai
-    ? `,
-      (
-        SELECT rj.\`eselon\`
-        FROM \`riwayat_jabatan\` rj
-        WHERE rj.\`id_pegawai\` = p.\`id_pegawai\`
-        ${riwayatOrderBy ? `ORDER BY ${riwayatOrderBy}` : ""}
-        LIMIT 1
-      ) AS \`eselon\``
-    : ", NULL AS `eselon`";
 
-  return queryRows(
-    `SELECT ${selectColumns}${eselonSelect}
+  const [rows, eselonByPegawai] = await Promise.all([
+    queryRows(
+      `SELECT ${selectColumns}
      FROM \`pegawai\` p
      ORDER BY p.\`id_pegawai\` DESC`
-  );
+    ),
+    getLatestEselonByPegawai({
+      hasRiwayatJabatan,
+      hasRiwayatEselon,
+      hasRiwayatIdPegawai,
+      riwayatOrderBy
+    })
+  ]);
+
+  return rows.map((row) => ({
+    ...row,
+    eselon: eselonByPegawai.get(String(row.id_pegawai || "")) || null
+  }));
 }
 
 export async function getPegawaiById(id) {

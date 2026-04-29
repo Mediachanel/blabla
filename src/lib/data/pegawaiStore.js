@@ -696,37 +696,98 @@ export async function getPegawaiData() {
   return queryRows("SELECT * FROM `pegawai` ORDER BY `id_pegawai` DESC");
 }
 
+async function buildPegawaiDashboardWhere(scope = {}) {
+  const user = scope.user;
+  const ukpdList = scope.ukpdList || [];
+  if (!user) return { sql: "", params: [] };
+
+  if (user.role === ROLES.ADMIN_UKPD) {
+    const clauses = [];
+    const params = [];
+    const matchedUkpd = ukpdList.find((ukpd) => (
+      ukpd.nama_ukpd === user.nama_ukpd ||
+      String(ukpd.id_ukpd || "") === String(user.username || "") ||
+      String(ukpd.ukpd_id || "") === String(user.username || "")
+    ));
+
+    if (user.nama_ukpd && await hasColumn("pegawai", "nama_ukpd")) {
+      clauses.push("p.`nama_ukpd` = ?");
+      params.push(user.nama_ukpd);
+    }
+    if (matchedUkpd?.id_ukpd && await hasColumn("pegawai", "id_ukpd")) {
+      clauses.push("p.`id_ukpd` = ?");
+      params.push(matchedUkpd.id_ukpd);
+    }
+    if (!clauses.length) return { sql: "WHERE 1 = 0", params: [] };
+    return { sql: `WHERE (${clauses.join(" OR ")})`, params };
+  }
+
+  if (user.role === ROLES.ADMIN_WILAYAH) {
+    const clauses = [];
+    const params = [];
+    const allowedUkpd = ukpdList
+      .filter((ukpd) => ukpd.wilayah === user.wilayah)
+      .map((ukpd) => ukpd.nama_ukpd)
+      .filter(Boolean);
+
+    if (user.wilayah && await hasColumn("pegawai", "wilayah")) {
+      clauses.push("p.`wilayah` = ?");
+      params.push(user.wilayah);
+    }
+    if (allowedUkpd.length && await hasColumn("pegawai", "nama_ukpd")) {
+      clauses.push(`p.\`nama_ukpd\` IN (${allowedUkpd.map(() => "?").join(", ")})`);
+      params.push(...allowedUkpd);
+    }
+    if (!clauses.length) return { sql: "WHERE 1 = 0", params: [] };
+    return { sql: `WHERE (${clauses.join(" OR ")})`, params };
+  }
+
+  return { sql: "", params: [] };
+}
+
 async function getLatestEselonByPegawai({
   hasRiwayatJabatan,
   hasRiwayatEselon,
   hasRiwayatIdPegawai,
-  riwayatOrderBy
+  riwayatOrderBy,
+  employeeIds = []
 }) {
   if (!hasRiwayatJabatan || !hasRiwayatEselon || !hasRiwayatIdPegawai) return new Map();
 
-  const rows = await queryRows(
-    `SELECT rj.\`id_pegawai\`, rj.\`eselon\`
-     FROM \`riwayat_jabatan\` rj
-     WHERE rj.\`id_pegawai\` IS NOT NULL
-     ORDER BY rj.\`id_pegawai\` ASC${riwayatOrderBy ? `, ${riwayatOrderBy}` : ""}`
-  );
+  const ids = [...new Set(employeeIds.map((id) => Number(id)).filter((id) => Number.isFinite(id) && id > 0))];
+  const shouldScopeByIds = ids.length > 0 && ids.length <= 5000;
+  const chunks = shouldScopeByIds
+    ? Array.from({ length: Math.ceil(ids.length / 1000) }, (_, index) => ids.slice(index * 1000, (index + 1) * 1000))
+    : [null];
   const eselonByPegawai = new Map();
 
-  for (const row of rows) {
-    const id = String(row.id_pegawai || "");
-    if (!id || eselonByPegawai.has(id)) continue;
-    eselonByPegawai.set(id, row.eselon || null);
+  for (const chunk of chunks) {
+    const scopedWhere = chunk?.length ? ` AND rj.\`id_pegawai\` IN (${chunk.map(() => "?").join(", ")})` : "";
+    const rows = await queryRows(
+      `SELECT rj.\`id_pegawai\`, rj.\`eselon\`
+       FROM \`riwayat_jabatan\` rj
+       WHERE rj.\`id_pegawai\` IS NOT NULL${scopedWhere}
+       ORDER BY rj.\`id_pegawai\` ASC${riwayatOrderBy ? `, ${riwayatOrderBy}` : ""}`,
+      chunk || []
+    );
+
+    for (const row of rows) {
+      const id = String(row.id_pegawai || "");
+      if (!id || eselonByPegawai.has(id)) continue;
+      eselonByPegawai.set(id, row.eselon || null);
+    }
   }
 
   return eselonByPegawai;
 }
 
-export async function getPegawaiDashboardData() {
+export async function getPegawaiDashboardData(scope = {}) {
   const selectColumns = (await Promise.all(PEGAWAI_DASHBOARD_COLUMNS.map(async (column) => (
     await hasColumn("pegawai", column)
       ? `p.\`${column}\``
       : `NULL AS \`${column}\``
   )))).join(", ");
+  const where = await buildPegawaiDashboardWhere(scope);
   const hasRiwayatJabatan = await hasTable("riwayat_jabatan");
   const hasRiwayatEselon = hasRiwayatJabatan && await hasColumn("riwayat_jabatan", "eselon");
   const hasRiwayatIdPegawai = hasRiwayatJabatan && await hasColumn("riwayat_jabatan", "id_pegawai");
@@ -740,19 +801,20 @@ export async function getPegawaiDashboardData() {
     hasRiwayatId ? "rj.`id` DESC" : ""
   ].filter(Boolean).join(", ");
 
-  const [rows, eselonByPegawai] = await Promise.all([
-    queryRows(
-      `SELECT ${selectColumns}
+  const rows = await queryRows(
+    `SELECT ${selectColumns}
      FROM \`pegawai\` p
-     ORDER BY p.\`id_pegawai\` DESC`
-    ),
-    getLatestEselonByPegawai({
-      hasRiwayatJabatan,
-      hasRiwayatEselon,
-      hasRiwayatIdPegawai,
-      riwayatOrderBy
-    })
-  ]);
+     ${where.sql}
+     ORDER BY p.\`id_pegawai\` DESC`,
+    where.params
+  );
+  const eselonByPegawai = await getLatestEselonByPegawai({
+    hasRiwayatJabatan,
+    hasRiwayatEselon,
+    hasRiwayatIdPegawai,
+    riwayatOrderBy,
+    employeeIds: rows.map((row) => row.id_pegawai)
+  });
 
   return rows.map((row) => ({
     ...row,

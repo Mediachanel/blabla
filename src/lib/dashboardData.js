@@ -25,10 +25,8 @@ export async function getScopedDashboardData(user) {
     return cached.promise;
   }
 
-  const promise = Promise.all([
-    getPegawaiDashboardData(),
-    getUkpdData()
-  ]).then(([pegawaiMaster, ukpdList]) => {
+  const promise = getUkpdData().then(async (ukpdList) => {
+    const pegawaiMaster = await getPegawaiDashboardData({ user, ukpdList });
     const data = filterPegawaiByRole(pegawaiMaster, user, ukpdList);
     const payload = { data, ukpdList };
     cache.set(cacheKey, { createdAt: Date.now(), data: payload });

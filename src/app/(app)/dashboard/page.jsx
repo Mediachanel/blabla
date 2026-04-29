@@ -927,7 +927,7 @@ export default function DashboardPage() {
         action={<Link className="btn-primary" href="/pegawai/new"><FilePlus2 className="h-4 w-4" /> Tambah Pegawai</Link>}
       />
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+      <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
         <KpiCard title="Total Pegawai" value={data.summary.total} percentage="100%" helper="Jumlah Pegawai Seluruh UKPD" icon={UsersRound} />
         <KpiCard title="PNS/CPNS" value={data.summary.pnsCpns} percentage={formatPercent(data.summary.pnsCpns, totalPegawai)} helper="ASN aktif" icon={ShieldCheck} tone="green" />
         <KpiCard title="PPPK" value={data.summary.pppk} percentage={formatPercent(data.summary.pppk, totalPegawai)} helper="Penuh waktu" icon={UserRoundCheck} tone="gold" />

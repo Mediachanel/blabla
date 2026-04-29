@@ -871,7 +871,13 @@ export default function DashboardPage() {
     setLoading(true);
     setErrorMessage("");
     fetch("/api/dashboard", { cache: "no-store" })
-      .then((res) => res.json())
+      .then(async (res) => {
+        const contentType = res.headers.get("content-type") || "";
+        if (!contentType.includes("application/json")) {
+          throw new Error(`API dashboard mengembalikan respons bukan JSON (HTTP ${res.status}).`);
+        }
+        return res.json();
+      })
       .then((payload) => {
         if (!payload?.success) throw new Error(payload?.message || "Dashboard gagal dimuat.");
         if (active) setData(payload.data);

@@ -1,7 +1,7 @@
 import { getPegawaiWilayah } from "@/lib/auth/access";
 import { requireAuth } from "@/lib/auth/requireAuth";
 import { getScopedDashboardData } from "@/lib/dashboardData";
-import { ok } from "@/lib/helpers/response";
+import { fail, ok } from "@/lib/helpers/response";
 import { JENIS_PEGAWAI_OPTIONS, normalizeJenisPegawai } from "@/lib/helpers/pegawaiStatus";
 import { PANGKAT_GOLONGAN_OPTIONS, normalizePangkatGolonganOption } from "@/lib/pegawaiReferenceOptions";
 
@@ -726,37 +726,42 @@ function buildSummary(data) {
 }
 
 export async function GET() {
-  const { user, error } = await requireAuth();
-  if (error) return error;
+  try {
+    const { user, error } = await requireAuth();
+    if (error) return error;
 
-  const cache = getDashboardCache();
-  const cacheKey = getDashboardCacheKey(user);
-  const cached = cache.get(cacheKey);
-  if (cached && Date.now() - cached.createdAt < DASHBOARD_CACHE_TTL) {
-    return ok(cached.data);
-  }
-
-  const { data, ukpdList } = await getScopedDashboardData(user);
-  const summary = buildSummary(data);
-  const activeData = data.filter((item) => String(item.kondisi || "").toUpperCase() === "AKTIF");
-  const chartItems = activeData.length ? activeData : data;
-  const dashboardMenuStatus = buildDashboardMenuStatusVariants(chartItems);
-
-  const payload = {
-    user,
-    summary,
-    chartViews: buildChartViews(chartItems),
-    dashboardMenus: dashboardMenuStatus.variants.total,
-    dashboardMenusByStatus: dashboardMenuStatus.variants,
-    dashboardMenuStatusOptions: dashboardMenuStatus.options,
-    latestEmployees: data.slice(0, 5),
-    analytics: buildDashboardAnalytics(data, ukpdList),
-    usulanSummary: {
-      mutasi: 0,
-      putusJf: 0
+    const cache = getDashboardCache();
+    const cacheKey = getDashboardCacheKey(user);
+    const cached = cache.get(cacheKey);
+    if (cached && Date.now() - cached.createdAt < DASHBOARD_CACHE_TTL) {
+      return ok(cached.data);
     }
-  };
 
-  cache.set(cacheKey, { createdAt: Date.now(), data: payload });
-  return ok(payload);
+    const { data, ukpdList } = await getScopedDashboardData(user);
+    const summary = buildSummary(data);
+    const activeData = data.filter((item) => String(item.kondisi || "").toUpperCase() === "AKTIF");
+    const chartItems = activeData.length ? activeData : data;
+    const dashboardMenuStatus = buildDashboardMenuStatusVariants(chartItems);
+
+    const payload = {
+      user,
+      summary,
+      chartViews: buildChartViews(chartItems),
+      dashboardMenus: dashboardMenuStatus.variants.total,
+      dashboardMenusByStatus: dashboardMenuStatus.variants,
+      dashboardMenuStatusOptions: dashboardMenuStatus.options,
+      latestEmployees: data.slice(0, 5),
+      analytics: buildDashboardAnalytics(data, ukpdList),
+      usulanSummary: {
+        mutasi: 0,
+        putusJf: 0
+      }
+    };
+
+    cache.set(cacheKey, { createdAt: Date.now(), data: payload });
+    return ok(payload);
+  } catch (error) {
+    console.error("Dashboard API error:", error);
+    return fail(`Dashboard gagal dimuat: ${error.message || "Terjadi kesalahan server."}`, 500);
+  }
 }

@@ -214,6 +214,13 @@ function getTableAvailabilityCache() {
   return globalThis.__sisdmkTableAvailability;
 }
 
+function getColumnAvailabilityCache() {
+  if (!globalThis.__sisdmkColumnAvailability) {
+    globalThis.__sisdmkColumnAvailability = new Map();
+  }
+  return globalThis.__sisdmkColumnAvailability;
+}
+
 async function hasTable(table) {
   const cache = getTableAvailabilityCache();
   if (cache.has(table)) return cache.get(table);
@@ -226,6 +233,24 @@ async function hasTable(table) {
   );
   const available = Number(rows[0]?.total || 0) > 0;
   cache.set(table, available);
+  return available;
+}
+
+async function hasColumn(table, column) {
+  const cache = getColumnAvailabilityCache();
+  const key = `${table}.${column}`;
+  if (cache.has(key)) return cache.get(key);
+
+  const rows = await queryRows(
+    `SELECT COUNT(*) AS total
+     FROM information_schema.columns
+     WHERE table_schema = DATABASE()
+       AND table_name = ?
+       AND column_name = ?`,
+    [table, column]
+  );
+  const available = Number(rows[0]?.total || 0) > 0;
+  cache.set(key, available);
   return available;
 }
 
@@ -672,14 +697,30 @@ export async function getPegawaiData() {
 }
 
 export async function getPegawaiDashboardData() {
-  const selectColumns = PEGAWAI_DASHBOARD_COLUMNS.map((column) => `p.\`${column}\``).join(", ");
-  const eselonSelect = await hasTable("riwayat_jabatan")
+  const selectColumns = (await Promise.all(PEGAWAI_DASHBOARD_COLUMNS.map(async (column) => (
+    await hasColumn("pegawai", column)
+      ? `p.\`${column}\``
+      : `NULL AS \`${column}\``
+  )))).join(", ");
+  const hasRiwayatJabatan = await hasTable("riwayat_jabatan");
+  const hasRiwayatEselon = hasRiwayatJabatan && await hasColumn("riwayat_jabatan", "eselon");
+  const hasRiwayatIdPegawai = hasRiwayatJabatan && await hasColumn("riwayat_jabatan", "id_pegawai");
+  const hasRiwayatId = hasRiwayatJabatan && await hasColumn("riwayat_jabatan", "id");
+  const riwayatOrderColumns = [];
+  if (hasRiwayatJabatan && await hasColumn("riwayat_jabatan", "tmt_jabatan")) riwayatOrderColumns.push("rj.`tmt_jabatan`");
+  if (hasRiwayatJabatan && await hasColumn("riwayat_jabatan", "tanggal_sk")) riwayatOrderColumns.push("rj.`tanggal_sk`");
+  if (hasRiwayatJabatan && await hasColumn("riwayat_jabatan", "created_at")) riwayatOrderColumns.push("rj.`created_at`");
+  const riwayatOrderBy = [
+    riwayatOrderColumns.length ? `COALESCE(${riwayatOrderColumns.join(", ")}, '') DESC` : "",
+    hasRiwayatId ? "rj.`id` DESC" : ""
+  ].filter(Boolean).join(", ");
+  const eselonSelect = hasRiwayatEselon && hasRiwayatIdPegawai
     ? `,
       (
         SELECT rj.\`eselon\`
         FROM \`riwayat_jabatan\` rj
         WHERE rj.\`id_pegawai\` = p.\`id_pegawai\`
-        ORDER BY COALESCE(rj.\`tmt_jabatan\`, rj.\`tanggal_sk\`, rj.\`created_at\`, '') DESC, rj.\`id\` DESC
+        ${riwayatOrderBy ? `ORDER BY ${riwayatOrderBy}` : ""}
         LIMIT 1
       ) AS \`eselon\``
     : ", NULL AS `eselon`";

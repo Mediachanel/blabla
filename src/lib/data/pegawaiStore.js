@@ -49,6 +49,7 @@ const PEGAWAI_DASHBOARD_COLUMNS = [
   "nama",
   "nip",
   "jenis_kelamin",
+  "tanggal_lahir",
   "status_perkawinan",
   "nama_ukpd",
   "id_ukpd",
@@ -58,6 +59,7 @@ const PEGAWAI_DASHBOARD_COLUMNS = [
   "status_rumpun",
   "nama_jabatan_orb",
   "nama_jabatan_menpan",
+  "pangkat_golongan",
   "jenjang_pendidikan",
   "program_studi",
   "kondisi",
@@ -670,10 +672,22 @@ export async function getPegawaiData() {
 }
 
 export async function getPegawaiDashboardData() {
+  const selectColumns = PEGAWAI_DASHBOARD_COLUMNS.map((column) => `p.\`${column}\``).join(", ");
+  const eselonSelect = await hasTable("riwayat_jabatan")
+    ? `,
+      (
+        SELECT rj.\`eselon\`
+        FROM \`riwayat_jabatan\` rj
+        WHERE rj.\`id_pegawai\` = p.\`id_pegawai\`
+        ORDER BY COALESCE(rj.\`tmt_jabatan\`, rj.\`tanggal_sk\`, rj.\`created_at\`, '') DESC, rj.\`id\` DESC
+        LIMIT 1
+      ) AS \`eselon\``
+    : ", NULL AS `eselon`";
+
   return queryRows(
-    `SELECT ${PEGAWAI_DASHBOARD_COLUMNS.map((column) => `\`${column}\``).join(", ")}
-     FROM \`pegawai\`
-     ORDER BY \`id_pegawai\` DESC`
+    `SELECT ${selectColumns}${eselonSelect}
+     FROM \`pegawai\` p
+     ORDER BY p.\`id_pegawai\` DESC`
   );
 }
 

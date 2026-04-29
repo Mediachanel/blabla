@@ -3,7 +3,7 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { BriefcaseMedical, ChevronDown, ChevronRight, Download, FilePlus2, Search, ShieldCheck, UserRoundCheck, UsersRound } from "lucide-react";
+import { BarChart3, BriefcaseMedical, ChevronDown, ChevronRight, Download, FilePlus2, GraduationCap, Home, Landmark, PieChart, Search, ShieldCheck, UserRoundCheck, UsersRound } from "lucide-react";
 import PageHeader from "@/components/layout/PageHeader";
 import KpiCard from "@/components/cards/KpiCard";
 import DataTable from "@/components/tables/DataTable";
@@ -22,6 +22,16 @@ const analyticsTabs = [
   { id: "pendidikan", label: "Pendidikan-Jurusan" },
   { id: "masa-kerja", label: "Masa Kerja" }
 ];
+
+const dashboardMenuOrder = ["dashboard", "pangkat", "eselon", "umur", "pendidikan", "pensiun"];
+const dashboardMenuIcons = {
+  dashboard: Home,
+  pangkat: BarChart3,
+  eselon: Landmark,
+  umur: PieChart,
+  pendidikan: GraduationCap,
+  pensiun: UserRoundCheck
+};
 
 const pivotHeadCell = "bg-slate-50 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-600";
 const pivotLabelHeadCell = `${pivotHeadCell} sticky left-0 z-20 text-left`;
@@ -748,13 +758,113 @@ function DashboardAnalyticsPanel({ analytics }) {
   );
 }
 
+function DashboardMiniStats({ cards = [] }) {
+  if (!cards.length) return null;
+
+  return (
+    <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      {cards.map((card) => (
+        <div key={card.label} className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{card.label}</p>
+          <strong className="mt-1 block text-2xl font-bold tabular-nums text-slate-950">{formatNumber(card.value)}</strong>
+          {card.helper ? <p className="mt-1 text-xs text-slate-500">{card.helper}</p> : null}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function DashboardMenuCharts({
+  menus = {},
+  menusByStatus = {},
+  statusOptions = [],
+  activeStatus = "total",
+  onStatusChange,
+  activeMenu,
+  onMenuChange
+}) {
+  const activeMenus = menusByStatus[activeStatus] || menusByStatus.total || menus;
+  const menuItems = dashboardMenuOrder
+    .filter((id) => activeMenus[id])
+    .map((id) => ({ id, ...activeMenus[id] }));
+  const fallbackId = menuItems[0]?.id;
+  const activeId = activeMenus[activeMenu] ? activeMenu : fallbackId;
+  const activeView = activeMenus[activeId];
+
+  if (!activeView) return null;
+
+  return (
+    <section className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-soft">
+      <nav className="flex gap-1 overflow-x-auto bg-emerald-600 px-3 py-2" aria-label="Menu dashboard">
+        {menuItems.map((item) => {
+          const Icon = dashboardMenuIcons[item.id] || BarChart3;
+          const selected = item.id === activeId;
+          return (
+            <button
+              key={item.id}
+              className={`inline-flex shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-white transition focus-ring ${selected ? "bg-white/20 shadow-sm" : "hover:bg-white/10"}`}
+              onClick={() => onMenuChange(item.id)}
+              type="button"
+            >
+              <Icon className="h-4 w-4" aria-hidden="true" />
+              {item.label}
+            </button>
+          );
+        })}
+      </nav>
+
+      <div className="p-4 sm:p-5">
+        <header className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+          <div className="flex flex-col gap-1">
+            <h2 className="text-lg font-bold text-slate-950">{activeView.title}</h2>
+            {activeView.subtitle ? <p className="text-sm text-slate-500">{activeView.subtitle}</p> : null}
+          </div>
+          {statusOptions.length ? (
+            <label className="flex w-full flex-col gap-1 text-sm font-semibold text-slate-700 sm:w-72">
+              <span>Status Pegawai</span>
+              <select
+                className="input py-2"
+                value={activeStatus}
+                onChange={(event) => onStatusChange(event.target.value)}
+              >
+                {statusOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label} ({formatNumber(option.total)})
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null}
+        </header>
+        <DashboardMiniStats cards={activeView.statCards || []} />
+        <section className="mt-4 grid gap-5 xl:grid-cols-2">
+          {(activeView.charts || []).map((chart) => (
+            <DashboardChartCard
+              key={chart.id || chart.title}
+              title={chart.title}
+              type={chart.type || "bar"}
+              labels={chart.labels || []}
+              values={chart.values || []}
+              colors={chart.colors}
+              datasets={chart.datasets}
+              horizontal={Boolean(chart.horizontal)}
+              stacked={Boolean(chart.stacked)}
+              heightClass={chart.heightClass || "h-80"}
+            />
+          ))}
+        </section>
+      </div>
+    </section>
+  );
+}
+
 export default function DashboardPage() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
-  const [chartView, setChartView] = useState("statusPegawai");
-  const [showAllCharts, setShowAllCharts] = useState(false);
+  const [dashboardMenu, setDashboardMenu] = useState("dashboard");
+  const [dashboardStatus, setDashboardStatus] = useState("total");
 
   useEffect(() => {
     let active = true;
@@ -801,7 +911,6 @@ export default function DashboardPage() {
     { key: "jenis_pegawai", header: "Status", render: (item) => <StatusBadge status={item.jenis_pegawai} /> },
     { key: "nama_ukpd", header: "UKPD" }
   ];
-  const activeChartView = data.chartViews?.[chartView] || data.chartViews?.statusPegawai;
   const totalPegawai = Number(data.summary.total || 0);
 
   return (
@@ -821,36 +930,15 @@ export default function DashboardPage() {
         <KpiCard title="PJLP" value={data.summary.pjlp} percentage={formatPercent(data.summary.pjlp, totalPegawai)} helper="PJLP" icon={UsersRound} />
       </section>
 
-      {activeChartView ? (
-        <>
-          <div className="mt-6 flex justify-end">
-            <div className="flex flex-wrap items-center justify-end gap-3">
-            <label className="flex items-center gap-3 text-sm text-slate-600">
-              <span>Tampilan chart:</span>
-              <select className="input min-w-44 py-2" value={chartView} onChange={(event) => setChartView(event.target.value)}>
-                {Object.entries(data.chartViews || {}).map(([key, view]) => (
-                  <option key={key} value={key}>{view.label}</option>
-                ))}
-              </select>
-            </label>
-            <button className="btn-secondary" type="button" onClick={() => setShowAllCharts((value) => !value)}>
-              {showAllCharts ? "Ringkas chart" : "Tampilkan semua chart"}
-            </button>
-            </div>
-          </div>
-
-          <section className="mt-3 grid gap-5 xl:grid-cols-2">
-            <DashboardChartCard title={activeChartView.titles.distribution} type="doughnut" heightClass="h-80" {...activeChartView.distribution} />
-            <DashboardChartCard title={activeChartView.titles.ukpd} stacked heightClass="h-80" {...activeChartView.ukpd} />
-            {showAllCharts ? (
-              <>
-                <DashboardChartCard title={activeChartView.titles.pendidikan} horizontal stacked heightClass="h-80" {...activeChartView.pendidikan} />
-                <DashboardChartCard title={activeChartView.titles.rumpun} stacked heightClass="h-80" {...activeChartView.rumpun} />
-              </>
-            ) : null}
-          </section>
-        </>
-      ) : null}
+      <DashboardMenuCharts
+        menus={data.dashboardMenus || {}}
+        menusByStatus={data.dashboardMenusByStatus || {}}
+        statusOptions={data.dashboardMenuStatusOptions || []}
+        activeStatus={dashboardStatus}
+        onStatusChange={setDashboardStatus}
+        activeMenu={dashboardMenu}
+        onMenuChange={setDashboardMenu}
+      />
 
       <DashboardAnalyticsPanel analytics={data.analytics} />
 

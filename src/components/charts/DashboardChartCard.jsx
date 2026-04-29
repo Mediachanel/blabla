@@ -1,10 +1,10 @@
 "use client";
 
-import { ArcElement, BarElement, CategoryScale, Chart as ChartJS, Legend, LinearScale, Tooltip } from "chart.js";
+import { ArcElement, BarElement, CategoryScale, Chart as ChartJS, Legend, LinearScale, LineController, LineElement, PointElement, Tooltip } from "chart.js";
 import { useRef } from "react";
 import { Bar, Doughnut } from "react-chartjs-2";
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Tooltip, Legend);
+ChartJS.register(CategoryScale, LinearScale, BarElement, LineController, LineElement, PointElement, ArcElement, Tooltip, Legend);
 
 const defaultColors = ["#18a8e0", "#13a8be", "#22c55e", "#14b8a6", "#10b981", "#8b5cf6", "#f97316", "#ef4444"];
 
@@ -29,7 +29,9 @@ function getVisibleDatasets(chart) {
 }
 
 function getStackTotal(chart, dataIndex) {
-  return getVisibleDatasets(chart).reduce((sum, { dataset }) => sum + Number(dataset.data?.[dataIndex] || 0), 0);
+  return getVisibleDatasets(chart)
+    .filter(({ dataset }) => dataset.type !== "line")
+    .reduce((sum, { dataset }) => sum + Number(dataset.data?.[dataIndex] || 0), 0);
 }
 
 function drawText(ctx, text, x, y, { color = "#334155", align = "center", baseline = "middle", font = "600 10px Inter, Arial, sans-serif", stroke = true, strokeColor = "rgba(255,255,255,0.92)" } = {}) {
@@ -117,6 +119,7 @@ const valueLabelsPlugin = {
         if (!horizontal && chart.data.labels.length > 20 && total < maxTotal * 0.16) return;
 
         const bars = visible
+          .filter(({ dataset }) => dataset.type !== "line")
           .map(({ datasetIndex }) => chart.getDatasetMeta(datasetIndex).data[dataIndex])
           .filter(Boolean)
           .map((bar) => bar.getProps(["x", "y"], true));
@@ -164,10 +167,11 @@ const valueLabelsPlugin = {
 
 function getSummaryRows({ labels = [], values = [], colors = [], datasets = [] }) {
   const palette = colors?.length ? colors : defaultColors;
+  const summaryDatasets = datasets?.filter((dataset) => dataset.summary !== false && dataset.type !== "line") || [];
   const rows = datasets?.length
     ? labels.map((label, index) => ({
         label,
-        value: datasets.reduce((sum, dataset) => sum + Number(dataset.data?.[index] || 0), 0),
+        value: summaryDatasets.reduce((sum, dataset) => sum + Number(dataset.data?.[index] || 0), 0),
         color: palette[index % palette.length]
       }))
     : labels.map((label, index) => ({
@@ -211,15 +215,26 @@ export default function DashboardChartCard({
   const chartRef = useRef(null);
   const flatTotal = values.reduce((sum, value) => sum + Number(value || 0), 0);
   const chartDatasets = datasets?.length
-    ? datasets.map((dataset, index) => ({
-        ...dataset,
-        backgroundColor: dataset.backgroundColor || defaultColors[index % defaultColors.length],
-        borderColor: dataset.borderColor || dataset.backgroundColor || defaultColors[index % defaultColors.length],
-        borderRadius: type === "bar" ? 2 : 0,
-        maxBarThickness: horizontal ? 14 : 18,
-        categoryPercentage: 0.9,
-        barPercentage: 0.85
-      }))
+    ? datasets.map((dataset, index) => {
+        const isLine = dataset.type === "line";
+        const color = dataset.borderColor || dataset.backgroundColor || defaultColors[index % defaultColors.length];
+        return {
+          ...dataset,
+          backgroundColor: dataset.backgroundColor || (isLine ? "rgba(56, 189, 248, 0.16)" : defaultColors[index % defaultColors.length]),
+          borderColor: color,
+          borderWidth: isLine ? dataset.borderWidth ?? 2 : dataset.borderWidth,
+          borderRadius: !isLine && type === "bar" ? 2 : 0,
+          maxBarThickness: isLine ? undefined : (horizontal ? 14 : 18),
+          categoryPercentage: isLine ? undefined : 0.9,
+          barPercentage: isLine ? undefined : 0.85,
+          pointRadius: isLine ? dataset.pointRadius ?? 4 : dataset.pointRadius,
+          pointHoverRadius: isLine ? dataset.pointHoverRadius ?? 5 : dataset.pointHoverRadius,
+          pointBackgroundColor: dataset.pointBackgroundColor || color,
+          tension: isLine ? dataset.tension ?? 0.35 : dataset.tension,
+          fill: isLine ? dataset.fill ?? false : dataset.fill,
+          order: dataset.order ?? (isLine ? 0 : 1)
+        };
+      })
     : [
         {
           label: title,
@@ -254,8 +269,13 @@ export default function DashboardChartCard({
         callbacks: {
           label: (context) => {
             const value = Number(context.raw || 0);
+            if (context.dataset.type === "line") {
+              return `${context.dataset.label || "Total"}: ${formatNumber(value)}`;
+            }
             const total = datasets?.length
-              ? context.chart.data.datasets.reduce((sum, dataset) => sum + Number(dataset.data?.[context.dataIndex] || 0), 0)
+              ? context.chart.data.datasets
+                .filter((dataset) => dataset.type !== "line")
+                .reduce((sum, dataset) => sum + Number(dataset.data?.[context.dataIndex] || 0), 0)
               : flatTotal;
             const label = type === "doughnut" ? context.label : (context.dataset.label || context.label);
             return `${label}: ${formatNumber(value)} (${formatPercent(value, total)})`;

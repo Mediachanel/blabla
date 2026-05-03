@@ -89,12 +89,12 @@ export default function AppShell({ children }) {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-[#f5f5f5]">
       <Sidebar user={user} collapsed={collapsed} onToggle={() => setCollapsed((value) => !value)} />
       <MobileSidebar user={user} open={mobileOpen} onClose={() => setMobileOpen(false)} />
-      <div className={`transition-[padding] duration-200 ${collapsed ? "lg:pl-20" : "lg:pl-72"}`}>
+      <div className={`transition-[padding] duration-200 ${collapsed ? "lg:pl-20" : "lg:pl-64"}`}>
         <Topbar user={user} onOpenMenu={() => setMobileOpen(true)} collapsed={collapsed} onToggleSidebar={() => setCollapsed((value) => !value)} />
-        <main className="px-4 py-6 sm:px-6 lg:px-8">{children}</main>
+        <main className="px-4 py-7 sm:px-6 lg:px-8">{children}</main>
       </div>
     </div>
   );

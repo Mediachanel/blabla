@@ -5,16 +5,16 @@ module.exports = {
     extend: {
       colors: {
         dinkes: {
-          50: "#f1f8fd",
-          100: "#dceffa",
-          200: "#bae0f5",
-          300: "#88cbed",
-          400: "#4dafdf",
-          500: "#2694cc",
-          600: "#1878ad",
-          700: "#155f8c",
-          800: "#164f74",
-          900: "#18435f"
+          50: "#eef5ff",
+          100: "#dbeafe",
+          200: "#bfdbfe",
+          300: "#93c5fd",
+          400: "#60a5fa",
+          500: "#4089f6",
+          600: "#2872dc",
+          700: "#1d5db8",
+          800: "#1e4c91",
+          900: "#1d3f73"
         },
         govgold: {
           50: "#fff9eb",
@@ -25,7 +25,9 @@ module.exports = {
         }
       },
       boxShadow: {
-        soft: "0 18px 50px rgba(21, 95, 140, 0.10)"
+        soft: "0 18px 50px rgba(64, 137, 246, 0.10)",
+        etpp: "0 10px 28px rgba(15, 23, 42, 0.06)",
+        button: "0 4px 12px rgba(64, 137, 246, 0.28)"
       }
     }
   },

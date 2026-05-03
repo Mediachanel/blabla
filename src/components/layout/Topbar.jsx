@@ -2,16 +2,44 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Loader2, Menu, PanelLeftClose, PanelLeftOpen, Search, X } from "lucide-react";
-import RoleBadge from "@/components/ui/RoleBadge";
+import { usePathname, useRouter } from "next/navigation";
+import { Bell, Loader2, Menu, PanelLeftClose, PanelLeftOpen, Search, X } from "lucide-react";
 
 function primaryPosition(item) {
   return item.nama_jabatan_menpan || item.nama_jabatan_orb || item.jabatan || "-";
 }
 
+function getInitials(user) {
+  const text = String(user?.username || user?.nama_ukpd || "SI").trim();
+  return text
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
+}
+
+function formatToday() {
+  return new Intl.DateTimeFormat("id-ID", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric"
+  }).format(new Date());
+}
+
+function breadcrumbFromPath(pathname) {
+  const segments = String(pathname || "/dashboard").split("/").filter(Boolean);
+  const last = segments[segments.length - 1] || "dashboard";
+  return last
+    .split("-")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
 export default function Topbar({ user, onOpenMenu, collapsed, onToggleSidebar }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -111,21 +139,26 @@ export default function Topbar({ user, onOpenMenu, collapsed, onToggleSidebar })
   }
 
   return (
-    <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/90 backdrop-blur">
-      <div className="flex h-16 items-center justify-between gap-4 px-4 sm:px-6">
-        <div className="flex items-center gap-3">
-          <button className="rounded-xl p-2 text-slate-600 hover:bg-slate-100 focus-ring lg:hidden" onClick={onOpenMenu} aria-label="Buka menu">
+    <header className="sticky top-0 z-30 border-b border-[#edf0f5] bg-white">
+      <div className="flex h-20 items-center justify-between gap-4 px-4 sm:px-6">
+        <div className="flex min-w-0 flex-1 items-center gap-4">
+          <button className="rounded-md bg-[#f5f7fb] p-3 text-slate-600 hover:bg-slate-100 focus-ring lg:hidden" onClick={onOpenMenu} aria-label="Buka menu">
             <Menu className="h-5 w-5" />
           </button>
-          <button className="hidden rounded-xl p-2 text-slate-600 hover:bg-slate-100 focus-ring lg:inline-flex" onClick={onToggleSidebar} aria-label={collapsed ? "Buka sidebar" : "Tutup sidebar"}>
+          <button className="hidden rounded-md bg-[#f5f7fb] p-3 text-slate-600 hover:bg-slate-100 focus-ring lg:inline-flex" onClick={onToggleSidebar} aria-label={collapsed ? "Buka sidebar" : "Tutup sidebar"}>
             {collapsed ? <PanelLeftOpen className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
           </button>
-          <div className="relative hidden w-80 md:block" ref={searchRef}>
+          <nav className="hidden min-w-0 items-center gap-2 text-sm font-medium md:flex" aria-label="Breadcrumb">
+            <Link className="text-dinkes-600 hover:text-dinkes-700" href="/dashboard">Beranda</Link>
+            <span className="text-slate-300">/</span>
+            <span className="truncate text-slate-600">{breadcrumbFromPath(pathname)}</span>
+          </nav>
+          <div className="relative ml-auto hidden w-80 xl:block" ref={searchRef}>
             <label className="sr-only" htmlFor="topbar-search-input">Pencarian cepat</label>
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
             <input
               id="topbar-search-input"
-              className="input py-2 pl-9 pr-10"
+              className="input h-10 rounded-md border-[#d8dde6] py-2 pl-9 pr-10"
               placeholder="Cari pegawai atau UKPD"
               value={query}
               onChange={(event) => {
@@ -149,7 +182,7 @@ export default function Topbar({ user, onOpenMenu, collapsed, onToggleSidebar })
               </button>
             ) : null}
             {open && trimmedQuery.length >= 2 ? (
-              <div id={resultListId} className="absolute left-0 top-full mt-2 w-[28rem] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl" role="listbox">
+              <div id={resultListId} className="absolute left-0 top-full mt-2 w-[28rem] overflow-hidden rounded-lg border border-slate-200 bg-white shadow-2xl" role="listbox">
                 {errorMessage ? (
                   <div className="px-4 py-3 text-sm text-rose-700">{errorMessage}</div>
                 ) : results.length ? (
@@ -184,11 +217,15 @@ export default function Topbar({ user, onOpenMenu, collapsed, onToggleSidebar })
             ) : null}
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <RoleBadge role={user?.role} />
-          <div className="hidden text-right sm:block">
-            <p className="text-sm font-semibold text-slate-900">{user?.username}</p>
-            <p className="max-w-52 truncate text-xs text-slate-500">{user?.nama_ukpd}</p>
+        <div className="flex shrink-0 items-center gap-4">
+          <span className="hidden text-sm font-medium text-slate-400 md:inline">{formatToday()}</span>
+          <span className="hidden h-8 w-px bg-[#e5e7eb] md:block" aria-hidden="true" />
+          <button className="relative rounded-full p-2 text-dinkes-600 hover:bg-dinkes-50 focus-ring" type="button" aria-label="Notifikasi">
+            <Bell className="h-5 w-5" />
+            <span className="absolute right-0 top-0 rounded-full bg-[#f13296] px-1.5 py-0.5 text-[10px] font-bold leading-none text-white">0</span>
+          </button>
+          <div className="grid h-11 w-11 place-items-center rounded-full bg-slate-100 text-sm font-medium text-slate-500 shadow-sm ring-1 ring-slate-200">
+            {getInitials(user)}
           </div>
         </div>
       </div>

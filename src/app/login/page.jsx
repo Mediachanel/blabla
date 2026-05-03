@@ -10,6 +10,7 @@ import {
   EyeOff,
   FileQuestion,
   Loader2,
+  LockKeyhole,
   Search,
   ShieldCheck,
   UsersRound
@@ -115,12 +116,12 @@ function QnaSection({ quickSearch, onResetQuickSearch }) {
     <section
       id="qna-layanan"
       aria-labelledby="qna-heading"
-      className="overflow-hidden rounded-[1.75rem] bg-white shadow-[0_22px_70px_rgba(15,23,42,0.08)] ring-1 ring-emerald-100/90"
+      className="overflow-hidden rounded-xl bg-white shadow-[0_22px_70px_rgba(15,23,42,0.08)] ring-1 ring-dinkes-100/90"
     >
       <div className="grid gap-0 lg:grid-cols-[0.92fr_1.08fr]">
-        <aside className="border-b border-slate-200/80 bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.14),transparent_42%),linear-gradient(180deg,#f7fdfb,#eefaf6)] p-6 sm:p-8 lg:border-b-0 lg:border-r">
-          <span className="inline-flex rounded-full bg-emerald-100 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.22em] text-emerald-700">Pusat QnA</span>
-          <h2 id="qna-heading" className="mt-5 text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">Pusat QnA Layanan Kepegawaian</h2>
+        <aside className="border-b border-slate-200/80 bg-[linear-gradient(180deg,#f6f9ff,#eef5ff)] p-6 sm:p-8 lg:border-b-0 lg:border-r">
+          <span className="inline-flex rounded-md bg-dinkes-100 px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-dinkes-700">Pusat QnA</span>
+          <h2 id="qna-heading" className="mt-5 text-2xl font-bold tracking-normal text-slate-900 sm:text-3xl">Pusat QnA Layanan Kepegawaian</h2>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
             Temukan aturan, syarat, dan alur layanan tanpa membuka dokumen panjang.
           </p>
@@ -131,7 +132,7 @@ function QnaSection({ quickSearch, onResetQuickSearch }) {
               <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" aria-hidden="true" />
               <input
                 id="qna-search"
-                className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-12 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
+                className="h-12 w-full rounded-md border border-[#d8dde6] bg-white px-12 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-dinkes-500 focus:ring-2 focus:ring-dinkes-100"
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Cari mutasi, cuti, kenaikan pangkat, disiplin..."
@@ -152,10 +153,10 @@ function QnaSection({ quickSearch, onResetQuickSearch }) {
               { label: "FAQ Terbit", value: String(totalFaq), icon: ShieldCheck },
               { label: "Akses", value: "Publik", icon: UsersRound }
             ].map((item) => (
-              <div key={item.label} className="rounded-2xl bg-white/90 p-4 shadow-sm ring-1 ring-emerald-100">
+              <div key={item.label} className="rounded-lg bg-white/90 p-4 shadow-sm ring-1 ring-dinkes-100">
                 <div className="flex items-center justify-between gap-3">
                   <p className="text-xs font-extrabold uppercase tracking-wide text-slate-500">{item.label}</p>
-                  <item.icon className="h-4 w-4 text-emerald-700" aria-hidden="true" />
+                  <item.icon className="h-4 w-4 text-dinkes-700" aria-hidden="true" />
                 </div>
                 <p className="mt-3 text-2xl font-extrabold text-slate-900">{item.value}</p>
               </div>
@@ -171,7 +172,7 @@ function QnaSection({ quickSearch, onResetQuickSearch }) {
             <div className="grid gap-2">
               {loading ? (
                 Array.from({ length: 4 }).map((_, index) => (
-                  <div key={index} className="h-16 animate-pulse rounded-2xl bg-white/70 ring-1 ring-slate-200" />
+                  <div key={index} className="h-16 animate-pulse rounded-lg bg-white/70 ring-1 ring-slate-200" />
                 ))
               ) : visibleCategories.length ? (
                 visibleCategories.map((category) => {
@@ -181,7 +182,7 @@ function QnaSection({ quickSearch, onResetQuickSearch }) {
                       key={category.id}
                       type="button"
                       onClick={() => setActiveCategory(category.id)}
-                      className={`rounded-2xl border p-4 text-left transition focus-ring ${active ? "border-emerald-500 bg-emerald-600 text-white shadow-lg shadow-emerald-200/80" : "border-slate-200 bg-white text-slate-800 hover:border-emerald-200 hover:bg-emerald-50/60"}`}
+                      className={`rounded-lg border p-4 text-left transition focus-ring ${active ? "border-dinkes-500 bg-dinkes-500 text-white shadow-button" : "border-slate-200 bg-white text-slate-800 hover:border-dinkes-200 hover:bg-dinkes-50/60"}`}
                     >
                       <div className="flex items-center justify-between gap-3">
                         <p className="text-sm font-extrabold">{highlightText(category.name, deferredSearch)}</p>
@@ -189,14 +190,14 @@ function QnaSection({ quickSearch, onResetQuickSearch }) {
                           {category.items.length}
                         </span>
                       </div>
-                      <p className={`mt-2 text-xs leading-5 ${active ? "text-emerald-50" : "text-slate-500"}`}>
+                      <p className={`mt-2 text-xs leading-5 ${active ? "text-dinkes-50" : "text-slate-500"}`}>
                         {highlightText(category.description || "Kategori informasi layanan kepegawaian.", deferredSearch)}
                       </p>
                     </button>
                   );
                 })
               ) : (
-                <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-5 text-sm text-slate-500">
+                <div className="rounded-lg border border-dashed border-slate-300 bg-white p-5 text-sm text-slate-500">
                   Tidak ada hasil. Coba gunakan kata kunci lain.
                 </div>
               )}
@@ -207,15 +208,15 @@ function QnaSection({ quickSearch, onResetQuickSearch }) {
         <div className="bg-white p-6 sm:p-8">
           <div className="flex flex-col gap-3 border-b border-slate-100 pb-5 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="text-xs font-extrabold uppercase tracking-[0.22em] text-emerald-600">Jawaban Terpilih</p>
-              <h3 className="mt-2 text-2xl font-extrabold tracking-tight text-slate-900">
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-dinkes-600">Jawaban Terpilih</p>
+              <h3 className="mt-2 text-2xl font-bold tracking-normal text-slate-900">
                 {selectedCategory?.name || (loading ? "Memuat QnA..." : "Belum ada kategori")}
               </h3>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
                 {selectedCategory?.description || "Pilih kategori untuk melihat daftar pertanyaan dan jawaban yang tersedia."}
               </p>
             </div>
-            <div className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700 ring-1 ring-emerald-100">
+            <div className="rounded-md bg-dinkes-50 px-4 py-3 text-sm font-semibold text-dinkes-700 ring-1 ring-dinkes-100">
               {visibleItems.length} pertanyaan
             </div>
           </div>
@@ -223,17 +224,17 @@ function QnaSection({ quickSearch, onResetQuickSearch }) {
           <div className="mt-6 space-y-3">
             {loading ? (
               Array.from({ length: 5 }).map((_, index) => (
-                <div key={index} className="h-24 animate-pulse rounded-2xl bg-slate-100" />
+                <div key={index} className="h-24 animate-pulse rounded-lg bg-slate-100" />
               ))
             ) : error ? (
-              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-800">
+              <div className="rounded-lg border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-800">
                 {error}
               </div>
             ) : visibleItems.length ? (
               visibleItems.map((item) => {
                 const open = openItems.includes(item.id);
                 return (
-                  <article key={item.id} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:border-emerald-200 hover:shadow-md">
+                  <article key={item.id} className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition hover:border-dinkes-200 hover:shadow-md">
                     <button
                       type="button"
                       onClick={() => setOpenItems((current) => current.includes(item.id) ? current.filter((entry) => entry !== item.id) : [...current, item.id])}
@@ -243,7 +244,7 @@ function QnaSection({ quickSearch, onResetQuickSearch }) {
                         <p className="text-base font-bold leading-7 text-slate-900">{highlightText(item.question, deferredSearch)}</p>
                         <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-400">{highlightText(item.category_name, deferredSearch)}</p>
                       </div>
-                      <span className={`mt-1 rounded-full border p-2 text-slate-500 transition ${open ? "rotate-180 border-emerald-200 bg-emerald-50 text-emerald-700" : "border-slate-200 bg-white"}`}>
+                      <span className={`mt-1 rounded-md border p-2 text-slate-500 transition ${open ? "rotate-180 border-dinkes-200 bg-dinkes-50 text-dinkes-700" : "border-slate-200 bg-white"}`}>
                         <ChevronDown className="h-4 w-4" aria-hidden="true" />
                       </span>
                     </button>
@@ -256,7 +257,7 @@ function QnaSection({ quickSearch, onResetQuickSearch }) {
                 );
               })
             ) : (
-              <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6 text-sm leading-6 text-slate-500">
+              <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-6 text-sm leading-6 text-slate-500">
                 Tidak ada hasil. Coba gunakan kata kunci lain.
               </div>
             )}
@@ -352,19 +353,19 @@ function LoginCard() {
   }
 
   return (
-    <aside aria-labelledby="login-heading" className="flex items-center justify-center bg-white p-6 sm:p-8 lg:p-10">
-      <form className="w-full max-w-[380px]" onSubmit={submit} noValidate>
-        <div className="mb-6 text-center">
-          <p className="text-lg font-bold text-slate-800">SI-DATA</p>
-          <div className="mx-auto mt-3 grid h-20 w-20 place-items-center overflow-hidden bg-white">
-            <Image src={dinkesLogo} alt="Logo Dinas Kesehatan DKI Jakarta" className="h-full w-full object-contain" priority />
+    <aside aria-labelledby="login-heading" className="flex items-center justify-center bg-dinkes-500 p-5 sm:p-8 lg:p-10">
+      <form className="w-full max-w-[520px] rounded-xl bg-white p-6 shadow-[0_26px_80px_rgba(15,23,42,0.18)] ring-1 ring-white/60 sm:p-8" onSubmit={submit} noValidate>
+        <div className="mb-5">
+          <div className="mb-4 grid h-12 w-12 place-items-center rounded-lg bg-dinkes-50 text-dinkes-600">
+            <LockKeyhole className="h-6 w-6" aria-hidden="true" />
           </div>
-          <h2 id="login-heading" className="sr-only">Masuk Sistem Informasi Data Pegawai</h2>
+          <h2 id="login-heading" className="text-xl font-bold tracking-normal text-slate-800 sm:text-2xl">Masuk Sistem Informasi Data Pegawai</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-500">Masukkan akun resmi Anda untuk mengakses dashboard dan layanan kepegawaian.</p>
         </div>
 
         <div className="space-y-4">
           <label htmlFor="username" className="block">
-            <span className="mb-2 block text-sm font-medium text-slate-500">Username</span>
+            <span className="mb-2 block text-sm font-semibold text-slate-700">Username / UKPD ID</span>
             <input
               id="username"
               ref={usernameRef}
@@ -373,7 +374,7 @@ function LoginCard() {
               value={form.username}
               onChange={(event) => updateField("username", event.target.value)}
               autoComplete="username"
-              placeholder="Masukkan username"
+              placeholder="Masukkan Username / UKPD ID"
               aria-invalid={Boolean(fieldErrors.username)}
               aria-describedby={fieldErrors.username ? "username-error" : undefined}
               autoFocus
@@ -382,7 +383,7 @@ function LoginCard() {
           </label>
 
           <label htmlFor="password" className="block">
-            <span className="mb-2 block text-sm font-medium text-slate-500">Password</span>
+            <span className="mb-2 block text-sm font-semibold text-slate-700">Password</span>
             <span className="relative block">
               <input
                 id="password"
@@ -421,7 +422,7 @@ function LoginCard() {
             </>
           ) : "Masuk"}
         </button>
-        <p className="mt-4 text-right text-xs font-medium text-dinkes-600">Lupa password?</p>
+        <p className="mt-3 text-xs font-medium text-slate-500">Lupa password? Hubungi admin Kepegawaian.</p>
         {formError ? <p className="mt-4 rounded-md border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700">{formError}</p> : null}
       </form>
     </aside>
@@ -454,70 +455,62 @@ function LoginShell() {
 
   return (
     <>
-      <a href="#konten-utama" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-xl focus:bg-white focus:px-4 focus:py-3 focus:text-sm focus:font-semibold focus:text-emerald-700 focus:shadow-lg">
+      <a href="#konten-utama" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-white focus:px-4 focus:py-3 focus:text-sm focus:font-semibold focus:text-dinkes-600 focus:shadow-lg">
         Lewati ke konten utama
       </a>
 
       <div className="min-h-screen overflow-hidden bg-[#f5f5f5] text-slate-900">
         <div className="absolute inset-0 -z-10 opacity-70 [background-image:linear-gradient(160deg,transparent_0%,transparent_42%,rgba(203,213,225,0.35)_42.2%,transparent_43%),linear-gradient(20deg,transparent_0%,transparent_62%,rgba(203,213,225,0.28)_62.2%,transparent_63%)]" />
 
-        <header className="hidden">
+        <header className="border-b border-white/70 bg-white/85 backdrop-blur">
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
             <div className="flex min-w-0 items-center gap-3">
-              <span className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-emerald-100">
-                <Image src={dinkesLogo} alt="Logo Dinas Kesehatan DKI Jakarta" className="h-full w-full object-cover" priority />
+              <span className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden bg-white">
+                <Image src={dinkesLogo} alt="Logo Dinas Kesehatan DKI Jakarta" className="h-full w-full object-contain" priority />
               </span>
               <div className="min-w-0">
-                <p className="truncate text-sm font-extrabold tracking-wide text-slate-800 sm:text-base">Subkelompok Kepegawaian</p>
+                <p className="truncate text-sm font-bold tracking-wide text-slate-800 sm:text-base">SI-DATA</p>
                 <p className="truncate text-xs font-semibold text-slate-600 sm:text-sm">Dinas Kesehatan Provinsi DKI Jakarta</p>
               </div>
             </div>
-            <div className="hidden items-center gap-2 rounded-full bg-white/90 px-4 py-2 text-xs font-medium text-slate-600 shadow-sm ring-1 ring-emerald-50 sm:flex">
-              <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" aria-hidden="true" />
+            <div className="hidden items-center gap-2 rounded-md bg-white/90 px-4 py-2 text-xs font-medium text-slate-600 shadow-sm ring-1 ring-dinkes-50 sm:flex">
+              <span className="h-2.5 w-2.5 rounded-full bg-dinkes-500" aria-hidden="true" />
               {timestamp}
             </div>
           </div>
         </header>
 
-        <main id="konten-utama" className="mx-auto flex min-h-screen w-full max-w-[1360px] flex-col justify-center gap-6 px-4 py-8 sm:px-6 lg:px-8">
-          <section className="grid min-h-[660px] overflow-hidden rounded-xl bg-white p-4 shadow-[0_18px_48px_rgba(15,23,42,0.08)] lg:grid-cols-[0.34fr_0.66fr]">
-            <LoginCard />
-            <section className="rounded-xl bg-[#477dcc] p-6 text-white sm:p-8 lg:p-10" aria-labelledby="announcement-heading">
-              <div className="flex items-center justify-between gap-4">
-                <h1 id="announcement-heading" className="text-2xl font-bold">Pengumuman</h1>
-                <p className="text-sm font-semibold sm:text-base">{new Intl.DateTimeFormat("id-ID", { weekday: "long", day: "2-digit", month: "long", year: "numeric" }).format(new Date())}</p>
-              </div>
-
-              <article className="mt-6 rounded-xl bg-white p-5 text-slate-900">
-                <h2 className="text-base font-bold text-[#ff2b5f]">Pengumuman Terbaru</h2>
-                <p className="mt-3 text-sm leading-7">
-                  Bila gagal login karena salah password, gunakan fitur <strong>Lupa Password?</strong> atau hubungi admin kepegawaian untuk bantuan pemulihan akun.
-                </p>
-              </article>
-
-              <div className="mt-6">
-                <h2 className="text-sm font-bold">Pengumuman Lainnya</h2>
-              <article className="mt-3 rounded-xl bg-white/18 p-5 text-white">
-                  <p className="text-sm leading-7">
-                    Sistem SI-DATA digunakan untuk pengelolaan informasi pegawai, usulan layanan kepegawaian, DUK, profil pegawai, dan data pendukung SDM Kesehatan.
-                  </p>
-                  <ol className="mt-5 list-decimal space-y-2 pl-7 text-sm font-medium leading-6">
-                    <li>Pastikan data pegawai selalu diperbarui sesuai kewenangan login.</li>
-                    <li>Gunakan menu usulan untuk memantau proses mutasi dan putus JF.</li>
-                  <li>Gunakan pencarian pegawai untuk membuka profil dan riwayat dengan cepat.</li>
-                </ol>
-                <button type="button" onClick={() => setShowHelp((value) => !value)} className="mt-5 rounded-md bg-white/20 px-4 py-2 text-xs font-bold text-white transition hover:bg-white/30 focus-ring">
-                  {showHelp ? "Tutup bantuan" : "Baca selengkapnya"}
+        <main id="konten-utama" className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8 lg:py-10">
+          <section className="grid min-h-[420px] overflow-hidden rounded-xl bg-dinkes-500 shadow-[0_24px_80px_rgba(64,137,246,0.22)] lg:grid-cols-[1fr_0.86fr]">
+            <section className="relative flex min-h-[330px] flex-col justify-center overflow-hidden bg-dinkes-500 p-7 text-white sm:p-10 lg:p-12" aria-labelledby="hero-heading">
+              <div className="absolute -right-20 -top-24 h-56 w-56 rounded-full border-[28px] border-white/10" aria-hidden="true" />
+              <div className="absolute bottom-8 right-8 hidden h-32 w-32 rounded-full bg-white/10 lg:block" aria-hidden="true" />
+              <span className="w-fit rounded-md border border-white/30 bg-white/12 px-4 py-2 text-xs font-bold shadow-sm backdrop-blur">
+                Informasi Kepegawaian
+              </span>
+              <h1 id="hero-heading" className="mt-7 max-w-3xl text-3xl font-bold leading-tight tracking-normal text-white sm:text-4xl lg:text-5xl">
+                Sistem Informasi SDM Kesehatan DKI Jakarta
+              </h1>
+              <p className="mt-5 max-w-2xl text-base font-medium leading-7 text-dinkes-50 sm:text-lg">
+                Akses layanan kepegawaian, informasi pengembangan karir, pendayagunaan pegawai, dan pusat tanya jawab dalam satu halaman yang mudah dipahami.
+              </p>
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                <button type="button" onClick={() => setShowHelp((value) => !value)} className="inline-flex w-full items-center justify-center rounded-md bg-white px-5 py-3 text-sm font-bold text-dinkes-700 transition hover:bg-dinkes-50 focus-ring sm:w-auto">
+                  {showHelp ? "Sembunyikan Bantuan" : "Buka Bantuan Kepegawaian"}
                 </button>
-              </article>
-            </div>
+              </div>
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-dinkes-50/90">
+                Temukan aturan, syarat, dan alur layanan tanpa membuka dokumen panjang.
+              </p>
             </section>
+
+            <LoginCard />
           </section>
 
           {showHelp ? (
           <section aria-labelledby="quick-action-heading" className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <div className="rounded-[1.5rem] border border-emerald-100 bg-white p-5 shadow-sm md:col-span-2 xl:col-span-4">
-              <h2 id="quick-action-heading" className="text-lg font-extrabold text-slate-900">Akses Cepat Informasi Layanan</h2>
+            <div className="rounded-xl border border-dinkes-100 bg-white p-5 shadow-sm md:col-span-2 xl:col-span-4">
+              <h2 id="quick-action-heading" className="text-lg font-bold text-slate-900">Akses Cepat Informasi Layanan</h2>
               <p className="mt-2 text-sm leading-6 text-slate-500">Gunakan shortcut ini untuk langsung memfilter pusat QnA sesuai layanan yang paling sering dicari.</p>
             </div>
             {QUICK_ACTIONS.map((action) => (
@@ -525,7 +518,7 @@ function LoginShell() {
                 key={action.title}
                 type="button"
                 onClick={() => applyQuickAction(action.keyword)}
-                className="rounded-[1.5rem] border border-emerald-100 bg-white p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-200 hover:bg-emerald-50/70 focus-ring"
+                className="rounded-xl border border-dinkes-100 bg-white p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-dinkes-200 hover:bg-dinkes-50/70 focus-ring"
               >
                 <p className="text-base font-bold text-slate-900">{action.title}</p>
                 <p className="mt-2 text-sm leading-6 text-slate-500">{action.description}</p>
@@ -547,7 +540,7 @@ function LoginShell() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<main className="grid min-h-screen place-items-center bg-[#f4fbf8]"><CalendarClock className="h-8 w-8 animate-pulse text-emerald-700" aria-hidden="true" /></main>}>
+    <Suspense fallback={<main className="grid min-h-screen place-items-center bg-[#f5f5f5]"><CalendarClock className="h-8 w-8 animate-pulse text-dinkes-600" aria-hidden="true" /></main>}>
       <LoginShell />
     </Suspense>
   );

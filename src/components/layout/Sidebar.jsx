@@ -7,7 +7,7 @@ import SidebarItem from "@/components/layout/SidebarItem";
 import dinkesLogo from "@/Foto/Dinkes.png";
 
 function getInitials(user) {
-  const text = String(user?.username || user?.nama_ukpd || "SI").trim();
+  const text = String(user?.nama_ukpd || user?.username || "SI").trim();
   return text
     .split(/\s+/)
     .slice(0, 2)
@@ -38,8 +38,8 @@ export default function Sidebar({ user, collapsed, onToggle }) {
         </span>
         {!collapsed ? (
           <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-slate-700">{user?.username || "Pengguna"}</p>
-            <p className="truncate text-xs text-slate-400">{user?.nama_ukpd || user?.role || "-"}</p>
+            <p className="truncate text-sm font-semibold text-slate-700">{user?.nama_ukpd || user?.username || "Pengguna"}</p>
+            <p className="truncate text-xs text-slate-400">{user?.role || "-"}</p>
           </div>
         ) : null}
       </section>

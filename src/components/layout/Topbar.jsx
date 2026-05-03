@@ -3,14 +3,14 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Bell, Loader2, Menu, PanelLeftClose, PanelLeftOpen, Search, X } from "lucide-react";
+import { Bell, LogOut, Loader2, Menu, PanelLeftClose, PanelLeftOpen, Search, UserRound, X } from "lucide-react";
 
 function primaryPosition(item) {
   return item.nama_jabatan_menpan || item.nama_jabatan_orb || item.jabatan || "-";
 }
 
 function getInitials(user) {
-  const text = String(user?.username || user?.nama_ukpd || "SI").trim();
+  const text = String(user?.nama_ukpd || user?.username || "SI").trim();
   return text
     .split(/\s+/)
     .slice(0, 2)
@@ -45,14 +45,17 @@ export default function Topbar({ user, onOpenMenu, collapsed, onToggleSidebar })
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [open, setOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const searchRef = useRef(null);
+  const accountRef = useRef(null);
   const trimmedQuery = query.trim();
   const resultListId = "topbar-search-results";
 
   useEffect(() => {
     function handlePointerDown(event) {
       if (!searchRef.current?.contains(event.target)) setOpen(false);
+      if (!accountRef.current?.contains(event.target)) setAccountOpen(false);
     }
 
     document.addEventListener("pointerdown", handlePointerDown);
@@ -135,6 +138,15 @@ export default function Topbar({ user, onOpenMenu, collapsed, onToggleSidebar })
         closeSearch();
         router.push(`/pegawai/${target.id_pegawai}`);
       }
+    }
+  }
+
+  async function handleLogout() {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } finally {
+      router.replace("/login");
+      router.refresh();
     }
   }
 
@@ -224,8 +236,44 @@ export default function Topbar({ user, onOpenMenu, collapsed, onToggleSidebar })
             <Bell className="h-5 w-5" />
             <span className="absolute right-0 top-0 rounded-full bg-[#f13296] px-1.5 py-0.5 text-[10px] font-bold leading-none text-white">0</span>
           </button>
-          <div className="grid h-11 w-11 place-items-center rounded-full bg-slate-100 text-sm font-medium text-slate-500 shadow-sm ring-1 ring-slate-200">
-            {getInitials(user)}
+          <div className="relative" ref={accountRef}>
+            <button
+              type="button"
+              className="grid h-11 w-11 place-items-center rounded-full bg-slate-100 text-sm font-medium text-slate-500 shadow-sm ring-1 ring-slate-200 focus-ring"
+              onClick={() => setAccountOpen((value) => !value)}
+              aria-label="Buka pengaturan pengguna"
+              aria-expanded={accountOpen}
+            >
+              {getInitials(user)}
+            </button>
+            {accountOpen ? (
+              <section className="absolute right-0 top-full mt-3 w-72 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-[0_18px_45px_rgba(15,23,42,0.16)]">
+                <header className="bg-dinkes-500 px-5 py-4 text-white">
+                  <p className="text-base font-semibold">Pengaturan</p>
+                  <p className="mt-1 truncate text-xs font-medium text-white/80">{user?.nama_ukpd || user?.username || "Pengguna"}</p>
+                </header>
+                <div className="border-b border-slate-100 px-5 py-3">
+                  <p className="truncate text-sm font-semibold text-slate-800">{user?.nama_ukpd || user?.username || "Pengguna"}</p>
+                  <p className="mt-1 truncate text-xs text-slate-500">{user?.role || "-"}</p>
+                </div>
+                <Link
+                  className="flex items-center gap-3 px-5 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                  href="/profil"
+                  onClick={() => setAccountOpen(false)}
+                >
+                  <UserRound className="h-4 w-4" />
+                  Profil Pengguna
+                </Link>
+                <button
+                  type="button"
+                  className="flex w-full items-center gap-3 px-5 py-3 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                  onClick={handleLogout}
+                >
+                  <LogOut className="h-4 w-4" />
+                  Keluar
+                </button>
+              </section>
+            ) : null}
           </div>
         </div>
       </div>

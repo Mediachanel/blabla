@@ -4,7 +4,6 @@ import { Fragment, useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { BarChart3, BriefcaseMedical, ChevronDown, ChevronRight, Download, FilePlus2, GraduationCap, Home, PieChart, Search, ShieldCheck, UserRoundCheck, UsersRound } from "lucide-react";
-import PageHeader from "@/components/layout/PageHeader";
 import KpiCard from "@/components/cards/KpiCard";
 import DataTable from "@/components/tables/DataTable";
 import StatusBadge from "@/components/ui/StatusBadge";
@@ -780,6 +779,7 @@ function DashboardMenuCharts({
   statusOptions = [],
   activeStatus = "total",
   onStatusChange,
+  statusLoading = false,
   activeMenu,
   onMenuChange
 }) {
@@ -825,6 +825,7 @@ function DashboardMenuCharts({
               <select
                 className="input py-2"
                 value={activeStatus}
+                disabled={statusLoading}
                 onChange={(event) => onStatusChange(event.target.value)}
               >
                 {statusOptions.map((option) => (
@@ -833,6 +834,7 @@ function DashboardMenuCharts({
                   </option>
                 ))}
               </select>
+              {statusLoading ? <span className="text-xs font-medium text-slate-500">Memuat...</span> : null}
             </label>
           ) : null}
         </header>
@@ -866,6 +868,8 @@ export default function DashboardPage() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [dashboardMenu, setDashboardMenu] = useState("dashboard");
   const [dashboardStatus, setDashboardStatus] = useState("total");
+  const [dashboardStatusLoading, setDashboardStatusLoading] = useState(false);
+  const [dashboardStatusError, setDashboardStatusError] = useState("");
   const [analytics, setAnalytics] = useState(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const [analyticsError, setAnalyticsError] = useState("");
@@ -874,6 +878,9 @@ export default function DashboardPage() {
     let active = true;
     setLoading(true);
     setErrorMessage("");
+    setDashboardStatus("total");
+    setDashboardStatusError("");
+    setDashboardStatusLoading(false);
     setAnalytics(null);
     setAnalyticsError("");
     setAnalyticsLoading(false);
@@ -948,13 +955,47 @@ export default function DashboardPage() {
     }
   }
 
+  async function handleDashboardStatusChange(nextStatus) {
+    if (!data || nextStatus === dashboardStatus) return;
+    if (data.dashboardMenusByStatus?.[nextStatus]) {
+      setDashboardStatus(nextStatus);
+      return;
+    }
+
+    setDashboardStatusLoading(true);
+    setDashboardStatusError("");
+    try {
+      const response = await fetch(`/api/dashboard?status=${encodeURIComponent(nextStatus)}`, { cache: "no-store" });
+      const contentType = response.headers.get("content-type") || "";
+      if (!contentType.includes("application/json")) {
+        throw new Error(`API dashboard mengembalikan respons bukan JSON (HTTP ${response.status}).`);
+      }
+
+      const payload = await response.json();
+      if (!payload?.success) throw new Error(payload?.message || "Dashboard gagal dimuat.");
+      const nextMenus = payload?.data?.dashboardMenus || {};
+      setData((current) => current ? {
+        ...current,
+        dashboardMenusByStatus: {
+          ...(current.dashboardMenusByStatus || {}),
+          [nextStatus]: nextMenus
+        },
+        dashboardMenuStatusOptions: payload?.data?.dashboardMenuStatusOptions || current.dashboardMenuStatusOptions
+      } : current);
+      setDashboardStatus(nextStatus);
+    } catch (error) {
+      setDashboardStatusError(error.message || "Filter status pegawai gagal dimuat.");
+    } finally {
+      setDashboardStatusLoading(false);
+    }
+  }
+
   return (
     <>
-      <PageHeader
-        title={`Selamat datang, ${data.user.nama_ukpd || data.user.username}`}
-        description={`Dashboard ${data.user.role} untuk ${data.user.wilayah || data.user.nama_ukpd}. Data Yang Ditampilkan Sesuai Session Login.`}
-        action={<Link className="btn-primary" href="/pegawai/new"><FilePlus2 className="h-4 w-4" /> Tambah Pegawai</Link>}
-      />
+      <header className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <h1 className="text-2xl font-bold tracking-tight text-slate-950">Selamat datang</h1>
+        <Link className="btn-primary" href="/pegawai/new"><FilePlus2 className="h-4 w-4" /> Tambah Pegawai</Link>
+      </header>
 
       <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
         <KpiCard title="Total Pegawai" value={data.summary.total} percentage="100%" helper="Jumlah Pegawai Seluruh UKPD" icon={UsersRound} />
@@ -970,10 +1011,16 @@ export default function DashboardPage() {
         menusByStatus={data.dashboardMenusByStatus || {}}
         statusOptions={data.dashboardMenuStatusOptions || []}
         activeStatus={dashboardStatus}
-        onStatusChange={setDashboardStatus}
+        onStatusChange={handleDashboardStatusChange}
+        statusLoading={dashboardStatusLoading}
         activeMenu={dashboardMenu}
         onMenuChange={setDashboardMenu}
       />
+      {dashboardStatusError ? (
+        <p className="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700" role="alert">
+          {dashboardStatusError}
+        </p>
+      ) : null}
 
       {analytics ? (
         <DashboardAnalyticsPanel analytics={analytics} />

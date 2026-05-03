@@ -638,6 +638,32 @@ function buildDashboardMenuStatusVariants(items, menuOptions = {}) {
   return { variants, options: statusOptions };
 }
 
+function buildDashboardMenuStatusOptions(items) {
+  const counts = new Map(JENIS_PEGAWAI_OPTIONS.map((status) => [status, 0]));
+  let total = 0;
+
+  for (const item of items) {
+    total += 1;
+    const status = normalizeJenisPegawai(item.jenis_pegawai);
+    if (counts.has(status)) counts.set(status, counts.get(status) + 1);
+  }
+
+  return [
+    { value: "total", label: "Total Pegawai", total },
+    ...JENIS_PEGAWAI_OPTIONS.map((status) => ({
+      value: status,
+      label: status,
+      total: counts.get(status) || 0
+    }))
+  ];
+}
+
+function normalizeDashboardStatusFilter(value) {
+  const text = String(value || "total").trim();
+  if (!text || text === "total") return "total";
+  return JENIS_PEGAWAI_OPTIONS.includes(text) ? text : "total";
+}
+
 function buildDashboardAnalytics(data, ukpdList) {
   const ukpdMap = new Map();
   const rumpunMap = new Map();
@@ -740,8 +766,9 @@ export async function GET(request) {
     if (error) return error;
 
     const detail = request?.nextUrl?.searchParams?.get("detail") || "summary";
+    const statusFilter = normalizeDashboardStatusFilter(request?.nextUrl?.searchParams?.get("status"));
     const cache = getDashboardCache();
-    const cacheKey = `${getDashboardCacheKey(user)}|${detail}`;
+    const cacheKey = `${getDashboardCacheKey(user)}|${detail}|${statusFilter}`;
     const cached = cache.get(cacheKey);
     if (cached && Date.now() - cached.createdAt < DASHBOARD_CACHE_TTL) {
       return ok(cached.data);
@@ -760,22 +787,27 @@ export async function GET(request) {
 
     const summary = buildSummary(data);
     const activeData = data.filter((item) => String(item.kondisi || "").toUpperCase() === "AKTIF");
-    const chartItems = activeData.length ? activeData : data;
+    const baseChartItems = activeData.length ? activeData : data;
+    const chartItems = statusFilter === "total"
+      ? baseChartItems
+      : baseChartItems.filter((item) => normalizeJenisPegawai(item.jenis_pegawai) === statusFilter);
     const chartSummary = buildSummary(chartItems);
     const dashboardMenus = buildDashboardMenus(chartItems, chartSummary, {
       includeUkpdStatusChart: false
     });
+    const dashboardMenusByStatus = {
+      [statusFilter]: dashboardMenus
+    };
+    if (statusFilter === "total") {
+      dashboardMenusByStatus.total = dashboardMenus;
+    }
 
     const payload = {
       user,
       summary,
       dashboardMenus,
-      dashboardMenusByStatus: {
-        total: dashboardMenus
-      },
-      dashboardMenuStatusOptions: [
-        { value: "total", label: "Total Pegawai", total: chartSummary.total }
-      ],
+      dashboardMenusByStatus,
+      dashboardMenuStatusOptions: buildDashboardMenuStatusOptions(baseChartItems),
       latestEmployees: data.slice(0, 5),
       usulanSummary: {
         mutasi: 0,

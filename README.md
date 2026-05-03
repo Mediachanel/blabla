@@ -59,6 +59,25 @@ Ada dua skenario. Pilih salah satu, jangan dicampur:
 - `docker-compose.casaos.yml`: app memakai PostgreSQL yang sudah ada di CasaOS/server.
 - `docker-compose.yml`: app dan PostgreSQL berjalan dalam satu stack compose baru.
 
+### Deploy cepat dari CasaOS via GitHub
+
+Alur ini mengikuti pola PasarKita: jalankan script dari terminal CasaOS/DietPi, lalu server akan pull GitHub, build container, cek database `si_data`, dan start app. PasarKita tidak disentuh.
+
+```bash
+mkdir -p /DATA/AppData/si-kepegawaian
+cd /DATA/AppData/si-kepegawaian
+curl -fsSL https://raw.githubusercontent.com/Mediachanel/SI_DATA_pgAdmin4/main/scripts/deploy-casaos-github.sh -o deploy-casaos-github.sh
+sh deploy-casaos-github.sh --install-deps --force-env --app-origin https://info.kepegawaian.media --postgres-container pasir-postgres
+```
+
+Jika dump `si_data.pg16.sql.tgz` sudah di-upload ke CasaOS, deploy sekaligus restore:
+
+```bash
+sh deploy-casaos-github.sh --force-env --app-origin https://info.kepegawaian.media --postgres-container pasir-postgres --restore-dump /DATA/Downloads/si_data.pg16.sql.tgz
+```
+
+Detail lengkap ada di [CasaOS Deployment](docs/CASAOS.md).
+
 ### Skenario A: Pakai PostgreSQL CasaOS/server yang sudah ada
 
 Pastikan database `si_data` bisa diakses dari container lewat host yang diset di `POSTGRES_HOST`/`POSTGRES_HOSTS`. Untuk skenario ini, pakai `docker-compose.casaos.yml`.

@@ -15,8 +15,8 @@ services:
       APP_ORIGIN: ${APP_ORIGIN:-}
       ALLOW_INSECURE_LOCAL_HTTP: ${ALLOW_INSECURE_LOCAL_HTTP:-false}
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
-      POSTGRES_HOST: ${POSTGRES_HOST:-postgres}
-      POSTGRES_HOSTS: ${POSTGRES_HOSTS:-postgres,db,host.docker.internal,172.17.0.1,127.0.0.1}
+      POSTGRES_HOST: ${POSTGRES_HOST:-pasir-postgres}
+      POSTGRES_HOSTS: ${POSTGRES_HOSTS:-pasir-postgres,host.docker.internal,172.17.0.1,postgres,db,127.0.0.1}
       POSTGRES_PORT: ${POSTGRES_PORT:-5432}
       POSTGRES_DATABASE: ${POSTGRES_DATABASE:-si_data}
       POSTGRES_DATABASES: ${POSTGRES_DATABASES:-si_data}
@@ -27,3 +27,9 @@ services:
       - "${APP_PORT:-8080}:3000"
     volumes:
       - ./storage:/app/storage
+    networks:
+      - sisdmk2-network
+
+networks:
+  sisdmk2-network:
+    external: true

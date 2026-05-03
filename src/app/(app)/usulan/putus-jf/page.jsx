@@ -36,11 +36,11 @@ import {
 } from "@/lib/usulan/checklist";
 
 const FLOW_STEPS = [
-  { key: 1, title: "UKPD Mengusulkan", description: "UKPD mengajukan data putus/pembebasan JF beserta alasan." },
-  { key: 2, title: "Sudin Verifikasi", description: "Sudin memverifikasi dasar usulan dan kelengkapan surat." },
-  { key: 3, title: "Diterima Dinas", description: "Berkas lengkap diterima Dinas untuk proses lebih lanjut." },
-  { key: 4, title: "Dinas Verifikasi", description: "Dinas memeriksa kecocokan usulan, dasar hukum, dan jabatan tujuan." },
-  { key: 5, title: "Surat Putus JF", description: "Jika sesuai, surat usulan putus/pembebasan JF disiapkan." }
+  { key: 1, title: "UKPD Mengusulkan" },
+  { key: 2, title: "Sudin Verifikasi" },
+  { key: 3, title: "Diterima Dinas" },
+  { key: 4, title: "Dinas Verifikasi" },
+  { key: 5, title: "Surat Putus JF" }
 ];
 
 const STATUS_OPTIONS = ["Diusulkan", "Verifikasi Sudin", "Diterima Dinas", "Verifikasi Dinas", "Dikembalikan", "Selesai", "Ditolak"];
@@ -168,7 +168,7 @@ function getDownloadFileName(disposition, fallback) {
   return plainName?.[1] || fallback;
 }
 
-function SummaryCard({ title, value, description, accent = "slate" }) {
+function SummaryCard({ title, value, accent = "slate" }) {
   const accents = {
     slate: "border-slate-200 bg-white",
     blue: "border-sky-200 bg-sky-50/70",
@@ -179,7 +179,6 @@ function SummaryCard({ title, value, description, accent = "slate" }) {
     <div className={`rounded-2xl border p-4 shadow-sm ${accents[accent] || accents.slate}`}>
       <p className="text-sm font-semibold text-slate-600">{title}</p>
       <p className="mt-2 text-2xl font-bold text-slate-950">{value}</p>
-      <p className="mt-1 text-sm text-slate-500">{description}</p>
     </div>
   );
 }
@@ -197,7 +196,6 @@ function FlowStrip({ activeStep }) {
                 {step.key}
               </div>
               <p className="text-sm font-bold text-slate-900">{step.title}</p>
-              <p className="mt-1 text-sm leading-5 text-slate-500">{step.description}</p>
             </div>
           );
         })}
@@ -836,15 +834,14 @@ export default function UsulanPutusJfPage() {
     <>
       <PageHeader
         title="Usulan Putus Jabatan Fungsional"
-        description="UI ini mengikuti alur usulan UKPD, verifikasi Sudin, penerimaan Dinas, verifikasi Dinas, hingga penyiapan surat usulan putus/pembebasan JF."
         breadcrumbs={[{ label: "Usulan" }, { label: "Putus JF" }]}
       />
 
       <div className="mb-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <SummaryCard title="Total Usulan" value={summaries.total} description="Semua usulan putus/pembebasan JF." />
-        <SummaryCard title="Usulan Baru" value={summaries.usulanBaru} description="Masih menunggu verifikasi Sudin." accent="amber" />
-        <SummaryCard title="Sedang Diverifikasi" value={summaries.verifikasi} description="Sedang ditelaah oleh Sudin atau Dinas." accent="blue" />
-        <SummaryCard title="Selesai" value={summaries.selesai} description="Sudah siap atau sudah dibuatkan surat." accent="emerald" />
+        <SummaryCard title="Total Usulan" value={summaries.total} />
+        <SummaryCard title="Usulan Baru" value={summaries.usulanBaru} accent="amber" />
+        <SummaryCard title="Sedang Diverifikasi" value={summaries.verifikasi} accent="blue" />
+        <SummaryCard title="Selesai" value={summaries.selesai} accent="emerald" />
       </div>
 
       <FlowStrip activeStep={selected?._flow.step || 1} />

@@ -35,11 +35,11 @@ import {
 } from "@/lib/usulan/checklist";
 
 const FLOW_STEPS = [
-  { key: 1, title: "UKPD Mengusulkan", description: "UKPD membuat usulan mutasi dan mengunggah berkas awal." },
-  { key: 2, title: "Sudin Verifikasi", description: "Sudin memeriksa administrasi dan kelengkapan berkas." },
-  { key: 3, title: "Diterima Dinas", description: "Usulan yang lengkap diteruskan ke Dinas untuk ditelaah." },
-  { key: 4, title: "Dinas Verifikasi", description: "Dinas menilai kecocokan usulan, ABK, bezetting, dan alasan." },
-  { key: 5, title: "Lanjut Putus JF", description: "Jika sesuai, Dinas menyiapkan usulan/surat lanjutan putus JF." }
+  { key: 1, title: "UKPD Mengusulkan" },
+  { key: 2, title: "Sudin Verifikasi" },
+  { key: 3, title: "Diterima Dinas" },
+  { key: 4, title: "Dinas Verifikasi" },
+  { key: 5, title: "Lanjut Putus JF" }
 ];
 
 const STATUS_OPTIONS = ["Diusulkan", "Verifikasi Sudin", "Diterima Dinas", "Verifikasi Dinas", "Dikembalikan", "Selesai", "Ditolak"];
@@ -169,7 +169,7 @@ function getMutasiFlow(item) {
   return { step: 1, stageLabel: "Usulan UKPD", nextAction: "Lengkapi berkas awal dan kirim ke Sudin." };
 }
 
-function SummaryCard({ title, value, description, tone = "slate" }) {
+function SummaryCard({ title, value, tone = "slate" }) {
   const tones = {
     slate: "border-slate-200 bg-white",
     blue: "border-sky-200 bg-sky-50/70",
@@ -180,7 +180,6 @@ function SummaryCard({ title, value, description, tone = "slate" }) {
     <div className={`rounded-2xl border p-4 shadow-sm ${tones[tone] || tones.slate}`}>
       <p className="text-sm font-semibold text-slate-600">{title}</p>
       <p className="mt-2 text-2xl font-bold text-slate-950">{value}</p>
-      <p className="mt-1 text-sm text-slate-500">{description}</p>
     </div>
   );
 }
@@ -199,7 +198,6 @@ function FlowStrip({ activeStep }) {
               </div>
               <div className="min-w-0">
                 <p className={`text-sm font-bold ${active ? "text-dinkes-800" : "text-slate-700"}`}>{step.title}</p>
-                <p className="mt-1 text-sm leading-5 text-slate-500">{step.description}</p>
               </div>
               {index < FLOW_STEPS.length - 1 ? <ArrowRight className="mt-2 hidden h-4 w-4 shrink-0 text-slate-300 lg:block" /> : null}
             </div>
@@ -892,16 +890,15 @@ export default function UsulanMutasiPage() {
     <>
       <PageHeader
         title="Usulan Mutasi"
-        description="Alur usulan dimulai dari UKPD, diverifikasi Sudin, diteruskan ke Dinas bila lengkap, lalu menjadi dasar penyiapan usulan putus JF bila disetujui."
         breadcrumbs={[{ label: "Usulan" }, { label: "Mutasi" }]}
         action={selected ? <Link className="btn-secondary" href="/usulan/putus-jf">Lihat Putus JF</Link> : null}
       />
 
       <div className="mb-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <SummaryCard title="Total Usulan" value={summaries.total} description="Seluruh usulan mutasi yang tercatat." />
-        <SummaryCard title="Usulan Baru" value={summaries.usulanBaru} description="Masih berada di tahap pengajuan UKPD." tone="amber" />
-        <SummaryCard title="Sedang Diverifikasi" value={summaries.verifikasi} description="Masih ditelaah oleh Sudin atau Dinas." tone="blue" />
-        <SummaryCard title="Tuntas" value={summaries.selesai} description="Sudah selesai atau siap ditindaklanjuti." tone="emerald" />
+        <SummaryCard title="Total Usulan" value={summaries.total} />
+        <SummaryCard title="Usulan Baru" value={summaries.usulanBaru} tone="amber" />
+        <SummaryCard title="Sedang Diverifikasi" value={summaries.verifikasi} tone="blue" />
+        <SummaryCard title="Tuntas" value={summaries.selesai} tone="emerald" />
       </div>
 
       <FlowStrip activeStep={selected?._flow.step || 1} />

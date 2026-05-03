@@ -819,7 +819,7 @@ function DashboardMenuCharts({
             <h2 className="text-lg font-bold text-slate-950">{activeView.title}</h2>
             {activeView.subtitle ? <p className="text-sm text-slate-500">{activeView.subtitle}</p> : null}
           </div>
-          {statusOptions.length ? (
+          {statusOptions.length > 1 ? (
             <label className="flex w-full flex-col gap-1 text-sm font-semibold text-slate-700 sm:w-72">
               <span>Status Pegawai</span>
               <select
@@ -866,11 +866,17 @@ export default function DashboardPage() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [dashboardMenu, setDashboardMenu] = useState("dashboard");
   const [dashboardStatus, setDashboardStatus] = useState("total");
+  const [analytics, setAnalytics] = useState(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [analyticsError, setAnalyticsError] = useState("");
 
   useEffect(() => {
     let active = true;
     setLoading(true);
     setErrorMessage("");
+    setAnalytics(null);
+    setAnalyticsError("");
+    setAnalyticsLoading(false);
     fetch("/api/dashboard", { cache: "no-store" })
       .then(async (res) => {
         const contentType = res.headers.get("content-type") || "";
@@ -920,6 +926,28 @@ export default function DashboardPage() {
   ];
   const totalPegawai = Number(data.summary.total || 0);
 
+  async function loadAnalytics() {
+    if (analytics || analyticsLoading) return;
+
+    setAnalyticsLoading(true);
+    setAnalyticsError("");
+    try {
+      const response = await fetch("/api/dashboard?detail=analytics", { cache: "no-store" });
+      const contentType = response.headers.get("content-type") || "";
+      if (!contentType.includes("application/json")) {
+        throw new Error(`API analitik mengembalikan respons bukan JSON (HTTP ${response.status}).`);
+      }
+
+      const payload = await response.json();
+      if (!payload?.success) throw new Error(payload?.message || "Analitik gagal dimuat.");
+      setAnalytics(payload?.data?.analytics || null);
+    } catch (error) {
+      setAnalyticsError(error.message || "Analitik gagal dimuat.");
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  }
+
   return (
     <>
       <PageHeader
@@ -947,7 +975,24 @@ export default function DashboardPage() {
         onMenuChange={setDashboardMenu}
       />
 
-      <DashboardAnalyticsPanel analytics={data.analytics} />
+      {analytics ? (
+        <DashboardAnalyticsPanel analytics={analytics} />
+      ) : (
+        <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-soft">
+          <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <h2 className="text-lg font-semibold text-slate-950">Analitik Detail</h2>
+            <button className="btn-secondary" type="button" onClick={loadAnalytics} disabled={analyticsLoading}>
+              <BarChart3 className="h-4 w-4" />
+              {analyticsLoading ? "Memuat..." : "Muat Analitik Detail"}
+            </button>
+          </header>
+          {analyticsError ? (
+            <p className="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700" role="alert">
+              {analyticsError}
+            </p>
+          ) : null}
+        </section>
+      )}
 
       <section className="mt-6 grid gap-5 xl:grid-cols-[1fr_360px]">
         <article>

@@ -1,7 +1,7 @@
 import { filterPegawaiByRole } from "@/lib/auth/access";
 import { getPegawaiDashboardData, getUkpdData } from "@/lib/data/pegawaiStore";
 
-const DASHBOARD_DATA_CACHE_TTL = 60_000;
+const DASHBOARD_DATA_CACHE_TTL = 300_000;
 
 function getDashboardDataCache() {
   if (!globalThis.__sisdmkDashboardDataCache) {

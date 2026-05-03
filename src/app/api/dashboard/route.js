@@ -3,10 +3,9 @@ import { requireAuth } from "@/lib/auth/requireAuth";
 import { getScopedDashboardData } from "@/lib/dashboardData";
 import { fail, ok } from "@/lib/helpers/response";
 import { JENIS_PEGAWAI_OPTIONS, normalizeJenisPegawai } from "@/lib/helpers/pegawaiStatus";
-import { ROLES } from "@/lib/constants/roles";
 import { PANGKAT_GOLONGAN_OPTIONS, normalizePangkatGolonganOption } from "@/lib/pegawaiReferenceOptions";
 
-const DASHBOARD_CACHE_TTL = 60_000;
+const DASHBOARD_CACHE_TTL = 300_000;
 const DEFAULT_CHART_COLORS = ["#18a8e0", "#f97316", "#22c55e", "#facc15", "#8b5cf6", "#14b8a6", "#ef4444", "#64748b"];
 const GENDER_CATEGORIES = [
   { key: "Laki-laki", label: "Laki-laki", color: "#0ea5e9" },
@@ -735,35 +734,49 @@ function buildSummary(data) {
   });
 }
 
-export async function GET() {
+export async function GET(request) {
   try {
     const { user, error } = await requireAuth();
     if (error) return error;
 
+    const detail = request?.nextUrl?.searchParams?.get("detail") || "summary";
     const cache = getDashboardCache();
-    const cacheKey = getDashboardCacheKey(user);
+    const cacheKey = `${getDashboardCacheKey(user)}|${detail}`;
     const cached = cache.get(cacheKey);
     if (cached && Date.now() - cached.createdAt < DASHBOARD_CACHE_TTL) {
       return ok(cached.data);
     }
 
     const { data, ukpdList } = await getScopedDashboardData(user);
+
+    if (detail === "analytics") {
+      const payload = {
+        analytics: buildDashboardAnalytics(data, ukpdList)
+      };
+
+      cache.set(cacheKey, { createdAt: Date.now(), data: payload });
+      return ok(payload);
+    }
+
     const summary = buildSummary(data);
     const activeData = data.filter((item) => String(item.kondisi || "").toUpperCase() === "AKTIF");
     const chartItems = activeData.length ? activeData : data;
-    const dashboardMenuStatus = buildDashboardMenuStatusVariants(chartItems, {
-      includeUkpdStatusChart: [ROLES.SUPER_ADMIN, ROLES.ADMIN_WILAYAH].includes(user.role)
+    const chartSummary = buildSummary(chartItems);
+    const dashboardMenus = buildDashboardMenus(chartItems, chartSummary, {
+      includeUkpdStatusChart: false
     });
 
     const payload = {
       user,
       summary,
-      chartViews: buildChartViews(chartItems),
-      dashboardMenus: dashboardMenuStatus.variants.total,
-      dashboardMenusByStatus: dashboardMenuStatus.variants,
-      dashboardMenuStatusOptions: dashboardMenuStatus.options,
+      dashboardMenus,
+      dashboardMenusByStatus: {
+        total: dashboardMenus
+      },
+      dashboardMenuStatusOptions: [
+        { value: "total", label: "Total Pegawai", total: chartSummary.total }
+      ],
       latestEmployees: data.slice(0, 5),
-      analytics: buildDashboardAnalytics(data, ukpdList),
       usulanSummary: {
         mutasi: 0,
         putusJf: 0

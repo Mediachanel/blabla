@@ -957,6 +957,8 @@ export default function UsulanMutasiPage() {
                 {
                   key: "pegawai",
                   header: "Pegawai",
+                  width: 270,
+                  wrap: true,
                   render: (item) => (
                     <div className="max-w-[250px] whitespace-normal">
                       <p className="font-semibold text-slate-900">{item.nama_pegawai || "-"}</p>
@@ -967,6 +969,8 @@ export default function UsulanMutasiPage() {
                 {
                   key: "unit",
                   header: "Asal / Tujuan",
+                  width: 280,
+                  wrap: true,
                   render: (item) => (
                     <div className="max-w-[260px] whitespace-normal text-sm">
                       <p>{item.nama_ukpd || "-"}</p>
@@ -978,6 +982,8 @@ export default function UsulanMutasiPage() {
                 {
                   key: "jabatan",
                   header: "Jabatan",
+                  width: 260,
+                  wrap: true,
                   render: (item) => (
                     <div className="max-w-[240px] whitespace-normal text-sm">
                       <p>{item.jabatan || "-"}</p>
@@ -989,6 +995,8 @@ export default function UsulanMutasiPage() {
                 {
                   key: "berkas",
                   header: "Berkas",
+                  width: 170,
+                  wrap: true,
                   render: (item) => (
                     <div className="w-36 whitespace-normal text-sm">
                       <div className="mb-1 flex items-center gap-2">
@@ -1002,6 +1010,8 @@ export default function UsulanMutasiPage() {
                 {
                   key: "tahap",
                   header: "Tahap",
+                  width: 190,
+                  wrap: true,
                   render: (item) => (
                     <div className="w-40 whitespace-normal">
                       <p className="font-semibold text-slate-900">{item._flow.stageLabel}</p>
@@ -1009,7 +1019,7 @@ export default function UsulanMutasiPage() {
                     </div>
                   )
                 },
-                { key: "tanggal_usulan", header: "Tgl Usulan", render: (item) => formatDateTime(item.tanggal_usulan || item.created_at) }
+                { key: "tanggal_usulan", header: "Tgl Usulan", width: 150, render: (item) => formatDateTime(item.tanggal_usulan || item.created_at) }
               ]}
               actions={(item) => (
                 <div className="flex flex-wrap gap-2">

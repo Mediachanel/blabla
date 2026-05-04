@@ -131,9 +131,9 @@ export default function ImportDrhPage() {
               rowKey="id"
               data={preview}
               columns={[
-                { key: "bagian", header: "Bagian DRH" },
-                { key: "jumlah", header: "Jumlah", render: (item) => (typeof item.jumlah === "number" ? formatCount(item.jumlah) : item.jumlah) },
-                { key: "status", header: "Status", render: (item) => <StatusBadge status={item.status} /> },
+                { key: "bagian", header: "Bagian DRH", width: 260 },
+                { key: "jumlah", header: "Jumlah", width: 140, render: (item) => (typeof item.jumlah === "number" ? formatCount(item.jumlah) : item.jumlah) },
+                { key: "status", header: "Status", width: 200, render: (item) => <StatusBadge status={item.status} /> },
               ]}
             />
           </div>

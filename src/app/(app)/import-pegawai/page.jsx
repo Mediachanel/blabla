@@ -172,9 +172,9 @@ export default function ImportPegawaiPage() {
                 rowKey="id"
                 data={errorRows}
                 columns={[
-                  { key: "rowNumber", header: "Baris" },
-                  { key: "fields", header: "Kolom" },
-                  { key: "messages", header: "Masalah" }
+                  { key: "rowNumber", header: "Baris", width: 100, align: "center" },
+                  { key: "fields", header: "Kolom", width: 220, wrap: true },
+                  { key: "messages", header: "Masalah", width: 520, wrap: true }
                 ]}
               />
             </section>
@@ -193,10 +193,10 @@ export default function ImportPegawaiPage() {
                 rowKey="id"
                 data={importedRows}
                 columns={[
-                  { key: "rowNumber", header: "Baris" },
-                  { key: "id_pegawai", header: "ID Pegawai" },
-                  { key: "nama", header: "Nama" },
-                  { key: "status", header: "Status", render: (item) => <StatusBadge status={item.status} /> }
+                  { key: "rowNumber", header: "Baris", width: 100, align: "center" },
+                  { key: "id_pegawai", header: "ID Pegawai", width: 140 },
+                  { key: "nama", header: "Nama", width: 260, wrap: true },
+                  { key: "status", header: "Status", width: 160, render: (item) => <StatusBadge status={item.status} /> }
                 ]}
               />
             </section>

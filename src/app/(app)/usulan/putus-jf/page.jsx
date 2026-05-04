@@ -900,6 +900,8 @@ export default function UsulanPutusJfPage() {
                 {
                   key: "pegawai",
                   header: "Pegawai",
+                  width: 270,
+                  wrap: true,
                   render: (item) => (
                     <div className="max-w-[240px] whitespace-normal">
                       <p className="font-semibold text-slate-900">{item.nama_pegawai || "-"}</p>
@@ -910,6 +912,8 @@ export default function UsulanPutusJfPage() {
                 {
                   key: "jabatan",
                   header: "Jabatan",
+                  width: 260,
+                  wrap: true,
                   render: (item) => (
                     <div className="max-w-[220px] whitespace-normal text-sm">
                       <p>{item.jabatan || "-"}</p>
@@ -921,6 +925,8 @@ export default function UsulanPutusJfPage() {
                 {
                   key: "surat",
                   header: "Surat",
+                  width: 230,
+                  wrap: true,
                   render: (item) => (
                     <div className="w-44 whitespace-normal text-sm">
                       <p className="font-medium text-slate-900">{item.nomor_surat || "-"}</p>
@@ -932,6 +938,8 @@ export default function UsulanPutusJfPage() {
                 {
                   key: "berkas",
                   header: "Berkas",
+                  width: 170,
+                  wrap: true,
                   render: (item) => (
                     <div className="w-36 whitespace-normal text-sm">
                       <div className="mb-1 flex items-center gap-2">
@@ -945,6 +953,8 @@ export default function UsulanPutusJfPage() {
                 {
                   key: "tahap",
                   header: "Tahap",
+                  width: 190,
+                  wrap: true,
                   render: (item) => (
                     <div className="w-40 whitespace-normal">
                       <p className="font-semibold text-slate-900">{item._flow.stageLabel}</p>
@@ -952,7 +962,7 @@ export default function UsulanPutusJfPage() {
                     </div>
                   )
                 },
-                { key: "tanggal_usulan", header: "Tgl Usulan", render: (item) => formatDate(item.tanggal_usulan || item.created_at) }
+                { key: "tanggal_usulan", header: "Tgl Usulan", width: 150, render: (item) => formatDate(item.tanggal_usulan || item.created_at) }
               ]}
               actions={(item) => (
                 <div className="flex flex-wrap gap-2">

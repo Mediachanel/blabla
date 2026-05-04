@@ -159,11 +159,11 @@ function DukFilters({ search, setSearch, pangkat, setPangkat, jabatan, setJabata
 
 function DukTable({ rows, startNumber }) {
   return (
-    <section className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+    <section className="surface overflow-hidden">
       <div className="border-b border-slate-200 bg-slate-50 px-4 py-3 text-xs font-semibold text-slate-500">
         Geser tabel ke kanan untuk melihat unit kerja dan aksi profil.
       </div>
-      <div className="max-w-full overflow-x-auto">
+      <div className="table-scroll">
         <table className="w-full min-w-[1220px] table-fixed divide-y divide-slate-200">
           <colgroup>
             <col className="w-14" />
@@ -179,7 +179,7 @@ function DukTable({ rows, startNumber }) {
           <thead className="bg-slate-50">
             <tr>
               {["No", "Nama", "NIP", "Pangkat/Gol", "TMT Pangkat", "Jabatan", "Pendidikan", "Unit Kerja", "Aksi"].map((header) => (
-                <th key={header} className="px-4 py-3 text-left text-xs font-extrabold uppercase tracking-wide text-slate-500" scope="col">
+                <th key={header} className="table-th uppercase" scope="col">
                   {header}
                 </th>
               ))}
@@ -188,23 +188,23 @@ function DukTable({ rows, startNumber }) {
           <tbody className="divide-y divide-slate-100 bg-white">
             {rows.map((item, index) => (
               <tr key={item.id_pegawai} className="align-top hover:bg-dinkes-50/40">
-                <td className="px-4 py-4 text-sm text-slate-500">{startNumber + index}</td>
-                <td className="px-4 py-4">
+                <td className="table-td text-slate-500">{startNumber + index}</td>
+                <td className="table-td">
                   <Link className="block text-sm font-extrabold leading-5 text-slate-950 hover:text-dinkes-700" href={`/pegawai/${item.id_pegawai}`}>
                     {valueOrDash(item.nama)}
                   </Link>
                   <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">{valueOrDash(item.nama_ukpd)}</p>
                 </td>
-                <td className="px-4 py-4 text-sm text-slate-700">{valueOrDash(item.nip)}</td>
-                <td className="px-4 py-4 text-sm font-semibold leading-5 text-slate-800">{valueOrDash(item.pangkat_golongan)}</td>
-                <td className="px-4 py-4 text-sm text-slate-700">{formatDate(item.tmt_pangkat_terakhir)}</td>
-                <td className="px-4 py-4 text-sm leading-5 text-slate-700">{valueOrDash(item.nama_jabatan_menpan)}</td>
-                <td className="px-4 py-4">
+                <td className="table-td text-slate-700">{valueOrDash(item.nip)}</td>
+                <td className="table-td font-semibold leading-5 text-slate-800">{valueOrDash(item.pangkat_golongan)}</td>
+                <td className="table-td text-slate-700">{formatDate(item.tmt_pangkat_terakhir)}</td>
+                <td className="table-td whitespace-normal leading-5 text-slate-700">{valueOrDash(item.nama_jabatan_menpan)}</td>
+                <td className="table-td">
                   <p className="text-sm font-bold text-slate-950">{valueOrDash(item.jenjang_pendidikan)}</p>
                   <p className="mt-1 line-clamp-3 text-xs leading-5 text-slate-500">{valueOrDash(item.program_studi)}</p>
                 </td>
-                <td className="px-4 py-4 text-sm leading-5 text-slate-700">{valueOrDash(item.nama_ukpd)}</td>
-                <td className="px-4 py-4">
+                <td className="table-td whitespace-normal leading-5 text-slate-700">{valueOrDash(item.nama_ukpd)}</td>
+                <td className="table-td">
                   <Link
                     href={`/pegawai/${item.id_pegawai}`}
                     className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-dinkes-300 hover:text-dinkes-700"

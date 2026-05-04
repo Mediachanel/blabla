@@ -193,7 +193,7 @@ function PivotDrillPanel({ mode, query }) {
       {loadingTree ? <p className="mt-3 text-sm text-slate-500">Memuat struktur...</p> : null}
       {treeError ? <p className="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700" role="alert">{treeError}</p> : null}
       <p className="mt-2 text-xs text-slate-500">Geser horizontal untuk melihat kolom jumlah per jenis pegawai.</p>
-      <div className="mt-3 max-w-[1100px] overflow-auto rounded-xl border border-slate-200 bg-white">
+      <div className="table-scroll mt-3 max-w-[1100px] rounded-xl border border-slate-200 bg-white">
         <table className="w-full min-w-[860px] table-fixed">
           <colgroup>
             <col className="w-[300px]" />
@@ -402,7 +402,7 @@ function UkpdDrillPanel({ query }) {
       <h3 className="text-sm font-semibold text-slate-900">Rincian Pivot: UKPD -&gt; Rumpun -&gt; Jabatan -&gt; Pegawai</h3>
       {loadingTree ? <p className="mt-3 text-sm text-slate-500">Memuat struktur...</p> : null}
       {treeError ? <p className="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700" role="alert">{treeError}</p> : null}
-      <div className="mt-3 max-w-[1180px] overflow-auto rounded-xl border border-slate-200 bg-white">
+      <div className="table-scroll mt-3 max-w-[1180px] rounded-xl border border-slate-200 bg-white">
         <table className="w-full min-w-[940px] table-fixed">
           <colgroup>
             <col className="w-[64px]" />
@@ -925,11 +925,11 @@ export default function DashboardPage() {
   if (!data) return null;
 
   const columns = [
-    { key: "nama", header: "Nama" },
-    { key: "nip", header: "NIP", render: (item) => item.nip || "-" },
-    { key: "nama_jabatan_menpan", header: "Jabatan", render: (item) => item.nama_jabatan_menpan || item.nama_jabatan_orb || "-" },
-    { key: "jenis_pegawai", header: "Status", render: (item) => <StatusBadge status={item.jenis_pegawai} /> },
-    { key: "nama_ukpd", header: "UKPD" }
+    { key: "nama", header: "Nama", width: 230 },
+    { key: "nip", header: "NIP", width: 180, render: (item) => item.nip || "-" },
+    { key: "nama_jabatan_menpan", header: "Jabatan", width: 260, wrap: true, render: (item) => item.nama_jabatan_menpan || item.nama_jabatan_orb || "-" },
+    { key: "jenis_pegawai", header: "Status", width: 150, render: (item) => <StatusBadge status={item.jenis_pegawai} /> },
+    { key: "nama_ukpd", header: "UKPD", width: 260, wrap: true }
   ];
   const totalPegawai = Number(data.summary.total || 0);
 

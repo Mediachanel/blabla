@@ -112,11 +112,11 @@ export default function PegawaiPage() {
   }
 
   const columns = [
-    { key: "nama", header: "Nama" },
-    { key: "nip", header: "NIP", render: displayNip },
-    { key: "nama_jabatan_menpan", header: "Jabatan Standar Kepgub 11", render: (item) => item.nama_jabatan_menpan || item.nama_jabatan_orb || "-" },
-    { key: "jenis_pegawai", header: "Status", render: (item) => <StatusBadge status={item.jenis_pegawai} /> },
-    { key: "nama_ukpd", header: "Nama UKPD" }
+    { key: "nama", header: "Nama", width: 240 },
+    { key: "nip", header: "NIP", width: 180, render: displayNip },
+    { key: "nama_jabatan_menpan", header: "Jabatan Standar Kepgub 11", width: 280, wrap: true, render: (item) => item.nama_jabatan_menpan || item.nama_jabatan_orb || "-" },
+    { key: "jenis_pegawai", header: "Status", width: 150, render: (item) => <StatusBadge status={item.jenis_pegawai} /> },
+    { key: "nama_ukpd", header: "Nama UKPD", width: 260, wrap: true }
   ];
 
   return (

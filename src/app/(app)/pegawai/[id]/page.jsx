@@ -288,12 +288,12 @@ function CompactListTable({ columns, data, rowKey = "id" }) {
   if (!data?.length) return null;
   return (
     <div className="overflow-hidden rounded-lg border border-slate-200">
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-slate-200">
+      <div className="table-scroll">
+        <table className="w-full min-w-[720px] table-fixed border-collapse">
           <thead className="bg-slate-50">
             <tr>
               {columns.map((column) => (
-                <th key={column.key} className="px-4 py-3 text-left text-xs font-extrabold uppercase tracking-wide text-slate-500" scope="col">{column.header}</th>
+                <th key={column.key} className="table-th uppercase" scope="col">{column.header}</th>
               ))}
             </tr>
           </thead>
@@ -301,7 +301,7 @@ function CompactListTable({ columns, data, rowKey = "id" }) {
             {data.map((row, index) => (
               <tr key={row[rowKey] || `${rowKey}-${index}`} className="hover:bg-dinkes-50/40">
                 {columns.map((column) => (
-                  <td key={column.key} className="px-4 py-3 text-sm text-slate-700">
+                  <td key={column.key} className="table-td whitespace-normal text-slate-700">
                     {column.render ? column.render(row, index) : valueOrDash(row[column.key])}
                   </td>
                 ))}

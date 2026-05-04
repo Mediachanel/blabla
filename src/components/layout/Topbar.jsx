@@ -151,13 +151,13 @@ export default function Topbar({ user, onOpenMenu, collapsed, onToggleSidebar })
   }
 
   return (
-    <header className="sticky top-0 z-30 border-b border-[#edf0f5] bg-white">
-      <div className="flex h-20 items-center justify-between gap-4 px-4 sm:px-6">
+    <header className="sticky top-0 z-30 border-b border-[#e9edf3] bg-white">
+      <div className="flex h-16 items-center justify-between gap-4 px-4 sm:px-6">
         <div className="flex min-w-0 flex-1 items-center gap-4">
-          <button className="rounded-md bg-[#f5f7fb] p-3 text-slate-600 hover:bg-slate-100 focus-ring lg:hidden" onClick={onOpenMenu} aria-label="Buka menu">
+          <button className="rounded-md bg-[#f5f7fb] p-2.5 text-slate-600 hover:bg-slate-100 focus-ring lg:hidden" onClick={onOpenMenu} aria-label="Buka menu">
             <Menu className="h-5 w-5" />
           </button>
-          <button className="hidden rounded-md bg-[#f5f7fb] p-3 text-slate-600 hover:bg-slate-100 focus-ring lg:inline-flex" onClick={onToggleSidebar} aria-label={collapsed ? "Buka sidebar" : "Tutup sidebar"}>
+          <button className="hidden rounded-md bg-[#f5f7fb] p-2.5 text-slate-600 hover:bg-slate-100 focus-ring lg:inline-flex" onClick={onToggleSidebar} aria-label={collapsed ? "Buka sidebar" : "Tutup sidebar"}>
             {collapsed ? <PanelLeftOpen className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
           </button>
           <nav className="hidden min-w-0 items-center gap-2 text-sm font-medium md:flex" aria-label="Breadcrumb">
@@ -165,7 +165,7 @@ export default function Topbar({ user, onOpenMenu, collapsed, onToggleSidebar })
             <span className="text-slate-300">/</span>
             <span className="truncate text-slate-600">{breadcrumbFromPath(pathname)}</span>
           </nav>
-          <div className="relative ml-auto hidden w-80 xl:block" ref={searchRef}>
+          <div className="relative ml-auto hidden w-[26rem] xl:block" ref={searchRef}>
             <label className="sr-only" htmlFor="topbar-search-input">Pencarian cepat</label>
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
             <input
@@ -214,7 +214,7 @@ export default function Topbar({ user, onOpenMenu, collapsed, onToggleSidebar })
                         >
                           <span className="block font-semibold text-slate-950">{item.nama || "-"}</span>
                           <span className="mt-1 block truncate text-xs text-slate-500">
-                            {item.nip || "Tanpa NIP"} · {primaryPosition(item)} · {item.nama_ukpd || "-"}
+                            {item.nip || "Tanpa NIP"} | {primaryPosition(item)} | {item.nama_ukpd || "-"}
                           </span>
                         </Link>
                       );
@@ -239,7 +239,7 @@ export default function Topbar({ user, onOpenMenu, collapsed, onToggleSidebar })
           <div className="relative" ref={accountRef}>
             <button
               type="button"
-              className="grid h-11 w-11 place-items-center rounded-full bg-slate-100 text-sm font-medium text-slate-500 shadow-sm ring-1 ring-slate-200 focus-ring"
+              className="grid h-10 w-10 place-items-center rounded-full bg-slate-100 text-sm font-medium text-slate-500 shadow-sm ring-1 ring-slate-200 focus-ring"
               onClick={() => setAccountOpen((value) => !value)}
               aria-label="Buka pengaturan pengguna"
               aria-expanded={accountOpen}

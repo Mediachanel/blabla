@@ -604,7 +604,7 @@ export default function UsulanMutasiPage() {
     setPegawaiLookupMessage("Mencari data pegawai...");
     const timer = setTimeout(async () => {
       try {
-        const response = await fetch(`/api/pegawai?q=${encodeURIComponent(nrk)}&pageSize=10`, { cache: "no-store" });
+        const response = await fetch(`/api/pegawai?nrk=${encodeURIComponent(nrk)}&pageSize=10`, { cache: "no-store" });
         const payload = await response.json();
         if (!response.ok || !payload.success) throw new Error(payload.message || "Data pegawai gagal dicari.");
         const pegawai = (payload.data?.rows || []).find((item) => normalizeText(item.nrk) === nrk);

@@ -29,9 +29,14 @@ function cleanNip(value) {
   return String(value || "").trim().replace(/^`+/, "");
 }
 
+function cleanNrk(value) {
+  return String(value || "").trim().replace(/\D/g, "");
+}
+
 function normalizePegawaiRows(rows) {
   return rows.map((row) => ({
     ...row,
+    nrk: cleanNrk(row.nrk),
     nip: cleanNip(row.nip)
   }));
 }
@@ -43,8 +48,12 @@ function addWhere(parts, params, clause, values = []) {
 
 const PEGAWAI_LIST_SELECT = [
   "p.`id_pegawai`",
+  "p.`nrk`",
   "p.`nama`",
   "p.`nip`",
+  "p.`gelar_depan`",
+  "p.`gelar_belakang`",
+  "p.`pangkat_golongan`",
   "p.`nama_jabatan_menpan`",
   "p.`nama_jabatan_orb`",
   "p.`jenis_pegawai`",
@@ -52,7 +61,7 @@ const PEGAWAI_LIST_SELECT = [
   "COALESCE(NULLIF(p.`wilayah`, ''), u.`wilayah`, '-') AS `wilayah`"
 ].join(", ");
 
-async function getPegawaiPage({ user, q, status, wilayah, ukpd, page, pageSize, exportAll = false }) {
+async function getPegawaiPage({ user, q, nrk, status, wilayah, ukpd, page, pageSize, exportAll = false }) {
   const pool = await getConnectedPool();
   const where = [];
   const params = [];
@@ -72,6 +81,14 @@ async function getPegawaiPage({ user, q, status, wilayah, ukpd, page, pageSize, 
       params,
       "(p.`nama` LIKE ? OR p.`nrk` LIKE ? OR p.`nip` LIKE ? OR p.`nama_jabatan_menpan` LIKE ? OR p.`nama_jabatan_orb` LIKE ? OR p.`nama_ukpd` LIKE ?)",
       [keyword, keyword, keyword, keyword, keyword, keyword]
+    );
+  }
+  if (nrk) {
+    addWhere(
+      where,
+      params,
+      "REPLACE(REPLACE(REPLACE(REPLACE(TRIM(COALESCE(p.`nrk`, '')), '`', ''), ' ', ''), '-', ''), '.', '') = ?",
+      [nrk]
     );
   }
   if (status) addWhere(where, params, "p.`jenis_pegawai` = ?", [status]);
@@ -130,6 +147,7 @@ export async function GET(request) {
   if (error) return error;
   const { searchParams } = new URL(request.url);
   const q = searchParams.get("q")?.toLowerCase() || "";
+  const nrk = cleanNrk(searchParams.get("nrk"));
   const status = searchParams.get("status") || "";
   const wilayah = searchParams.get("wilayah") || "";
   const ukpd = searchParams.get("ukpd") || "";
@@ -137,7 +155,7 @@ export async function GET(request) {
   const pageSize = numberParam(searchParams.get("pageSize"), 10, 10, 100);
   const exportAll = searchParams.get("export") === "1";
 
-  return ok(await getPegawaiPage({ user, q, status, wilayah, ukpd, page, pageSize, exportAll }));
+  return ok(await getPegawaiPage({ user, q, nrk, status, wilayah, ukpd, page, pageSize, exportAll }));
 }
 
 export async function POST(request) {

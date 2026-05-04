@@ -3,7 +3,7 @@ set -Eeuo pipefail
 
 APP_SERVICE="${APP_SERVICE:-app}"
 APP_CONTAINER="${APP_CONTAINER:-sisdmk2-app}"
-BRANCH="${BRANCH:-push-main-optimize}"
+BRANCH="${BRANCH:-main}"
 COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.casaos.yml}"
 ENV_FILE="${ENV_FILE:-.env.casaos}"
 NO_CACHE="${NO_CACHE:-1}"

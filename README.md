@@ -82,7 +82,7 @@ Atau pakai script build/deploy CasaOS:
 
 ```bash
 chmod +x scripts/deploy-casaos.sh
-BRANCH=push-main-optimize ./scripts/deploy-casaos.sh
+./scripts/deploy-casaos.sh
 ```
 
 Tes koneksi dari container app:

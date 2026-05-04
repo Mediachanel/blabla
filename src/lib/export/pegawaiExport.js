@@ -163,6 +163,8 @@ async function attachKeluarga(pool, rows, ids) {
 function buildPegawaiExportWhere({ user, q, status, wilayah, ukpd }) {
   const where = [];
   const params = [];
+  const canFilterWilayah = user.role === ROLES.SUPER_ADMIN;
+  const canFilterUkpd = user.role === ROLES.SUPER_ADMIN || user.role === ROLES.ADMIN_WILAYAH;
 
   if (user.role === ROLES.ADMIN_UKPD) {
     addWhere(where, params, "p.`nama_ukpd` = ?", [user.nama_ukpd]);
@@ -182,8 +184,8 @@ function buildPegawaiExportWhere({ user, q, status, wilayah, ukpd }) {
     );
   }
   if (status) addWhere(where, params, "p.`jenis_pegawai` = ?", [status]);
-  if (wilayah) addWhere(where, params, "COALESCE(NULLIF(p.`wilayah`, ''), u.`wilayah`) = ?", [wilayah]);
-  if (ukpd) addWhere(where, params, "p.`nama_ukpd` = ?", [ukpd]);
+  if (canFilterWilayah && wilayah) addWhere(where, params, "COALESCE(NULLIF(p.`wilayah`, ''), u.`wilayah`) = ?", [wilayah]);
+  if (canFilterUkpd && ukpd) addWhere(where, params, "p.`nama_ukpd` = ?", [ukpd]);
 
   return {
     whereSql: where.length ? `WHERE ${where.join(" AND ")}` : "",

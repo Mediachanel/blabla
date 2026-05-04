@@ -24,7 +24,7 @@ export const sidebarMenu = [
     ]
   },
   { label: "Import Excel Pegawai", href: "/import-pegawai", icon: FileSpreadsheet, roles: [ROLES.SUPER_ADMIN] },
-  { label: "Import DRH", href: "/import-drh", icon: UploadCloud, roles: [ROLES.SUPER_ADMIN] },
+  { label: "Import DRH", href: "/import-drh", icon: UploadCloud, roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN_UKPD] },
   { label: "Daftar Urut Kepangkatan", href: "/duk", icon: FileSpreadsheet, roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN_WILAYAH, ROLES.ADMIN_UKPD] },
   { label: "QnA Admin", href: "/qna-admin", icon: Bot, roles: [ROLES.SUPER_ADMIN] },
   { label: "Profil Akun", href: "/profil", icon: UserCircle, roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN_WILAYAH, ROLES.ADMIN_UKPD] },

@@ -4,7 +4,7 @@ import { getJwtSecret } from "@/lib/auth/sessionConfig";
 
 const protectedRoutes = ["/dashboard", "/pegawai", "/usulan", "/import-drh", "/duk", "/qna-admin", "/profil"];
 const roleRules = {
-  "/import-drh": ["SUPER_ADMIN"],
+  "/import-drh": ["SUPER_ADMIN", "ADMIN_UKPD"],
   "/qna-admin": ["SUPER_ADMIN"],
   "/usulan": ["SUPER_ADMIN", "ADMIN_WILAYAH"]
 };

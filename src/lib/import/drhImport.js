@@ -154,13 +154,36 @@ async function findPegawai(connection, pegawai) {
   return candidates[0] || null;
 }
 
-async function upsertPegawai(connection, parsed) {
+function assertAllowedUkpdImport({ allowedUkpdName, existing, ukpd }) {
+  const allowed = normalizeComparableName(allowedUkpdName);
+  if (!allowed) return;
+  const deny = (message) => {
+    const error = new Error(message);
+    error.status = 403;
+    throw error;
+  };
+
+  if (existing?.nama_ukpd && normalizeComparableName(existing.nama_ukpd) !== allowed) {
+    deny("Admin UKPD hanya dapat import DRH pegawai dari UKPD miliknya.");
+  }
+
+  if (ukpd?.nama_ukpd && normalizeComparableName(ukpd.nama_ukpd) !== allowed) {
+    deny("Unit kerja pada PDF DRH tidak sesuai dengan UKPD akun Anda.");
+  }
+
+  if (!existing && !ukpd) {
+    deny("Unit kerja pada PDF DRH tidak ditemukan di referensi UKPD. Admin UKPD belum dapat membuat data pegawai tanpa UKPD yang valid.");
+  }
+}
+
+async function upsertPegawai(connection, parsed, options = {}) {
   const pegawai = parsed?.pegawai || {};
   const latestPangkat = pickLatestByDate(parsed?.riwayat_pangkat, "tmt_pangkat");
   const latestJabatan = pickLatestByDate(parsed?.riwayat_jabatan, "tmt_jabatan");
   const latestEducation = pickHighestFormalEducation(parsed?.riwayat_pendidikan);
   const ukpd = await findUkpd(connection, pegawai.unit_kerja);
   const existing = await findPegawai(connection, pegawai);
+  assertAllowedUkpdImport({ allowedUkpdName: options.allowedUkpdName, existing, ukpd });
 
   const baseData = {
     nama: normalizePersonName(pegawai.nama || pegawai.nama_lengkap),
@@ -334,7 +357,7 @@ async function replaceSectionRows(connection, { table, idPegawai, rows, buildRec
 }
 
 export async function importDrhToDatabase(connection, parsed, options = {}) {
-  const pegawaiResult = await upsertPegawai(connection, parsed);
+  const pegawaiResult = await upsertPegawai(connection, parsed, options);
   const idPegawai = Number(pegawaiResult.id_pegawai);
   const namaPegawai = normalizeNullableText(pegawaiResult.nama || parsed?.pegawai?.nama || parsed?.pegawai?.nama_lengkap);
   const nipPegawai = normalizeNullableText(pegawaiResult.nip || parsed?.pegawai?.nip);

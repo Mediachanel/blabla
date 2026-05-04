@@ -93,7 +93,7 @@ async function parseDrhPdf(file) {
 }
 
 export async function POST(request) {
-  const { error } = await requireAuth([ROLES.SUPER_ADMIN], request);
+  const { user, error } = await requireAuth([ROLES.SUPER_ADMIN, ROLES.ADMIN_UKPD], request);
   if (error) return error;
 
   const formData = await request.formData();
@@ -121,7 +121,10 @@ export async function POST(request) {
   try {
     await ensureDrhSchema(connection);
     await connection.beginTransaction();
-    const imported = await importDrhToDatabase(connection, parsed, { fileName: file.name });
+    const imported = await importDrhToDatabase(connection, parsed, {
+      fileName: file.name,
+      allowedUkpdName: user.role === ROLES.ADMIN_UKPD ? user.nama_ukpd : "",
+    });
     await connection.commit();
     return ok(
       {
@@ -136,7 +139,7 @@ export async function POST(request) {
     );
   } catch (importError) {
     await connection.rollback();
-    return fail(importError.message || "Import PDF DRH gagal diproses.", 500);
+    return fail(importError.message || "Import PDF DRH gagal diproses.", importError.status || 500);
   } finally {
     connection.release();
   }

@@ -72,10 +72,17 @@ sql/create_app_user_casaos.sql
 Lalu deploy:
 
 ```bash
-git pull origin sisdmk2-casaos
+git pull origin push-main-optimize
 docker compose -f docker-compose.casaos.yml down
 docker compose -f docker-compose.casaos.yml build --no-cache app
 docker compose -f docker-compose.casaos.yml up -d
+```
+
+Atau pakai script build/deploy CasaOS:
+
+```bash
+chmod +x scripts/deploy-casaos.sh
+BRANCH=push-main-optimize ./scripts/deploy-casaos.sh
 ```
 
 Tes koneksi dari container app:

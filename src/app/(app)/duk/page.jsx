@@ -22,7 +22,7 @@ const PANGKAT_RANK = [
   ["II/a", "ii/a", "pengatur muda"],
   ["I/d", "i/d", "juru tk.i", "juru tingkat i"],
   ["I/c", "i/c", "juru"],
-  ["I/b", "i/b", "juru muda tk.i", "juru tingkat i"],
+  ["I/b", "i/b", "juru muda tk.i", "juru muda tingkat i"],
   ["I/a", "i/a", "juru muda"]
 ];
 
@@ -45,10 +45,29 @@ const EDUCATION_RANK = {
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 
+function normalizePangkatText(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/\btingkat\b/g, "tk")
+    .replace(/\s*\/\s*/g, "/")
+    .replace(/\s*\.\s*/g, ".")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function hasGolonganCode(text, code) {
+  const [group, level] = code.toLowerCase().split("/");
+  const pattern = new RegExp(`(^|[^a-z0-9])${group}\\s*[/.]?\\s*${level}([^a-z0-9]|$)`);
+  return pattern.test(text);
+}
+
 function pangkatRank(value) {
-  const text = String(value || "").toLowerCase();
-  const index = PANGKAT_RANK.findIndex((aliases) => aliases.some((alias) => text.includes(alias.toLowerCase())));
-  return index === -1 ? 999 : index;
+  const text = normalizePangkatText(value);
+  const byCode = PANGKAT_RANK.findIndex(([code]) => hasGolonganCode(text, code));
+  if (byCode !== -1) return byCode;
+
+  const byName = PANGKAT_RANK.findIndex(([, , ...aliases]) => aliases.some((alias) => normalizePangkatText(alias) === text));
+  return byName === -1 ? 999 : byName;
 }
 
 function educationRank(value) {
@@ -121,9 +140,11 @@ function RankBadge({ number }) {
 }
 
 function PangkatBadge({ value }) {
+  const text = valueOrDash(value);
+
   return (
-    <span className={`inline-flex max-w-full items-center rounded-md px-2.5 py-1 text-xs font-bold ring-1 ${pangkatBadgeClass(value)}`}>
-      <span className="truncate">{valueOrDash(value)}</span>
+    <span className={`inline-flex w-full max-w-[180px] items-center justify-center rounded-md px-3 py-1.5 text-center text-xs font-bold leading-5 ring-1 ${pangkatBadgeClass(value)}`} title={text}>
+      <span className="truncate">{text}</span>
     </span>
   );
 }
@@ -216,7 +237,9 @@ function DukTable({ rows, startNumber }) {
               <div className="mt-3 grid gap-2 text-xs">
                 <div className="flex items-center justify-between gap-3">
                   <span className="font-semibold text-slate-500">Pangkat</span>
-                  <PangkatBadge value={item.pangkat_golongan} />
+                  <span className="flex w-[180px] max-w-[58vw] justify-end">
+                    <PangkatBadge value={item.pangkat_golongan} />
+                  </span>
                 </div>
                 <div className="flex items-center justify-between gap-3">
                   <span className="font-semibold text-slate-500">TMT Pangkat</span>
@@ -240,11 +263,11 @@ function DukTable({ rows, startNumber }) {
         })}
       </div>
       <div className="table-scroll hidden md:block">
-        <table className="w-full min-w-[1540px] table-fixed border-collapse">
+        <table className="w-full min-w-[1570px] table-fixed border-collapse">
           <colgroup>
             <col className="w-[72px]" />
             <col className="w-[280px]" />
-            <col className="w-[170px]" />
+            <col className="w-[200px]" />
             <col className="w-[140px]" />
             <col className="w-[280px]" />
             <col className="w-[220px]" />
@@ -277,7 +300,7 @@ function DukTable({ rows, startNumber }) {
                     </Link>
                     <p className="mt-1 truncate text-xs leading-5 text-slate-500">NIP {valueOrDash(item.nip)}</p>
                   </td>
-                  <td className="table-td">
+                  <td className="table-td text-center">
                     <PangkatBadge value={item.pangkat_golongan} />
                   </td>
                   <td className="table-td font-semibold text-slate-700">{formatDate(item.tmt_pangkat_terakhir)}</td>
@@ -381,7 +404,7 @@ export default function DukPage() {
     setPage(1);
   }, [jabatan, pangkat, search, ukpd]);
 
-  const pangkatOptions = useMemo(() => [...new Set(rows.map((item) => item.pangkat_golongan).filter(Boolean))], [rows]);
+  const pangkatOptions = useMemo(() => [...new Set(rows.map((item) => item.pangkat_golongan).filter(Boolean))].sort((a, b) => pangkatRank(a) - pangkatRank(b) || a.localeCompare(b, "id")), [rows]);
   const jabatanOptions = useMemo(() => [...new Set(rows.map((item) => item.nama_jabatan_menpan).filter(Boolean))], [rows]);
   const ukpdOptions = useMemo(() => [...new Set(rows.map((item) => item.nama_ukpd).filter(Boolean))].sort((a, b) => a.localeCompare(b, "id")), [rows]);
 

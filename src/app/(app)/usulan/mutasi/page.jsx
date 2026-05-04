@@ -23,6 +23,7 @@ import DataTable from "@/components/tables/DataTable";
 import SearchFilterBar from "@/components/forms/SearchFilterBar";
 import StatusBadge from "@/components/ui/StatusBadge";
 import EmptyState from "@/components/ui/EmptyState";
+import ActionDrawer from "@/components/ui/ActionDrawer";
 import { ROLES } from "@/lib/constants/roles";
 import {
   CHECKLIST_DOCUMENT_MAX_BYTES,
@@ -244,23 +245,26 @@ function ActionPanel({
   canPrintPertimbangan,
   saving,
   printingPertimbangan,
-  uploadingKey
+  uploadingKey,
+  drawer = false
 }) {
   if (!mode) return null;
 
   if (mode === "verify") {
     return (
-      <section className="surface space-y-4 p-5">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h2 className="text-base font-semibold text-slate-900">Verifikasi Usulan</h2>
-            <p className="text-sm text-slate-500">Perbarui status dan checklist berkas sesuai hasil verifikasi.</p>
+      <section className={drawer ? "space-y-5" : "surface space-y-4 p-5"}>
+        {!drawer ? (
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h2 className="text-base font-semibold text-slate-900">Verifikasi Usulan</h2>
+              <p className="text-sm text-slate-500">Perbarui status dan checklist berkas sesuai hasil verifikasi.</p>
+            </div>
+            <button className="btn-secondary" type="button" onClick={onClose}>
+              <X className="h-4 w-4" />
+              Tutup
+            </button>
           </div>
-          <button className="btn-secondary" type="button" onClick={onClose}>
-            <X className="h-4 w-4" />
-            Tutup
-          </button>
-        </div>
+        ) : null}
 
         {activeItem ? (
           <div className="rounded-2xl border border-dinkes-100 bg-dinkes-50/70 p-4">
@@ -370,20 +374,22 @@ function ActionPanel({
   ], form.jabatan_baru);
 
   return (
-    <form className="surface space-y-4 p-5" onSubmit={onSubmitForm}>
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-center gap-3">
-          {mode === "create" ? <Plus className="h-5 w-5 text-dinkes-700" /> : <Pencil className="h-5 w-5 text-dinkes-700" />}
-          <div>
-            <h2 className="text-base font-semibold text-slate-900">{mode === "create" ? "Tambah Usulan Mutasi" : "Edit Usulan Mutasi"}</h2>
-            <p className="text-sm text-slate-500">Form disimpan saat diperlukan, bukan tampil terus di layar.</p>
+    <form className={drawer ? "space-y-5" : "surface space-y-4 p-5"} onSubmit={onSubmitForm}>
+      {!drawer ? (
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-3">
+            {mode === "create" ? <Plus className="h-5 w-5 text-dinkes-700" /> : <Pencil className="h-5 w-5 text-dinkes-700" />}
+            <div>
+              <h2 className="text-base font-semibold text-slate-900">{mode === "create" ? "Tambah Usulan Mutasi" : "Edit Usulan Mutasi"}</h2>
+              <p className="text-sm text-slate-500">Form disimpan saat diperlukan, bukan tampil terus di layar.</p>
+            </div>
           </div>
+          <button className="btn-secondary" type="button" onClick={onClose}>
+            <X className="h-4 w-4" />
+            Tutup
+          </button>
         </div>
-        <button className="btn-secondary" type="button" onClick={onClose}>
-          <X className="h-4 w-4" />
-          Tutup
-        </button>
-      </div>
+      ) : null}
 
       <div className="space-y-4">
         <label className="space-y-2">
@@ -662,6 +668,10 @@ export default function UsulanMutasiPage() {
 
   const selected = filteredRows.find((item) => item.id === selectedId) || decoratedRows.find((item) => item.id === selectedId) || null;
   const activeItem = decoratedRows.find((item) => item.id === activeId) || rows.find((item) => item.id === activeId) || null;
+  const drawerTitle = panelMode === "verify" ? "Validasi Usulan Mutasi" : panelMode === "edit" ? "Edit Usulan Mutasi" : "Tambah Usulan Mutasi";
+  const drawerDescription = panelMode === "verify"
+    ? "Perbarui status, checklist, dan dokumen pendukung tanpa menggeser tampilan daftar."
+    : "Isi NRK, tujuan mutasi, jabatan, serta dokumen checklist dalam satu panel.";
 
   function closePanel() {
     setPanelMode(null);
@@ -909,30 +919,7 @@ export default function UsulanMutasiPage() {
         </section>
       ) : null}
 
-      <section className={`mt-5 grid gap-5 ${panelMode ? "xl:grid-cols-[420px_1fr]" : "xl:grid-cols-1"}`}>
-        <ActionPanel
-          mode={panelMode}
-          form={form}
-          verifyForm={verifyForm}
-          activeItem={activeItem}
-          pegawaiLookupMessage={pegawaiLookupMessage}
-          referenceOptions={referenceOptions}
-          formDocuments={formDocuments}
-          pendingFormFiles={pendingFormFiles}
-          saving={saving}
-          onClose={closePanel}
-          onFormChange={(name, value) => setForm((current) => ({ ...current, [name]: value }))}
-          onVerifyChange={(name, value) => setVerifyForm((current) => ({ ...current, [name]: value }))}
-          onSubmitForm={handleSubmitForm}
-          onSubmitVerify={handleSubmitVerify}
-          onUploadDocument={handleUploadDocument}
-          onSelectFormDocument={selectPendingFormDocument}
-          onPrintPertimbangan={() => handlePrintPertimbangan(activeItem)}
-          canPrintPertimbangan={canPrintDinasPertimbangan(user, activeItem, verifyForm.status)}
-          printingPertimbangan={printingPertimbanganId === activeItem?.id}
-          uploadingKey={uploadingKey}
-        />
-
+      <section className="mt-5">
         <div className="space-y-5">
           <SearchFilterBar
             search={search}
@@ -1134,6 +1121,32 @@ export default function UsulanMutasiPage() {
           ) : null}
         </div>
       </section>
+
+      <ActionDrawer open={Boolean(panelMode)} title={drawerTitle} description={drawerDescription} onClose={closePanel}>
+        <ActionPanel
+          mode={panelMode}
+          form={form}
+          verifyForm={verifyForm}
+          activeItem={activeItem}
+          pegawaiLookupMessage={pegawaiLookupMessage}
+          referenceOptions={referenceOptions}
+          formDocuments={formDocuments}
+          pendingFormFiles={pendingFormFiles}
+          saving={saving}
+          onClose={closePanel}
+          onFormChange={(name, value) => setForm((current) => ({ ...current, [name]: value }))}
+          onVerifyChange={(name, value) => setVerifyForm((current) => ({ ...current, [name]: value }))}
+          onSubmitForm={handleSubmitForm}
+          onSubmitVerify={handleSubmitVerify}
+          onUploadDocument={handleUploadDocument}
+          onSelectFormDocument={selectPendingFormDocument}
+          onPrintPertimbangan={() => handlePrintPertimbangan(activeItem)}
+          canPrintPertimbangan={canPrintDinasPertimbangan(user, activeItem, verifyForm.status)}
+          printingPertimbangan={printingPertimbanganId === activeItem?.id}
+          uploadingKey={uploadingKey}
+          drawer
+        />
+      </ActionDrawer>
     </>
   );
 }

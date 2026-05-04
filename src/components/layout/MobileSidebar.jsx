@@ -13,7 +13,7 @@ export default function MobileSidebar({ user, open, onClose }) {
   return (
     <div className="fixed inset-0 z-50 lg:hidden">
       <div className="absolute inset-0 bg-slate-950/40" onClick={onClose} />
-      <aside className="relative z-10 flex h-full w-[188px] max-w-[88vw] flex-col bg-white shadow-2xl">
+      <aside className="relative z-10 flex h-full w-72 max-w-[88vw] flex-col bg-white shadow-2xl">
         <header className="flex h-16 items-center justify-between border-b border-[#e9edf3] px-4">
           <div className="flex items-center gap-3">
             <span className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden bg-white">

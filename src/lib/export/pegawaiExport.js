@@ -6,6 +6,10 @@ function addWhere(parts, params, clause, values = []) {
   params.push(...values);
 }
 
+function idInClause(ids = []) {
+  return ids.map(() => "?").join(", ");
+}
+
 function toDateString(value) {
   if (!value || typeof value !== "object" || !("toISOString" in value)) return value;
   return value.toISOString().slice(0, 10);
@@ -49,7 +53,7 @@ async function attachAlamat(pool, rows, ids) {
   const [alamatRows] = await pool.query(
     `SELECT *
      FROM \`alamat\`
-     WHERE \`id_pegawai\` IN (?)
+     WHERE \`id_pegawai\` IN (${idInClause(ids)})
      ORDER BY \`id_pegawai\` ASC,
        CASE
          WHEN LOWER(\`tipe\`) = 'domisili' THEN 0
@@ -57,7 +61,7 @@ async function attachAlamat(pool, rows, ids) {
          ELSE 2
        END,
        \`id\` ASC`,
-    [ids]
+    ids
   );
 
   const byId = new Map(rows.map((row) => [Number(row.id_pegawai), row]));
@@ -109,13 +113,13 @@ async function attachKeluarga(pool, rows, ids) {
     const [keluargaRows] = await pool.query(
       `SELECT *
        FROM \`keluarga\`
-       WHERE \`id_pegawai\` IN (?) AND \`hubungan\` IN ('pasangan', 'anak')
+       WHERE \`id_pegawai\` IN (${idInClause(ids)}) AND \`hubungan\` IN ('pasangan', 'anak')
        ORDER BY \`id_pegawai\` ASC,
          CASE WHEN \`hubungan\` = 'pasangan' THEN 0 ELSE 1 END,
          CASE WHEN \`sumber_tabel\` = 'drh_pdf_keluarga' THEN 0 ELSE 1 END,
          COALESCE(\`urutan\`, 99) ASC,
          \`id\` ASC`,
-      [ids]
+      ids
     );
 
     for (const sourceRow of keluargaRows.map(normalizeRow)) {
@@ -131,9 +135,9 @@ async function attachKeluarga(pool, rows, ids) {
     const [pasanganRows] = await pool.query(
       `SELECT *
        FROM \`pasangan\`
-       WHERE \`id_pegawai\` IN (?)
+       WHERE \`id_pegawai\` IN (${idInClause(ids)})
        ORDER BY \`id_pegawai\` ASC, \`id\` ASC`,
-      [ids]
+      ids
     );
     for (const sourceRow of pasanganRows.map(normalizeRow)) {
       const target = byId.get(Number(sourceRow.id_pegawai));
@@ -145,9 +149,9 @@ async function attachKeluarga(pool, rows, ids) {
     const [anakRows] = await pool.query(
       `SELECT *
        FROM \`anak\`
-       WHERE \`id_pegawai\` IN (?)
+       WHERE \`id_pegawai\` IN (${idInClause(ids)})
        ORDER BY \`id_pegawai\` ASC, COALESCE(\`urutan\`, 99) ASC, \`id\` ASC`,
-      [ids]
+      ids
     );
     for (const sourceRow of anakRows.map(normalizeRow)) {
       const target = byId.get(Number(sourceRow.id_pegawai));

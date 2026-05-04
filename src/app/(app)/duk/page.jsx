@@ -92,11 +92,40 @@ function valueOrDash(value) {
   return value || "-";
 }
 
+function rankBadgeClass(number) {
+  if (number <= 3) return "bg-govgold-100 text-govgold-700 ring-govgold-300";
+  if (number <= 10) return "bg-dinkes-50 text-dinkes-700 ring-dinkes-200";
+  return "bg-slate-100 text-slate-600 ring-slate-200";
+}
+
+function pangkatBadgeClass(value) {
+  const rank = pangkatRank(value);
+  if (rank <= 4) return "bg-violet-50 text-violet-700 ring-violet-200";
+  if (rank <= 9) return "bg-dinkes-50 text-dinkes-700 ring-dinkes-200";
+  return "bg-slate-100 text-slate-700 ring-slate-200";
+}
+
 function pendidikanLabel(item) {
   const jenjang = String(item?.jenjang_pendidikan || "").trim();
   const programStudi = String(item?.program_studi || "").trim();
   if (jenjang && programStudi) return `${jenjang} - ${programStudi}`;
   return jenjang || programStudi || "-";
+}
+
+function RankBadge({ number }) {
+  return (
+    <span className={`inline-flex h-8 min-w-8 items-center justify-center rounded-full px-2 text-xs font-extrabold ring-1 ${rankBadgeClass(number)}`}>
+      {number}
+    </span>
+  );
+}
+
+function PangkatBadge({ value }) {
+  return (
+    <span className={`inline-flex max-w-full items-center rounded-md px-2.5 py-1 text-xs font-bold ring-1 ${pangkatBadgeClass(value)}`}>
+      <span className="truncate">{valueOrDash(value)}</span>
+    </span>
+  );
 }
 
 function DukSummary({ total, filtered, topPangkat }) {
@@ -160,61 +189,120 @@ function DukFilters({ search, setSearch, pangkat, setPangkat, jabatan, setJabata
 function DukTable({ rows, startNumber }) {
   return (
     <section className="surface overflow-hidden">
-      <div className="border-b border-slate-200 bg-slate-50 px-4 py-3 text-xs font-semibold text-slate-500">
-        Geser tabel ke kanan untuk melihat unit kerja dan aksi profil.
+      <div className="flex flex-col gap-1 border-b border-slate-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="text-sm font-extrabold text-slate-900">Ranking DUK Pegawai</h2>
+          <p className="text-xs font-medium text-slate-500">Urutan tampil mengikuti aturan pangkat, TMT, pendidikan, lalu nama.</p>
+        </div>
+        <p className="hidden text-xs font-semibold text-slate-500 md:block">Geser horizontal untuk melihat semua kolom.</p>
       </div>
-      <div className="table-scroll">
-        <table className="w-full min-w-[1220px] table-fixed divide-y divide-slate-200">
+      <div className="grid gap-3 p-3 md:hidden">
+        {rows.map((item, index) => {
+          const number = startNumber + index;
+          return (
+            <article key={item.id_pegawai} className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
+              <div className="flex items-start gap-3">
+                <RankBadge number={number} />
+                <div className="min-w-0 flex-1">
+                  <Link className="block truncate text-sm font-extrabold text-slate-950 hover:text-dinkes-700" href={`/pegawai/${item.id_pegawai}`}>
+                    {valueOrDash(item.nama)}
+                  </Link>
+                  <p className="mt-0.5 text-xs text-slate-500">NIP {valueOrDash(item.nip)}</p>
+                </div>
+                <Link className="rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-bold text-slate-600 hover:border-dinkes-300 hover:text-dinkes-700" href={`/pegawai/${item.id_pegawai}`}>
+                  Profil
+                </Link>
+              </div>
+              <div className="mt-3 grid gap-2 text-xs">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="font-semibold text-slate-500">Pangkat</span>
+                  <PangkatBadge value={item.pangkat_golongan} />
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="font-semibold text-slate-500">TMT Pangkat</span>
+                  <span className="font-semibold text-slate-800">{formatDate(item.tmt_pangkat_terakhir)}</span>
+                </div>
+                <div className="rounded-md bg-slate-50 p-2">
+                  <p className="font-semibold text-slate-500">Jabatan</p>
+                  <p className="mt-1 leading-5 text-slate-800">{valueOrDash(item.nama_jabatan_menpan)}</p>
+                </div>
+                <div className="rounded-md bg-slate-50 p-2">
+                  <p className="font-semibold text-slate-500">Pendidikan</p>
+                  <p className="mt-1 leading-5 text-slate-800">{pendidikanLabel(item)}</p>
+                </div>
+                <div className="rounded-md bg-slate-50 p-2">
+                  <p className="font-semibold text-slate-500">Unit Kerja</p>
+                  <p className="mt-1 leading-5 text-slate-800">{valueOrDash(item.nama_ukpd)}</p>
+                </div>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+      <div className="table-scroll hidden md:block">
+        <table className="w-full min-w-[1540px] table-fixed border-collapse">
           <colgroup>
-            <col className="w-14" />
-            <col className="w-[230px]" />
+            <col className="w-[72px]" />
+            <col className="w-[280px]" />
             <col className="w-[170px]" />
-            <col className="w-[190px]" />
-            <col className="w-[130px]" />
+            <col className="w-[140px]" />
+            <col className="w-[280px]" />
+            <col className="w-[220px]" />
             <col className="w-[260px]" />
-            <col className="w-[230px]" />
-            <col className="w-[230px]" />
-            <col className="w-[110px]" />
+            <col className="w-[116px]" />
           </colgroup>
-          <thead className="bg-slate-50">
+          <thead>
             <tr>
-              {["No", "Nama", "NIP", "Pangkat/Gol", "TMT Pangkat", "Jabatan", "Pendidikan", "Unit Kerja", "Aksi"].map((header) => (
-                <th key={header} className="table-th uppercase" scope="col">
-                  {header}
-                </th>
-              ))}
+              <th className="table-th sticky left-0 z-30 bg-[#f3f4f6] text-center uppercase" scope="col">No</th>
+              <th className="table-th sticky left-[72px] z-30 bg-[#f3f4f6] uppercase" scope="col">Pegawai</th>
+              <th className="table-th uppercase" scope="col">Pangkat/Gol</th>
+              <th className="table-th uppercase" scope="col">TMT Pangkat</th>
+              <th className="table-th uppercase" scope="col">Jabatan</th>
+              <th className="table-th uppercase" scope="col">Pendidikan</th>
+              <th className="table-th uppercase" scope="col">Unit Kerja</th>
+              <th className="table-th sticky right-0 z-30 bg-[#f3f4f6] text-center uppercase" scope="col">Aksi</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 bg-white">
-            {rows.map((item, index) => (
-              <tr key={item.id_pegawai} className="align-top hover:bg-dinkes-50/40">
-                <td className="table-td text-slate-500">{startNumber + index}</td>
-                <td className="table-td">
-                  <Link className="block text-sm font-extrabold leading-5 text-slate-950 hover:text-dinkes-700" href={`/pegawai/${item.id_pegawai}`}>
-                    {valueOrDash(item.nama)}
-                  </Link>
-                  <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">{valueOrDash(item.nama_ukpd)}</p>
-                </td>
-                <td className="table-td text-slate-700">{valueOrDash(item.nip)}</td>
-                <td className="table-td font-semibold leading-5 text-slate-800">{valueOrDash(item.pangkat_golongan)}</td>
-                <td className="table-td text-slate-700">{formatDate(item.tmt_pangkat_terakhir)}</td>
-                <td className="table-td whitespace-normal leading-5 text-slate-700">{valueOrDash(item.nama_jabatan_menpan)}</td>
-                <td className="table-td">
-                  <p className="text-sm font-bold text-slate-950">{valueOrDash(item.jenjang_pendidikan)}</p>
-                  <p className="mt-1 line-clamp-3 text-xs leading-5 text-slate-500">{valueOrDash(item.program_studi)}</p>
-                </td>
-                <td className="table-td whitespace-normal leading-5 text-slate-700">{valueOrDash(item.nama_ukpd)}</td>
-                <td className="table-td">
+            {rows.map((item, index) => {
+              const number = startNumber + index;
+              return (
+                <tr key={item.id_pegawai} className="group align-top hover:bg-dinkes-50/40">
+                  <td className="table-td sticky left-0 z-20 bg-white text-center group-hover:bg-dinkes-50/40">
+                    <RankBadge number={number} />
+                  </td>
+                  <td className="table-td sticky left-[72px] z-20 bg-white group-hover:bg-dinkes-50/40">
+                    <Link className="block truncate text-sm font-extrabold leading-5 text-slate-950 hover:text-dinkes-700" href={`/pegawai/${item.id_pegawai}`}>
+                      {valueOrDash(item.nama)}
+                    </Link>
+                    <p className="mt-1 truncate text-xs leading-5 text-slate-500">NIP {valueOrDash(item.nip)}</p>
+                  </td>
+                  <td className="table-td">
+                    <PangkatBadge value={item.pangkat_golongan} />
+                  </td>
+                  <td className="table-td font-semibold text-slate-700">{formatDate(item.tmt_pangkat_terakhir)}</td>
+                  <td className="table-td whitespace-normal leading-5 text-slate-700">
+                    <p className="line-clamp-3">{valueOrDash(item.nama_jabatan_menpan)}</p>
+                  </td>
+                  <td className="table-td whitespace-normal">
+                    <p className="text-sm font-bold text-slate-950">{valueOrDash(item.jenjang_pendidikan)}</p>
+                    <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">{valueOrDash(item.program_studi)}</p>
+                  </td>
+                  <td className="table-td whitespace-normal leading-5 text-slate-700">
+                    <p className="line-clamp-3">{valueOrDash(item.nama_ukpd)}</p>
+                  </td>
+                  <td className="table-td sticky right-0 z-20 bg-white text-center group-hover:bg-dinkes-50/40">
                   <Link
                     href={`/pegawai/${item.id_pegawai}`}
-                    className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-dinkes-300 hover:text-dinkes-700"
+                    className="inline-flex items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-dinkes-300 hover:text-dinkes-700"
                   >
                     <Eye className="h-4 w-4" />
                     Profil
                   </Link>
-                </td>
-              </tr>
-            ))}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

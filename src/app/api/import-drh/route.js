@@ -15,8 +15,50 @@ export const runtime = "nodejs";
 const execFileAsync = promisify(execFile);
 const DRH_PDF_MAX_BYTES = 10 * 1024 * 1024;
 
+function getPythonCandidates() {
+  const configured = process.env.DRH_PYTHON_BIN?.trim();
+  if (configured) return [{ command: configured, argsPrefix: [] }];
+
+  return [
+    { command: "python3", argsPrefix: [] },
+    { command: "python", argsPrefix: [] },
+    { command: "py", argsPrefix: ["-3"] },
+  ];
+}
+
 function normalizeFileName(value) {
   return String(value || "").replace(/[^\w.-]+/g, "_");
+}
+
+async function runDrhParser(parserPath, tempPath) {
+  const candidates = getPythonCandidates();
+  const missingCommands = [];
+
+  for (const candidate of candidates) {
+    try {
+      return await execFileAsync(candidate.command, [...candidate.argsPrefix, parserPath, tempPath], {
+        cwd: process.cwd(),
+        maxBuffer: 20 * 1024 * 1024,
+      });
+    } catch (error) {
+      if (error.code !== "ENOENT") {
+        throw error;
+      }
+      missingCommands.push(candidate.command);
+    }
+  }
+
+  throw new Error(
+    `Interpreter Python tidak ditemukan. Dicoba: ${missingCommands.join(", ")}. Pastikan image Docker sudah di-rebuild atau set DRH_PYTHON_BIN.`
+  );
+}
+
+function formatParserError(error) {
+  const stderr = String(error.stderr || "");
+  if (stderr.includes("No module named 'pdfplumber'") || stderr.includes('No module named "pdfplumber"')) {
+    return "Parser PDF membutuhkan package Python `pdfplumber`. Jalankan `pip install -r requirements.txt` atau rebuild image Docker terbaru.";
+  }
+  return error.message;
 }
 
 async function parseDrhPdf(file) {
@@ -38,16 +80,13 @@ async function parseDrhPdf(file) {
   await fs.writeFile(tempPath, buffer);
 
   try {
-    const { stdout, stderr } = await execFileAsync("python", [parserPath, tempPath], {
-      cwd: process.cwd(),
-      maxBuffer: 20 * 1024 * 1024,
-    });
+    const { stdout, stderr } = await runDrhParser(parserPath, tempPath);
     if (!stdout) {
       throw new Error(stderr || "Parser PDF tidak mengembalikan data.");
     }
     return JSON.parse(stdout);
   } catch (error) {
-    throw new Error(`Gagal membaca PDF DRH: ${error.message}`);
+    throw new Error(`Gagal membaca PDF DRH: ${formatParserError(error)}`);
   } finally {
     await fs.unlink(tempPath).catch(() => {});
   }

@@ -674,7 +674,7 @@ function allOptionsFor(name, referenceOptions) {
 }
 
 function repeatableOptionsFor(sectionKey, fieldName, referenceOptions) {
-  if (sectionKey.startsWith("riwayat_") && ["nama_jabatan_menpan", "pangkat_golongan"].includes(fieldName)) {
+  if (sectionKey.startsWith("riwayat_") && fieldName === "pangkat_golongan") {
     return [];
   }
   return allOptionsFor(fieldName, referenceOptions);

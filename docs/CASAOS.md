@@ -78,6 +78,16 @@ cd /DATA/AppData/si-kepegawaian
 sh deploy-casaos-github.sh --app-origin https://info.kepegawaian.media --postgres-container pasir-postgres
 ```
 
+Jika ingin menjalankan Docker Compose manual dari folder app, pastikan env CasaOS ikut dibaca. Tanpa env file ini, compose bisa gagal dengan pesan `POSTGRES_PASSWORD is missing`.
+
+```bash
+cd /DATA/AppData/si-kepegawaian
+git pull origin main
+cp .env.casaos .env
+docker compose --env-file .env.casaos -f docker-compose.casaos.yml up -d --build
+docker logs --tail 50 sisdmk2-app
+```
+
 ## Jika User PostgreSQL Bukan `postgres`
 
 Jika container PostgreSQL CasaOS tidak punya role `postgres`, jalankan dengan user admin yang benar:

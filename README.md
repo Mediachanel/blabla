@@ -99,6 +99,13 @@ docker exec sisdmk2-app npm run check:postgres
 
 Jika user database belum dibuat, app akan gagal dengan pesan akses user. Buat user PostgreSQL sesuai nilai `POSTGRES_USER` dan beri akses ke database `POSTGRES_DATABASE`.
 
+Jika menjalankan compose manual di CasaOS, gunakan env file CasaOS agar `POSTGRES_PASSWORD` dan `JWT_SECRET` terbaca:
+
+```bash
+cp .env.casaos .env
+docker compose --env-file .env.casaos -f docker-compose.casaos.yml up -d --build
+```
+
 ### Skenario B: App dan PostgreSQL satu stack compose
 
 Pakai `docker-compose.yml`. Dalam skenario ini host PostgreSQL untuk app adalah `db:5432`, bukan `host.docker.internal`.
@@ -123,6 +130,12 @@ Catatan troubleshooting:
 - Jika muncul pesan gagal konek database, cek `POSTGRES_HOSTS`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DATABASE`, dan `POSTGRES_DATABASES` pada container app.
 - Jika volume `sisdmk2_postgres_data` sudah pernah dibuat dengan password lama, mengganti `POSTGRES_PASSWORD` di compose tidak otomatis mengubah password user yang sudah ada. Pakai password lama, ubah password user manual dari PostgreSQL, atau buat volume baru bila data lama boleh dihapus.
 - Aplikasi mencoba beberapa host PostgreSQL secara berurutan dari `POSTGRES_HOSTS`, lalu fallback lokal/CasaOS: `postgres`, `db`, `host.docker.internal`, `172.17.0.1`, `127.0.0.1`, dan `localhost`. Database yang dicoba berasal dari `POSTGRES_DATABASES`/`POSTGRES_DATABASE`, dengan fallback ke `si_data`.
+
+## Form Pegawai
+
+Field `Jabatan Standar Kepgub 11` memakai daftar `jabatan_standar` sebagai referensi resmi. Pada data utama pegawai dan `Riwayat Jabatan`, field ini ditampilkan sebagai dropdown agar user tidak perlu mengetik nilai persis secara manual.
+
+Jika ada nilai lama dari DRH/import seperti `Pengolah Data` yang belum ada di daftar standar, pilih padanan jabatan dari dropdown. Validasi penyimpanan akan menolak nilai bebas yang tidak ada di referensi.
 
 ## Import CSV Master Pegawai
 

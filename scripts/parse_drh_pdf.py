@@ -27,6 +27,9 @@ INFORMASI_PENDUKUNG_ORDER = [
     "keberhasilan",
 ]
 
+PREFIX_TITLE_KEYS = {"dr", "drg", "apt", "ns"}
+PREFIX_TITLE_PATTERN = re.compile(r"^\s*(drg|dr|apt|ns)\.\s*", re.IGNORECASE)
+
 
 def clean_cell(value):
     if value is None:
@@ -67,10 +70,45 @@ def split_name_and_title(value):
     text = clean_cell(value)
     text = re.sub(r"\s+,", ",", text)
     text = re.sub(r",\s*", ", ", text)
-    if "," in text:
-        base, suffix = text.split(",", 1)
-        return clean_cell(base), clean_cell(suffix)
-    return text, None
+    comma_parts = [clean_cell(part) for part in text.split(",") if clean_cell(part)]
+    main_part = comma_parts[0] if comma_parts else text
+    suffix = ", ".join(comma_parts[1:]) or None
+
+    prefix = []
+    remaining = main_part
+    while remaining:
+        match = PREFIX_TITLE_PATTERN.match(remaining)
+        if not match:
+            break
+        prefix.append(normalize_prefix_title(match.group(1)))
+        remaining = remaining[match.end():].lstrip()
+
+    tokens = remaining.split()
+    while tokens:
+        token = tokens[0]
+        key = re.sub(r"[^a-z]", "", token.lower())
+        if key not in PREFIX_TITLE_KEYS:
+            break
+        prefix.append(normalize_prefix_title(token))
+        tokens.pop(0)
+        remaining = " ".join(tokens)
+
+    name = clean_cell(remaining) or main_part
+    return name, ", ".join(prefix) or None, suffix
+
+
+def normalize_prefix_title(value):
+    raw = clean_cell(value)
+    key = re.sub(r"[^a-z]", "", raw.lower())
+    if key == "dr":
+        return "dr."
+    if key == "drg":
+        return "drg."
+    if key == "ns":
+        return "Ns."
+    if key == "apt":
+        return "Apt."
+    return raw
 
 
 def extract_data_diri(page_text):
@@ -96,7 +134,7 @@ def extract_data_diri(page_text):
         elif current_label:
             values[current_label] = clean_cell(f"{values[current_label]} {line}")
 
-    nama, gelar_belakang = split_name_and_title(values.get("NAMA", ""))
+    nama, gelar_depan, gelar_belakang = split_name_and_title(values.get("NAMA", ""))
 
     tempat_lahir = None
     tanggal_lahir = None
@@ -124,6 +162,7 @@ def extract_data_diri(page_text):
     return {
         "nama_lengkap": clean_cell(values.get("NAMA", "")) or None,
         "nama": nama or None,
+        "gelar_depan": gelar_depan,
         "gelar_belakang": gelar_belakang,
         "nrk": nrk,
         "nip": nip,

@@ -482,6 +482,45 @@ function isLikelyMisplacedName(value) {
   return words.length >= 2 && words.length <= 6 && words.every((word) => /^[A-Za-z'`-]+$/.test(word));
 }
 
+const FRONT_TITLE_PATTERN = /^\s*(drg|dr|apt|ns)\.\s*/i;
+const FRONT_TITLE_KEYS = new Set(["dr", "drg", "apt", "ns"]);
+
+function normalizeFrontTitle(value) {
+  const key = String(value || "").replace(/[^a-z]/gi, "").toLowerCase();
+  if (key === "dr") return "dr.";
+  if (key === "drg") return "drg.";
+  if (key === "apt") return "Apt.";
+  if (key === "ns") return "Ns.";
+  return normalizeText(value);
+}
+
+function splitLeadingFrontTitles(value) {
+  const original = normalizeText(value);
+  let remaining = original;
+  const titles = [];
+
+  while (remaining) {
+    const match = remaining.match(FRONT_TITLE_PATTERN);
+    if (!match) break;
+    titles.push(normalizeFrontTitle(match[1]));
+    remaining = remaining.slice(match[0].length).trim();
+  }
+
+  const tokens = remaining.split(/\s+/).filter(Boolean);
+  while (tokens.length) {
+    const key = tokens[0].replace(/[^a-z]/gi, "").toLowerCase();
+    if (!FRONT_TITLE_KEYS.has(key)) break;
+    titles.push(normalizeFrontTitle(tokens[0]));
+    tokens.shift();
+    remaining = tokens.join(" ");
+  }
+
+  return {
+    gelar_depan: titles.join(", "),
+    nama: normalizeText(remaining) || original,
+  };
+}
+
 function createEmptyEntry(sectionKey) {
   const defaults = {
     keluarga: {
@@ -556,6 +595,12 @@ function deriveKeluarga(initialData = {}) {
 
 function buildInitialForm(initialData = {}) {
   const normalizedInitialData = normalizeObjectForForm(initialData);
+  const splitNameTitle = splitLeadingFrontTitles(normalizedInitialData.nama);
+  if (splitNameTitle.gelar_depan) {
+    normalizedInitialData.nama = splitNameTitle.nama;
+    normalizedInitialData.gelar_depan = normalizedInitialData.gelar_depan || splitNameTitle.gelar_depan;
+  }
+
   const fallbackName = normalizeText(normalizedInitialData.nama || normalizedInitialData.nama_pegawai || normalizedInitialData.nama_lengkap);
   if (!fallbackName && isLikelyMisplacedName(normalizedInitialData.gelar_belakang)) {
     normalizedInitialData.nama = normalizedInitialData.gelar_belakang;
@@ -626,6 +671,13 @@ function referenceOptionsFor(name, referenceOptions) {
 
 function allOptionsFor(name, referenceOptions) {
   return staticOptionsFor(name).length ? staticOptionsFor(name) : referenceOptionsFor(name, referenceOptions);
+}
+
+function repeatableOptionsFor(sectionKey, fieldName, referenceOptions) {
+  if (sectionKey.startsWith("riwayat_") && ["nama_jabatan_menpan", "pangkat_golongan"].includes(fieldName)) {
+    return [];
+  }
+  return allOptionsFor(fieldName, referenceOptions);
 }
 
 function parseDate(value) {
@@ -708,18 +760,18 @@ const overallSchema = baseSchema.shape({
     tahun_lulus: yup.string().trim().matches(/^\d{0,4}$/, { message: "Tahun lulus harus 4 digit.", excludeEmptyString: true }).nullable().transform((value) => value || "")
   })),
   riwayat_jabatan: yup.array().of(yup.object({
-    nama_jabatan_menpan: selectField("Jabatan Standar Kepgub 11 riwayat jabatan", JABATAN_STANDAR_OPTIONS),
-    pangkat_golongan: selectField("Pangkat/golongan riwayat jabatan", PANGKAT_GOLONGAN_OPTIONS),
+    nama_jabatan_menpan: yup.string().nullable(),
+    pangkat_golongan: yup.string().nullable(),
     tmt_jabatan: dateField("TMT jabatan"),
     tanggal_sk: dateField("Tanggal SK")
   })),
   riwayat_gaji_pokok: yup.array().of(yup.object({
-    pangkat_golongan: selectField("Pangkat/golongan riwayat gaji", PANGKAT_GOLONGAN_OPTIONS),
+    pangkat_golongan: yup.string().nullable(),
     tmt_gaji: dateField("TMT gaji"),
     tanggal_sk: dateField("Tanggal SK")
   })),
   riwayat_pangkat: yup.array().of(yup.object({
-    pangkat_golongan: selectField("Pangkat/golongan riwayat pangkat", PANGKAT_GOLONGAN_OPTIONS),
+    pangkat_golongan: yup.string().nullable(),
     tmt_pangkat: dateField("TMT pangkat"),
     tanggal_sk: dateField("Tanggal SK")
   })),
@@ -943,10 +995,16 @@ function AddressCard({
 
 function RepeatableAccordion({ section, control, register, formState, referenceOptions }) {
   const { fields, append, remove } = useFieldArray({ control, name: section.key });
-  const [open, setOpen] = useState(false);
+  const sectionErrors = getByPath(formState.errors, section.key);
+  const hasSectionError = Boolean(firstErrorPath(sectionErrors));
+  const [open, setOpen] = useState(hasSectionError);
+
+  useEffect(() => {
+    if (hasSectionError) setOpen(true);
+  }, [hasSectionError]);
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white">
+    <div className={`rounded-2xl border bg-white ${hasSectionError ? "border-rose-300" : "border-slate-200"}`}>
       <button
         type="button"
         className="flex w-full items-start justify-between gap-4 px-4 py-4 text-left"
@@ -957,6 +1015,9 @@ function RepeatableAccordion({ section, control, register, formState, referenceO
           <p className="mt-1 text-xs leading-5 text-slate-500">{section.description}</p>
         </div>
         <div className="flex items-center gap-3">
+          {hasSectionError ? (
+            <span className="rounded-full bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700">Perlu diperbaiki</span>
+          ) : null}
           <span className="rounded-full bg-dinkes-50 px-3 py-1 text-xs font-semibold text-dinkes-700">{fields.length} entri</span>
           {open ? <ChevronUp className="h-5 w-5 text-slate-500" /> : <ChevronDown className="h-5 w-5 text-slate-500" />}
         </div>
@@ -993,7 +1054,7 @@ function RepeatableAccordion({ section, control, register, formState, referenceO
                           key={path}
                           name={path}
                           register={register}
-                          options={allOptionsFor(fieldName, referenceOptions)}
+                          options={repeatableOptionsFor(section.key, fieldName, referenceOptions)}
                           error={getByPath(formState.errors, path)}
                           touched={Boolean(getByPath(formState.touchedFields, path))}
                           dirty={Boolean(getByPath(formState.dirtyFields, path))}
@@ -1390,11 +1451,14 @@ export default function PegawaiForm({ initialData, mode = "create" }) {
 
   function submitInvalid(errors) {
     const path = firstErrorPath(errors);
+    const firstMessage = getByPath(errors, path)?.message;
     startTransition(() => setActiveStep(fieldStepIndex(path)));
     window.setTimeout(() => scrollToField(path), 150);
     setBanner({
       type: "error",
-      text: "Masih ada kesalahan pengisian. Sistem otomatis membawa Anda ke step yang perlu diperbaiki."
+      text: firstMessage
+        ? `Masih ada kesalahan pengisian: ${firstMessage}`
+        : "Masih ada kesalahan pengisian. Sistem otomatis membawa Anda ke step yang perlu diperbaiki."
     });
   }
 

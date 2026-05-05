@@ -7,13 +7,14 @@ import DataTable from "@/components/tables/DataTable";
 import StatusBadge from "@/components/ui/StatusBadge";
 
 const importRules = [
-  "Gunakan sheet Pegawai. Baris pertama nama kolom teknis dan tidak boleh diubah.",
-  "Kolom wajib: nama, nama_ukpd, jenis_pegawai.",
+  "Gunakan sheet Pegawai. Struktur kolom mengikuti export Excel pegawai.",
+  "Kolom wajib: NAMA (TANPA GELAR), NAMA UKPD, dan JENIS PEGAWAI.",
   "Update memakai id_pegawai jika ada, lalu NIP, NRK, atau NIK. Jika tidak cocok, data dibuat baru.",
   "Kolom kosong pada update tidak menghapus data lama.",
   "Tanggal memakai format YYYY-MM-DD, contoh 2024-01-31.",
-  "Nama UKPD harus sama dengan referensi UKPD di sistem.",
-  "Jenis pegawai, agama, jenis kontrak, dan pangkat/golongan mengikuti sheet Referensi."
+  "Admin UKPD hanya boleh import pegawai untuk UKPD sendiri.",
+  "Kolom alamat DOMISILI dan KTP disimpan terpisah per jalan, kelurahan, kecamatan, kota/kabupaten, provinsi, dan kode wilayah.",
+  "Jenis pegawai, agama, jenis kontrak, pangkat/golongan, dan jabatan standar mengikuti sheet Referensi."
 ];
 
 function formatNumber(value) {
@@ -25,6 +26,39 @@ function formatBytes(value) {
   if (bytes < 1024) return `${formatNumber(bytes)} bytes`;
   if (bytes < 1024 * 1024) return `${formatNumber(Math.round(bytes / 1024))} KB`;
   return `${(bytes / (1024 * 1024)).toLocaleString("id-ID", { maximumFractionDigits: 1 })} MB`;
+}
+
+function wait(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function postImportFile(formData) {
+  try {
+    return await fetch("/api/import-pegawai", {
+      method: "POST",
+      body: formData,
+      credentials: "same-origin",
+      cache: "no-store"
+    });
+  } catch (error) {
+    await wait(700);
+    return fetch("/api/import-pegawai", {
+      method: "POST",
+      body: formData,
+      credentials: "same-origin",
+      cache: "no-store"
+    });
+  }
+}
+
+async function readJsonResponse(response) {
+  const text = await response.text();
+  if (!text) return {};
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { message: text };
+  }
 }
 
 export default function ImportPegawaiPage() {
@@ -70,18 +104,18 @@ export default function ImportPegawaiPage() {
     try {
       const formData = new FormData();
       formData.append("file", file);
-      const response = await fetch("/api/import-pegawai", {
-        method: "POST",
-        body: formData
-      });
-      const payload = await response.json();
+      const response = await postImportFile(formData);
+      const payload = await readJsonResponse(response);
       if (!response.ok || !payload.success) {
         setErrorDetails(payload.errors || null);
         throw new Error(payload.message || "Import Excel pegawai gagal diproses.");
       }
       setResult(payload.data);
     } catch (requestError) {
-      setError(requestError.message || "Import Excel pegawai gagal diproses.");
+      const message = requestError instanceof TypeError
+        ? "Koneksi ke server import terputus. Refresh halaman lalu coba upload lagi."
+        : requestError.message || "Import Excel pegawai gagal diproses.";
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -91,7 +125,7 @@ export default function ImportPegawaiPage() {
     <>
       <PageHeader
         title="Import Excel Pegawai"
-        description="Upload template Excel pegawai untuk membuat atau memperbarui data utama pegawai secara massal."
+        description="Upload file export Excel pegawai atau template sistem untuk membuat dan memperbarui data pegawai, alamat, dan keluarga secara massal."
         breadcrumbs={[{ label: "Import Excel Pegawai" }]}
         action={
           <a className="btn-secondary" href="/api/import-pegawai/template">
@@ -106,7 +140,7 @@ export default function ImportPegawaiPage() {
           <label className="flex min-h-64 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-dinkes-200 bg-dinkes-50 px-6 text-center hover:bg-dinkes-100">
             <UploadCloud className="h-12 w-12 text-dinkes-700" />
             <span className="mt-4 text-base font-semibold text-slate-900">Pilih atau tarik file Excel pegawai</span>
-            <span className="mt-2 text-sm text-slate-500">Format: `.xlsx` dari template sistem atau `.csv` dengan kolom yang sama</span>
+            <span className="mt-2 text-sm text-slate-500">Format: `.xlsx` dari export/template sistem atau `.csv` dengan kolom yang sama</span>
             <input
               className="sr-only"
               type="file"

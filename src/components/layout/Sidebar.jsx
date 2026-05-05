@@ -20,7 +20,7 @@ export default function Sidebar({ user, collapsed, onToggle }) {
   const menu = filterMenuByRole(user?.role);
 
   return (
-    <aside className={`hidden border-r border-[#e9edf3] bg-white shadow-[4px_0_18px_rgba(15,23,42,0.04)] transition-[width] duration-200 lg:fixed lg:inset-y-0 lg:flex lg:flex-col ${collapsed ? "lg:w-14" : "lg:w-[208px]"}`}>
+    <aside className={`hidden border-r border-[#e9edf3] bg-white shadow-[4px_0_18px_rgba(15,23,42,0.04)] transition-[width] duration-200 print:hidden lg:fixed lg:inset-y-0 lg:flex lg:flex-col ${collapsed ? "lg:w-14" : "lg:w-[200px]"}`}>
       <header className={`flex h-16 items-center gap-3 px-4 ${collapsed ? "justify-center px-2" : ""}`}>
         <span className="grid h-8 w-8 shrink-0 place-items-center overflow-hidden bg-white">
           <Image src={dinkesLogo} alt="Logo Dinas Kesehatan DKI Jakarta" className="h-full w-full object-contain" priority />

@@ -151,7 +151,7 @@ export default function Topbar({ user, onOpenMenu, collapsed, onToggleSidebar })
   }
 
   return (
-    <header className="sticky top-0 z-30 border-b border-[#e9edf3] bg-white">
+    <header className="sticky top-0 z-30 border-b border-[#e9edf3] bg-white print:hidden">
       <div className="flex h-16 items-center justify-between gap-4 px-4 sm:px-6">
         <div className="flex min-w-0 flex-1 items-center gap-4">
           <button className="rounded-md bg-[#f5f7fb] p-2.5 text-slate-600 hover:bg-slate-100 focus-ring lg:hidden" onClick={onOpenMenu} aria-label="Buka menu">

@@ -32,6 +32,27 @@ async function ensureTable(connection, createSql) {
   await connection.query(createSql);
 }
 
+async function ensureUniqueIndex(connection, indexName, tableName, columns) {
+  await connection.query(
+    `CREATE UNIQUE INDEX IF NOT EXISTS \`${indexName}\` ON \`${tableName}\` (${columns.map((column) => `\`${column}\``).join(", ")})`
+  );
+}
+
+async function ensureDrhIndexes(connection) {
+  await ensureUniqueIndex(connection, "uniq_keluarga_sumber", "keluarga", ["sumber_tabel", "sumber_id"]);
+  await ensureUniqueIndex(connection, "uniq_riwayat_jabatan_source", "riwayat_jabatan", ["source_key"]);
+  await ensureUniqueIndex(connection, "uniq_riwayat_pangkat_source", "riwayat_pangkat", ["source_key"]);
+  await ensureUniqueIndex(connection, "uniq_riwayat_pendidikan_source", "riwayat_pendidikan", ["source_key"]);
+  await ensureUniqueIndex(connection, "uniq_riwayat_gaji_pokok_source", "riwayat_gaji_pokok", ["source_key"]);
+  await ensureUniqueIndex(connection, "uniq_riwayat_penghargaan_source", "riwayat_penghargaan", ["source_key"]);
+  await ensureUniqueIndex(connection, "uniq_riwayat_skp_source", "riwayat_skp", ["source_key"]);
+  await ensureUniqueIndex(connection, "uniq_riwayat_hukuman_source", "riwayat_hukuman_disiplin", ["source_key"]);
+  await ensureUniqueIndex(connection, "uniq_riwayat_prestasi_pendidikan_source", "riwayat_prestasi_pendidikan", ["source_key"]);
+  await ensureUniqueIndex(connection, "uniq_riwayat_narasumber_source", "riwayat_narasumber", ["source_key"]);
+  await ensureUniqueIndex(connection, "uniq_riwayat_kegiatan_strategis_source", "riwayat_kegiatan_strategis", ["source_key"]);
+  await ensureUniqueIndex(connection, "uniq_riwayat_keberhasilan_source", "riwayat_keberhasilan", ["source_key"]);
+}
+
 export async function ensureDrhSchema(connection) {
   const databaseName = await getCurrentDatabase(connection);
   if (!databaseName) {
@@ -292,4 +313,6 @@ export async function ensureDrhSchema(connection) {
   for (const statement of createStatements) {
     await ensureTable(connection, statement);
   }
+
+  await ensureDrhIndexes(connection);
 }

@@ -5,7 +5,6 @@ import { fail, ok } from "@/lib/helpers/response";
 import { JENIS_PEGAWAI_OPTIONS, normalizeJenisPegawai } from "@/lib/helpers/pegawaiStatus";
 import { PANGKAT_GOLONGAN_OPTIONS, normalizePangkatGolonganOption } from "@/lib/pegawaiReferenceOptions";
 
-const DASHBOARD_CACHE_TTL = 300_000;
 const DEFAULT_CHART_COLORS = ["#18a8e0", "#f97316", "#22c55e", "#facc15", "#8b5cf6", "#14b8a6", "#ef4444", "#64748b"];
 const GENDER_CATEGORIES = [
   { key: "Laki-laki", label: "Laki-laki", color: "#0ea5e9" },
@@ -61,17 +60,6 @@ const MONTH_LOOKUP = {
   DESEMBER: 12,
   DECEMBER: 12
 };
-
-function getDashboardCache() {
-  if (!globalThis.__sisdmkDashboardCache) {
-    globalThis.__sisdmkDashboardCache = new Map();
-  }
-  return globalThis.__sisdmkDashboardCache;
-}
-
-function getDashboardCacheKey(user) {
-  return [user?.role, user?.wilayah || "", user?.nama_ukpd || "", user?.username || ""].join("|");
-}
 
 const CHART_VIEW_CONFIGS = {
   statusPegawai: {
@@ -767,12 +755,6 @@ export async function GET(request) {
 
     const detail = request?.nextUrl?.searchParams?.get("detail") || "summary";
     const statusFilter = normalizeDashboardStatusFilter(request?.nextUrl?.searchParams?.get("status"));
-    const cache = getDashboardCache();
-    const cacheKey = `${getDashboardCacheKey(user)}|${detail}|${statusFilter}`;
-    const cached = cache.get(cacheKey);
-    if (cached && Date.now() - cached.createdAt < DASHBOARD_CACHE_TTL) {
-      return ok(cached.data);
-    }
 
     const { data, ukpdList } = await getScopedDashboardData(user);
 
@@ -781,7 +763,6 @@ export async function GET(request) {
         analytics: buildDashboardAnalytics(data, ukpdList)
       };
 
-      cache.set(cacheKey, { createdAt: Date.now(), data: payload });
       return ok(payload);
     }
 
@@ -815,7 +796,6 @@ export async function GET(request) {
       }
     };
 
-    cache.set(cacheKey, { createdAt: Date.now(), data: payload });
     return ok(payload);
   } catch (error) {
     console.error("Dashboard API error:", error);

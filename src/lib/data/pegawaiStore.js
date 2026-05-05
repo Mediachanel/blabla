@@ -89,6 +89,10 @@ const PASANGAN_FIELDS = ["status_punya", "nama", "no_tlp", "email", "pekerjaan"]
 
 const ANAK_FIELDS = ["nama", "jenis_kelamin", "tempat_lahir", "tanggal_lahir", "pekerjaan"];
 
+function hasOwn(object, key) {
+  return Object.prototype.hasOwnProperty.call(object || {}, key);
+}
+
 const RIWAYAT_TABLE_CONFIG = {
   riwayat_pendidikan: {
     orderBy: "COALESCE(`tanggal_ijazah`, `tahun_lulus`, '') DESC, `id` DESC",
@@ -500,12 +504,16 @@ function buildSourceId(connectionId, table, item, index) {
 }
 
 async function savePegawaiAlamat(connection, idPegawai, alamatInput) {
+  if (!alamatInput || typeof alamatInput !== "object") return;
+  const requestedTypes = ["domisili", "ktp"].filter((tipe) => hasOwn(alamatInput, tipe));
+  if (!requestedTypes.length) return;
+
   const alamat = {
     domisili: normalizeAlamatEntry(alamatInput?.domisili, "domisili"),
     ktp: normalizeAlamatEntry(alamatInput?.ktp, "ktp")
   };
 
-  for (const tipe of ["domisili", "ktp"]) {
+  for (const tipe of requestedTypes) {
     const item = alamat[tipe];
     const [existingRows] = await connection.query(
       "SELECT * FROM `alamat` WHERE `id_pegawai` = ? AND LOWER(`tipe`) = ? ORDER BY `id` ASC",
@@ -603,7 +611,7 @@ async function savePegawaiAnak(connection, idPegawai, anakInput) {
        VALUES (?, 'anak', NULL, NULL, NULL, ?, ?, ?, ?, ?, NULL, NULL, ?, 'keluarga_anak', ?, ?)`,
       [
         Number(idPegawai),
-        index + 1,
+        item.urutan || index + 1,
         normalizeNullableText(item.nama),
         normalizeNullableText(item.jenis_kelamin),
         normalizeNullableText(item.tempat_lahir),
@@ -682,12 +690,18 @@ async function savePegawaiRiwayatTable(connection, idPegawai, table, entriesInpu
 }
 
 async function savePegawaiRelations(connection, idPegawai, relations = {}) {
-  await savePegawaiAlamat(connection, idPegawai, relations.alamat);
-  if (Array.isArray(relations.keluarga)) {
+  if (hasOwn(relations, "alamat")) {
+    await savePegawaiAlamat(connection, idPegawai, relations.alamat);
+  }
+  if (hasOwn(relations, "keluarga") && Array.isArray(relations.keluarga)) {
     await savePegawaiKeluarga(connection, idPegawai, relations.keluarga);
   } else {
-    await savePegawaiPasangan(connection, idPegawai, relations.pasangan);
-    await savePegawaiAnak(connection, idPegawai, relations.anak);
+    if (hasOwn(relations, "pasangan")) {
+      await savePegawaiPasangan(connection, idPegawai, relations.pasangan);
+    }
+    if (hasOwn(relations, "anak")) {
+      await savePegawaiAnak(connection, idPegawai, relations.anak);
+    }
   }
 
   const identity = {
@@ -696,8 +710,24 @@ async function savePegawaiRelations(connection, idPegawai, relations = {}) {
   };
 
   for (const table of Object.keys(RIWAYAT_TABLE_CONFIG)) {
-    await savePegawaiRiwayatTable(connection, idPegawai, table, relations[table], identity);
+    if (hasOwn(relations, table)) {
+      await savePegawaiRiwayatTable(connection, idPegawai, table, relations[table], identity);
+    }
   }
+}
+
+function pickPegawaiRelations(data = {}) {
+  const relations = {};
+  for (const key of [
+    "alamat",
+    "pasangan",
+    "anak",
+    "keluarga",
+    ...Object.keys(RIWAYAT_TABLE_CONFIG)
+  ]) {
+    if (hasOwn(data, key)) relations[key] = data[key];
+  }
+  return relations;
 }
 
 export async function getUkpdData() {
@@ -998,23 +1028,9 @@ export async function createPegawaiData(data) {
     await connection.beginTransaction();
     const [[maxRow]] = await connection.query("SELECT COALESCE(MAX(`id_pegawai`), 0) + 1 AS next_id FROM `pegawai`");
     const relations = {
-      alamat: data.alamat,
-      pasangan: data.pasangan,
-      anak: data.anak,
-      keluarga: data.keluarga,
+      ...pickPegawaiRelations(data),
       nip: data.nip,
-      nama: data.nama,
-      riwayat_pendidikan: data.riwayat_pendidikan,
-      riwayat_jabatan: data.riwayat_jabatan,
-      riwayat_gaji_pokok: data.riwayat_gaji_pokok,
-      riwayat_pangkat: data.riwayat_pangkat,
-      riwayat_penghargaan: data.riwayat_penghargaan,
-      riwayat_skp: data.riwayat_skp,
-      riwayat_hukuman_disiplin: data.riwayat_hukuman_disiplin,
-      riwayat_prestasi_pendidikan: data.riwayat_prestasi_pendidikan,
-      riwayat_narasumber: data.riwayat_narasumber,
-      riwayat_kegiatan_strategis: data.riwayat_kegiatan_strategis,
-      riwayat_keberhasilan: data.riwayat_keberhasilan
+      nama: data.nama
     };
     const item = {
       id_pegawai: Number(maxRow.next_id),
@@ -1053,23 +1069,9 @@ export async function updatePegawaiData(id, data) {
       );
     }
     await savePegawaiRelations(connection, Number(id), {
-      alamat: data.alamat,
-      pasangan: data.pasangan,
-      anak: data.anak,
-      keluarga: data.keluarga,
+      ...pickPegawaiRelations(data),
       nip: data.nip ?? data.current_nip,
-      nama: data.nama ?? data.current_nama,
-      riwayat_pendidikan: data.riwayat_pendidikan,
-      riwayat_jabatan: data.riwayat_jabatan,
-      riwayat_gaji_pokok: data.riwayat_gaji_pokok,
-      riwayat_pangkat: data.riwayat_pangkat,
-      riwayat_penghargaan: data.riwayat_penghargaan,
-      riwayat_skp: data.riwayat_skp,
-      riwayat_hukuman_disiplin: data.riwayat_hukuman_disiplin,
-      riwayat_prestasi_pendidikan: data.riwayat_prestasi_pendidikan,
-      riwayat_narasumber: data.riwayat_narasumber,
-      riwayat_kegiatan_strategis: data.riwayat_kegiatan_strategis,
-      riwayat_keberhasilan: data.riwayat_keberhasilan
+      nama: data.nama ?? data.current_nama
     });
     const [rows] = await connection.query("SELECT * FROM `pegawai` WHERE `id_pegawai` = ? LIMIT 1", [Number(id)]);
     await connection.commit();

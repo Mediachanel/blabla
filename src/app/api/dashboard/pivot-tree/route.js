@@ -3,8 +3,6 @@ import { getScopedDashboardData } from "@/lib/dashboardData";
 import { ok } from "@/lib/helpers/response";
 import { normalizeJenisPegawai } from "@/lib/helpers/pegawaiStatus";
 
-const CACHE_TTL_MS = 5 * 60 * 1000;
-const responseCache = new Map();
 const MASA_KERJA_ORDER = [
   ...Array.from({ length: 10 }, (_, index) => `${index * 2}-${index * 2 + 2} tahun`),
   ">20 tahun",
@@ -277,20 +275,6 @@ function buildUkpdTree(data, ukpdList = []) {
     }));
 }
 
-function getCached(cacheKey) {
-  const entry = responseCache.get(cacheKey);
-  if (!entry) return null;
-  if (Date.now() - entry.timestamp > CACHE_TTL_MS) {
-    responseCache.delete(cacheKey);
-    return null;
-  }
-  return entry.data;
-}
-
-function setCached(cacheKey, data) {
-  responseCache.set(cacheKey, { timestamp: Date.now(), data });
-}
-
 export async function GET(request) {
   const { user, error } = await requireAuth();
   if (error) return error;
@@ -312,9 +296,6 @@ export async function GET(request) {
   const group3 = searchParams.get("group3") || "";
   const page = Math.max(1, Number.parseInt(searchParams.get("page") || "1", 10));
   const pageSize = Math.min(50, Math.max(10, Number.parseInt(searchParams.get("pageSize") || "20", 10)));
-  const cacheKey = `${user.role}|${user.wilayah || "-"}|${user.nama_ukpd || "-"}|${mode}|${q}|${group1}|${group2}|${group3}|${page}|${pageSize}`;
-  const cached = getCached(cacheKey);
-  if (cached) return ok(cached);
 
   const { data: scoped, ukpdList } = await getScopedDashboardData(user);
   const filtered = q
@@ -366,7 +347,6 @@ export async function GET(request) {
     const start = (page - 1) * pageSize;
     const employees = employeesAll.slice(start, start + pageSize);
     const data = { mode, group1, group2, group3, page, pageSize, total: employeesAll.length, employees };
-    setCached(cacheKey, data);
     return ok(data);
   }
 
@@ -380,6 +360,5 @@ export async function GET(request) {
           ? buildMasaKerjaTree(filtered)
         : buildRumpunTree(filtered);
   const data = { mode, total: filtered.length, tree };
-  setCached(cacheKey, data);
   return ok(data);
 }

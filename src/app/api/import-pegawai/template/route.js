@@ -6,10 +6,13 @@ import { buildPegawaiImportTemplate } from "@/lib/import/pegawaiExcel";
 export const runtime = "nodejs";
 
 export async function GET() {
-  const { error } = await requireAuth([ROLES.SUPER_ADMIN]);
+  const { user, error } = await requireAuth([ROLES.SUPER_ADMIN, ROLES.ADMIN_UKPD]);
   if (error) return error;
 
-  const ukpdRows = await getUkpdData();
+  const allUkpdRows = await getUkpdData();
+  const ukpdRows = user.role === ROLES.ADMIN_UKPD
+    ? allUkpdRows.filter((row) => row.nama_ukpd === user.nama_ukpd)
+    : allUkpdRows;
   const buffer = await buildPegawaiImportTemplate({ ukpdRows });
   return new Response(buffer, {
     headers: {

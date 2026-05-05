@@ -93,6 +93,15 @@ function formatNumber(value) {
   return Number.isFinite(number) ? new Intl.NumberFormat("id-ID").format(number) : valueOrDash(value);
 }
 
+function formatDrhDate(value) {
+  const date = parseDate(value);
+  if (!date) return "-";
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+  return `${day}-${month}-${year}`;
+}
+
 function durationFrom(value) {
   const date = parseDate(value);
   if (!date) return "-";
@@ -229,7 +238,7 @@ function QuickNav({ items }) {
   );
 }
 
-function ProfileSummary({ pegawai, computed }) {
+function ProfileSummary({ pegawai, computed, onPrint }) {
   const name = fullNameWithTitle(pegawai);
   const isActive = String(pegawai.kondisi || "").toLowerCase().includes("aktif");
   const summaryItems = [
@@ -261,11 +270,11 @@ function ProfileSummary({ pegawai, computed }) {
             <Edit className="h-4 w-4" />
             Edit Profil
           </Link>
-          <button className="btn-secondary" type="button" onClick={() => window.print()}>
+          <button className="btn-secondary" type="button" onClick={onPrint}>
             <Printer className="h-4 w-4" />
             Cetak Profil
           </button>
-          <button className="btn-secondary" type="button" onClick={() => window.print()}>
+          <button className="btn-secondary" type="button" onClick={onPrint}>
             <Download className="h-4 w-4" />
             Export PDF
           </button>
@@ -493,6 +502,389 @@ function getHistoryYear(row) {
   return match?.[0] || "";
 }
 
+function printValue(value) {
+  if (typeof value === "object") return "-";
+  return hasValue(value) ? value : "-";
+}
+
+function arrayValue(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function formatPrintNumber(value) {
+  return hasValue(value) ? formatNumber(value) : "-";
+}
+
+function joinPrintParts(values, separator = " / ") {
+  return values.filter(hasValue).join(separator);
+}
+
+function fullNameWithTitleForPrint(pegawai) {
+  const name = [pegawai.gelar_depan, pegawai.nama].filter(hasValue).join(" ");
+  if (hasValue(pegawai.gelar_belakang)) return `${name}, ${pegawai.gelar_belakang}`;
+  return name;
+}
+
+function formatPrintBirth(pegawai) {
+  return joinPrintParts([pegawai.tempat_lahir, formatDrhDate(pegawai.tanggal_lahir)]);
+}
+
+function formatPrintPhone(pegawai) {
+  const telephone = pegawai.no_telepon || pegawai.no_telp || pegawai.telepon;
+  const hp = pegawai.no_hp_pegawai || pegawai.no_hp;
+  if (hasValue(telephone) || hasValue(hp)) return `${hasValue(telephone) ? telephone : ""} / ${hasValue(hp) ? hp : ""}`;
+  return "-";
+}
+
+function formatPrintAddress(pegawai) {
+  const addressRow = pegawai.alamat?.domisili || pegawai.alamat?.ktp || null;
+  if (addressRow) {
+    const lines = [
+      addressRow.jalan,
+      addressRow.kelurahan ? `KELURAHAN ${addressRow.kelurahan}` : "",
+      addressRow.kecamatan ? `KECAMATAN ${addressRow.kecamatan}` : "",
+      joinPrintParts([addressRow.kota_kabupaten, addressRow.provinsi], " - ")
+    ].filter(hasValue);
+    if (lines.length) return lines.join("\n");
+  }
+  return pegawai.alamat_domisili || pegawai.alamat_ktp || "-";
+}
+
+function formatPrintTtl(row) {
+  const place = row.tempat_lahir ? `${row.tempat_lahir},` : "";
+  return joinPrintParts([place, formatDrhDate(row.tanggal_lahir)], "\n");
+}
+
+function printRowNumber(_row, index) {
+  return index + 1;
+}
+
+function getPrintJabatanRows(rows, type) {
+  const items = arrayValue(rows);
+  if (type === "fungsional") {
+    return items.filter((item) => normalizeJenisRiwayat(item.jenis_jabatan) === "fungsional");
+  }
+  return items.filter((item) => normalizeJenisRiwayat(item.jenis_jabatan) !== "fungsional");
+}
+
+function getPrintPrestasiRows(rows, type) {
+  return arrayValue(rows).filter((item) => normalizeJenisRiwayat(item.kategori) === type);
+}
+
+function PrintHeader() {
+  return (
+    <header className="print-drh-header">
+      <img className="print-drh-logo" src="/dinkes.png" alt="Logo Dinas Kesehatan Provinsi DKI Jakarta" />
+      <div className="print-drh-heading">
+        <p className="print-drh-agency">DINAS KESEHATAN PROVINSI DKI JAKARTA</p>
+        <p className="print-drh-address">Jl. Kesehatan No. 10, Petojo Selatan, Kecamatan Gambir, Kota Jakarta Pusat, DKI Jakarta 10160</p>
+        <p className="print-drh-contact">Telp. 021-3451338 | Email: dinkes@jakarta.go.id</p>
+        <p className="print-drh-title">Daftar Riwayat Hidup</p>
+      </div>
+      <div aria-hidden="true" />
+    </header>
+  );
+}
+
+function PrintPage({ children, breakBefore = false }) {
+  return (
+    <section className={`print-drh-page ${breakBefore ? "print-break-before" : ""}`}>
+      <PrintHeader />
+      {children}
+    </section>
+  );
+}
+
+function PrintSection({ title, children }) {
+  return (
+    <section className="print-drh-section">
+      <h2 className="print-drh-section-title">{title}</h2>
+      {children}
+    </section>
+  );
+}
+
+function PrintTable({ columns, rows }) {
+  const dataRows = arrayValue(rows);
+  return (
+    <table className="print-drh-table">
+      <colgroup>
+        {columns.map((column) => (
+          <col key={column.key} style={column.width ? { width: column.width } : undefined} />
+        ))}
+      </colgroup>
+      <thead>
+        <tr>
+          {columns.map((column) => (
+            <th key={column.key}>{column.header}</th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {dataRows.length ? dataRows.map((row, index) => (
+          <tr key={row.id || row.source_key || `${columns[0]?.key}-${index}`}>
+            {columns.map((column) => (
+              <td key={column.key} className={column.align === "center" ? "print-drh-center" : ""}>
+                <span className="print-drh-cell-preline">
+                  {printValue(column.render ? column.render(row, index) : row[column.key])}
+                </span>
+              </td>
+            ))}
+          </tr>
+        )) : (
+          <tr>
+            <td className="print-drh-empty" colSpan={columns.length}>Tidak ada data</td>
+          </tr>
+        )}
+      </tbody>
+    </table>
+  );
+}
+
+function PrintDataDiri({ pegawai, computed }) {
+  const items = [
+    { label: "NAMA", value: fullNameWithTitleForPrint(pegawai) || computed.nama },
+    { label: "NRK / NIP", value: joinPrintParts([pegawai.nrk, pegawai.nip]) },
+    { label: "TEMPAT / TGL LAHIR", value: formatPrintBirth(pegawai) },
+    { label: "AGAMA", value: pegawai.agama },
+    { label: "JENIS KELAMIN", value: pegawai.jenis_kelamin },
+    { label: "STATUS PERNIKAHAN", value: pegawai.status_pernikahan || pegawai.status_perkawinan },
+    { label: "JABATAN", value: computed.jabatan },
+    { label: "UNIT KERJA", value: pegawai.nama_ukpd },
+    { label: "NO. TELEPON / HP", value: formatPrintPhone(pegawai) },
+    { label: "EMAIL", value: pegawai.email },
+    { label: "ALAMAT", value: formatPrintAddress(pegawai) }
+  ];
+
+  return (
+    <PrintSection title="DATA DIRI">
+      <dl className="print-drh-data">
+        {items.map((item) => (
+          <div className="print-drh-data-row" key={item.label}>
+            <dt>{item.label}</dt>
+            <dd>:</dd>
+            <dd className="print-drh-cell-preline">{printValue(item.value)}</dd>
+          </div>
+        ))}
+      </dl>
+    </PrintSection>
+  );
+}
+
+const pendidikanFormalPrintColumns = [
+  { key: "no", header: "NO", width: "4.5%", align: "center", render: printRowNumber },
+  { key: "jenjang_pendidikan", header: "TINGKAT\nPENDIDIKAN", width: "17%", align: "center" },
+  { key: "program_studi", header: "JURUSAN", width: "18%" },
+  { key: "tanggal_ijazah", header: "TGL IJAZAH", width: "14%", align: "center", render: (row) => formatDrhDate(row.tanggal_ijazah) },
+  { key: "nama_institusi", header: "NAMA\nSEKOLAH/UNIVERSITAS", render: (row) => row.nama_institusi || row.nama_universitas },
+  { key: "kota_institusi", header: "KOTA\nSEKOLAH/UNIVERSITAS", width: "18%", align: "center" }
+];
+
+const pendidikanNonFormalPrintColumns = [
+  { key: "no", header: "NO", width: "4.5%", align: "center", render: printRowNumber },
+  { key: "tanggal_ijazah", header: "TGL IJAZAH", width: "17%", align: "center", render: (row) => formatDrhDate(row.tanggal_ijazah) },
+  { key: "nama_institusi", header: "NAMA SEKOLAH", render: (row) => row.nama_institusi || row.nama_universitas },
+  { key: "kota_institusi", header: "KOTA SEKOLAH", width: "18%", align: "center" }
+];
+
+const keluargaPrintColumns = [
+  { key: "no", header: "NO", width: "4.5%", align: "center", render: printRowNumber },
+  { key: "hubungan_detail", header: "HUBUNGAN", width: "16%", render: (row) => row.hubungan_detail || row.hubungan },
+  { key: "nama", header: "NAMA", width: "22%" },
+  { key: "ttl", header: "TTL", width: "14%", render: formatPrintTtl },
+  { key: "jenis_kelamin", header: "JENIS KELAMIN", width: "14%" },
+  { key: "status_tunjangan", header: "TUNJANGAN", width: "12%" },
+  { key: "pekerjaan", header: "PEKERJAAN" }
+];
+
+const jabatanPrintColumns = [
+  { key: "no", header: "NO", width: "4.5%", align: "center", render: printRowNumber },
+  { key: "tmt_jabatan", header: "TMT", width: "10%", align: "center", render: (row) => formatDrhDate(row.tmt_jabatan) },
+  { key: "lokasi", header: "LOKASI", width: "23%" },
+  { key: "nama_jabatan_menpan", header: "JABATAN", render: (row) => row.nama_jabatan_menpan || row.nama_jabatan_orb },
+  { key: "pangkat_golongan", header: "PANGKAT", width: "13%" },
+  { key: "eselon", header: "ESL", width: "5.5%", align: "center" },
+  { key: "nomor_sk", header: "NO.SK", width: "13%" },
+  { key: "tanggal_sk", header: "TGL.SK", width: "9.5%", align: "center", render: (row) => formatDrhDate(row.tanggal_sk) }
+];
+
+const gajiPrintColumns = [
+  { key: "no", header: "NO", width: "4.5%", align: "center", render: printRowNumber },
+  { key: "tmt_gaji", header: "TMT", width: "14%", align: "center", render: (row) => formatDrhDate(row.tmt_gaji) },
+  { key: "pangkat_golongan", header: "PANGKAT", width: "28%" },
+  { key: "gaji_pokok", header: "GAJI", width: "18%", render: (row) => formatPrintNumber(row.gaji_pokok) },
+  { key: "nomor_sk", header: "NO.SK", width: "19%" },
+  { key: "tanggal_sk", header: "TGL.SK", width: "16.5%", align: "center", render: (row) => formatDrhDate(row.tanggal_sk) }
+];
+
+const pangkatPrintColumns = [
+  { key: "no", header: "NO", width: "4.5%", align: "center", render: printRowNumber },
+  { key: "tmt_pangkat", header: "TMT", width: "11%", align: "center", render: (row) => formatDrhDate(row.tmt_pangkat) },
+  { key: "pangkat_golongan", header: "PANGKAT", width: "16%" },
+  { key: "lokasi", header: "LOKASI" },
+  { key: "nomor_sk", header: "NO.SK", width: "17%" },
+  { key: "tanggal_sk", header: "TGL.SK", width: "11%", align: "center", render: (row) => formatDrhDate(row.tanggal_sk) }
+];
+
+const penghargaanPrintColumns = [
+  { key: "no", header: "NO", width: "4.5%", align: "center", render: printRowNumber },
+  { key: "nama_penghargaan", header: "NAMA PENGHARGAAN", width: "38%" },
+  { key: "asal_penghargaan", header: "ASAL PENGHARGAAN" },
+  { key: "nomor_sk", header: "NO.SK", width: "17%" },
+  { key: "tanggal_sk", header: "TGL.SK", width: "11%", align: "center", render: (row) => formatDrhDate(row.tanggal_sk) }
+];
+
+const skpPrintColumns = [
+  { key: "no", header: "NO", width: "4.5%", align: "center", render: printRowNumber },
+  { key: "tahun", header: "TAHUN", width: "12%", align: "center" },
+  { key: "nilai_skp", header: "NILAI SKP", width: "14%", align: "center" },
+  { key: "nilai_perilaku", header: "NILAI PERILAKU", width: "14%", align: "center" },
+  { key: "nilai_prestasi", header: "NILAI PRESTASI", width: "17%", align: "center" },
+  { key: "keterangan_prestasi", header: "KETERANGAN PRESTASI", render: (row) => row.keterangan_prestasi || row.keterangan }
+];
+
+const hukumanPrintColumns = [
+  { key: "no", header: "NO", width: "4.5%", align: "center", render: printRowNumber },
+  { key: "tanggal_mulai", header: "TGMULAI", width: "12%", align: "center", render: (row) => formatDrhDate(row.tanggal_mulai) },
+  { key: "tanggal_akhir", header: "TGAKHIR", width: "12%", align: "center", render: (row) => formatDrhDate(row.tanggal_akhir) },
+  { key: "hukuman_disiplin", header: "HUKUMAN DISIPLIN", width: "27%" },
+  { key: "nomor_sk", header: "NO.SK", width: "15%" },
+  { key: "tanggal_sk", header: "TGL.SK", width: "12%", align: "center", render: (row) => formatDrhDate(row.tanggal_sk) },
+  { key: "keterangan", header: "KETERANGAN" }
+];
+
+const prestasiPrintColumns = [
+  { key: "no", header: "NO", width: "4.5%", align: "center", render: printRowNumber },
+  { key: "jenjang_pendidikan", header: "JENJANG PENDIDIKAN", width: "34%" },
+  { key: "prestasi", header: "PRESTASI YANG PERNAH DIRAIH" }
+];
+
+const narasumberPrintColumns = [
+  { key: "no", header: "NO", width: "4.5%", align: "center", render: printRowNumber },
+  { key: "kegiatan", header: "KEGIATAN", width: "24%" },
+  { key: "judul_materi", header: "JUDUL MATERI YANG DIBAWAKAN", width: "38%" },
+  { key: "lembaga_penyelenggara", header: "LEMBAGA PENYELENGGARA" }
+];
+
+const kegiatanStrategisPrintColumns = [
+  { key: "no", header: "NO", width: "4.5%", align: "center", render: printRowNumber },
+  { key: "kegiatan", header: "KEGIATAN", width: "35%" },
+  { key: "tahun_anggaran", header: "TAHUN ANGGARAN", width: "16%", align: "center" },
+  { key: "jumlah_anggaran", header: "JUMLAH ANGGARAN", width: "17%", render: (row) => formatPrintNumber(row.jumlah_anggaran) },
+  { key: "kedudukan_dalam_kegiatan", header: "KEDUDUKAN DALAM KEGIATAN" }
+];
+
+const keberhasilanPrintColumns = [
+  { key: "no", header: "NO", width: "4.5%", align: "center", render: printRowNumber },
+  { key: "jabatan", header: "JABATAN", width: "16%" },
+  { key: "tahun", header: "TAHUN", width: "11%", align: "center" },
+  { key: "keberhasilan", header: "KEBERHASILAN", width: "20%" },
+  { key: "kendala_yang_dihadapi", header: "KENDALA YANG DIHADAPI", width: "24%" },
+  { key: "solusi_yang_dilakukan", header: "SOLUSI YANG DILAKUKAN" }
+];
+
+function PrintSupportSection({ number, title, note, columns, rows }) {
+  return (
+    <section className="print-drh-support-section">
+      <h3>{number}. {title}</h3>
+      {note ? <p className="print-drh-note">({note})</p> : null}
+      <PrintTable columns={columns} rows={rows} />
+    </section>
+  );
+}
+
+function PrintProfileDocument({ pegawai, computed }) {
+  const structuralRows = getPrintJabatanRows(pegawai.riwayat_jabatan, "struktural");
+  const functionalRows = getPrintJabatanRows(pegawai.riwayat_jabatan, "fungsional");
+  const formalPrestasiRows = getPrintPrestasiRows(pegawai.riwayat_prestasi_pendidikan, "formal");
+  const nonFormalPrestasiRows = getPrintPrestasiRows(pegawai.riwayat_prestasi_pendidikan, "non_formal");
+
+  return (
+    <article className="print-profile" aria-label="Dokumen cetak profil pegawai">
+      <PrintPage>
+        <PrintDataDiri pegawai={pegawai} computed={computed} />
+        <PrintSection title="RIWAYAT PENDIDIKAN FORMAL">
+          <PrintTable columns={pendidikanFormalPrintColumns} rows={computed.riwayatPendidikanFormal} />
+        </PrintSection>
+        <PrintSection title="RIWAYAT PENDIDIKAN NON FORMAL">
+          <PrintTable columns={pendidikanNonFormalPrintColumns} rows={computed.riwayatPendidikanNonFormal} />
+        </PrintSection>
+        <PrintSection title="RIWAYAT KELUARGA">
+          <PrintTable columns={keluargaPrintColumns} rows={arrayValue(pegawai.keluarga).length ? pegawai.keluarga : computed.keluargaRows} />
+        </PrintSection>
+      </PrintPage>
+
+      <PrintPage breakBefore>
+        <PrintSection title="RIWAYAT JABATAN STRUKTURAL">
+          <PrintTable columns={jabatanPrintColumns} rows={structuralRows} />
+        </PrintSection>
+        <PrintSection title="RIWAYAT JABATAN FUNGSIONAL">
+          <PrintTable columns={jabatanPrintColumns} rows={functionalRows} />
+        </PrintSection>
+      </PrintPage>
+
+      <PrintPage breakBefore>
+        <PrintSection title="RIWAYAT GAJI POKOK">
+          <PrintTable columns={gajiPrintColumns} rows={pegawai.riwayat_gaji_pokok} />
+        </PrintSection>
+        <PrintSection title="RIWAYAT PANGKAT">
+          <PrintTable columns={pangkatPrintColumns} rows={pegawai.riwayat_pangkat} />
+        </PrintSection>
+        <PrintSection title="RIWAYAT PENGHARGAAN">
+          <PrintTable columns={penghargaanPrintColumns} rows={pegawai.riwayat_penghargaan} />
+        </PrintSection>
+        <PrintSection title="RIWAYAT SKP">
+          <PrintTable columns={skpPrintColumns} rows={pegawai.riwayat_skp} />
+        </PrintSection>
+        <PrintSection title="RIWAYAT HUKUMAN DISIPLIN">
+          <PrintTable columns={hukumanPrintColumns} rows={pegawai.riwayat_hukuman_disiplin} />
+        </PrintSection>
+      </PrintPage>
+
+      <PrintPage breakBefore>
+        <section className="print-drh-support">
+          <h2>INFORMASI PENDUKUNG :</h2>
+          <PrintSupportSection
+            number="1"
+            title="Prestasi pendidikan formal"
+            note="prestasi sebelum menjadi CPNS sampai dengan sekarang"
+            columns={prestasiPrintColumns}
+            rows={formalPrestasiRows}
+          />
+          <PrintSupportSection
+            number="2"
+            title="Prestasi pendidikan non formal"
+            note="prestasi sebelum menjadi CPNS sampai dengan sekarang"
+            columns={prestasiPrintColumns}
+            rows={nonFormalPrestasiRows}
+          />
+          <PrintSupportSection
+            number="3"
+            title="Pengalaman sebagai narasumber"
+            note="narasumber untuk tingkat nasional dan internasional"
+            columns={narasumberPrintColumns}
+            rows={pegawai.riwayat_narasumber}
+          />
+          <PrintSupportSection
+            number="4"
+            title="Keberhasilan dalam mengelola kegiatan strategis dan jumlah anggaran yang dikelola"
+            note="keberhasilan dari CPNS sampai dengan sekarang"
+            columns={kegiatanStrategisPrintColumns}
+            rows={pegawai.riwayat_kegiatan_strategis}
+          />
+          <PrintSupportSection
+            number="5"
+            title="Keberhasilan yang telah dicapai"
+            note="keberhasilan sebelum menjadi CPNS sampai dengan sekarang"
+            columns={keberhasilanPrintColumns}
+            rows={pegawai.riwayat_keberhasilan}
+          />
+        </section>
+      </PrintPage>
+    </article>
+  );
+}
+
 function filterHistoryRows(rows, query, year) {
   const q = normalizeSearch(query);
   return (rows || []).filter((row) => {
@@ -620,6 +1012,18 @@ export default function DetailPegawaiPage() {
     return historyConfig(pegawai, computed, historyQuery, historyYear).filter((section) => section.data?.length);
   }, [computed, historyActivated, historyQuery, historyYear, pegawai]);
 
+  function printProfile() {
+    const previousTitle = document.title;
+    document.title = `Daftar Riwayat Hidup - ${computed?.nama || "Pegawai"}`;
+    const restoreTitle = () => {
+      document.title = previousTitle;
+      window.removeEventListener("afterprint", restoreTitle);
+    };
+    window.addEventListener("afterprint", restoreTitle);
+    window.print();
+    window.setTimeout(restoreTitle, 1000);
+  }
+
   if (loading) {
     return (
       <div className="space-y-4">
@@ -679,11 +1083,12 @@ export default function DetailPegawaiPage() {
   }[activeTab];
 
   return (
-    <div className="space-y-5">
-      <ProfileSummary pegawai={pegawai} computed={computed} />
-      <TabsNavigation activeTab={activeTab} onChange={changeTab} />
+    <>
+      <div className="space-y-5 print:hidden">
+        <ProfileSummary pegawai={pegawai} computed={computed} onPrint={printProfile} />
+        <TabsNavigation activeTab={activeTab} onChange={changeTab} />
 
-      <div className="grid gap-5 xl:grid-cols-[1fr_220px]">
+        <div className="grid gap-5 xl:grid-cols-[1fr_220px]">
         <main className="space-y-5">
           {activeTab === "overview" ? (
             <>
@@ -845,6 +1250,8 @@ export default function DetailPegawaiPage() {
         </main>
         <QuickNav items={quickNavItems} />
       </div>
-    </div>
+      </div>
+      <PrintProfileDocument pegawai={pegawai} computed={computed} />
+    </>
   );
 }

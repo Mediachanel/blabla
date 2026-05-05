@@ -11,37 +11,37 @@ import {
   normalizePangkatGolonganOption
 } from "@/lib/pegawaiReferenceOptions";
 
-export const PEGAWAI_IMPORT_COLUMNS = [
-  { key: "id_pegawai", label: "ID Pegawai", rule: "Opsional. Isi hanya jika ingin update data berdasarkan ID pegawai." },
-  { key: "nama", label: "Nama", required: true, rule: "Wajib. Minimal 3 karakter." },
-  { key: "gelar_depan", label: "Gelar Depan" },
-  { key: "gelar_belakang", label: "Gelar Belakang" },
-  { key: "jenis_kelamin", label: "Jenis Kelamin", rule: "Contoh: Laki-laki atau Perempuan." },
-  { key: "tempat_lahir", label: "Tempat Lahir" },
-  { key: "tanggal_lahir", label: "Tanggal Lahir", rule: "Format tanggal: YYYY-MM-DD. Contoh: 1990-12-31." },
-  { key: "nik", label: "NIK" },
-  { key: "agama", label: "Agama", rule: `Pilihan: ${AGAMA_OPTIONS.join(", ")}.` },
-  { key: "nama_ukpd", label: "Nama UKPD", required: true, rule: "Wajib. Harus sama dengan nama UKPD yang ada di sistem." },
-  { key: "jenis_pegawai", label: "Jenis Pegawai", required: true, rule: `Pilihan: ${JENIS_PEGAWAI_OPTIONS.join(", ")}.` },
-  { key: "status_rumpun", label: "Status Rumpun" },
-  { key: "jenis_kontrak", label: "Jenis Kontrak", rule: `Pilihan: ${JENIS_KONTRAK_OPTIONS.join(", ")}.` },
-  { key: "nrk", label: "NRK", rule: "Dipakai sebagai kunci update bila ID pegawai dan NIP kosong." },
-  { key: "nip", label: "NIP", rule: "Dipakai sebagai kunci update bila ID pegawai kosong." },
-  { key: "nama_jabatan_orb", label: "Jabatan ORB" },
-  { key: "nama_jabatan_menpan", label: "Jabatan Standar Kepgub 11", rule: "Gunakan daftar jabatan_standar pada sheet Referensi." },
-  { key: "struktur_atasan_langsung", label: "Struktur Atasan Langsung" },
-  { key: "pangkat_golongan", label: "Pangkat / Golongan", rule: "Gunakan daftar pada sheet Referensi." },
-  { key: "tmt_pangkat_terakhir", label: "TMT Pangkat Terakhir", rule: "Format tanggal: YYYY-MM-DD." },
-  { key: "jenjang_pendidikan", label: "Jenjang Pendidikan", rule: "Contoh: SMA, D3, S1, S2, S3, PROFESI." },
-  { key: "program_studi", label: "Program Studi" },
-  { key: "nama_universitas", label: "Universitas / Institusi" },
-  { key: "no_hp_pegawai", label: "No HP Pegawai" },
-  { key: "email", label: "Email", rule: "Opsional, tetapi jika diisi harus format email valid." },
-  { key: "no_bpjs", label: "No BPJS" },
-  { key: "kondisi", label: "Kondisi", rule: "Contoh: Aktif, Pensiun, Mutasi." },
-  { key: "status_perkawinan", label: "Status Perkawinan" },
-  { key: "tmt_kerja_ukpd", label: "TMT Kerja UKPD", rule: "Format tanggal: YYYY-MM-DD." }
-];
+const PEGAWAI_IMPORT_COLUMN_RULES = {
+  id_pegawai: "Opsional. Isi hanya jika ingin update data berdasarkan ID pegawai pada format import lama.",
+  nama: "Wajib. Minimal 3 karakter.",
+  nama_ukpd: "Wajib. Harus sama dengan nama UKPD yang ada di sistem. Admin UKPD hanya boleh memakai UKPD sendiri.",
+  jenis_pegawai: `Wajib. Pilihan: ${JENIS_PEGAWAI_OPTIONS.join(", ")}.`,
+  jenis_kelamin: "Contoh: L, P, Laki-laki, atau Perempuan.",
+  tanggal_lahir: "Format tanggal: YYYY-MM-DD. Contoh: 1990-12-31.",
+  agama: `Pilihan: ${AGAMA_OPTIONS.join(", ")}.`,
+  jenis_kontrak: `Pilihan: ${JENIS_KONTRAK_OPTIONS.join(", ")}.`,
+  nrk: "Dipakai sebagai kunci update bila ID pegawai dan NIP kosong.",
+  nip: "Dipakai sebagai kunci update bila ID pegawai kosong.",
+  nama_jabatan_menpan: "Gunakan daftar jabatan_standar pada sheet Referensi.",
+  pangkat_golongan: "Gunakan daftar pada sheet Referensi.",
+  tmt_pangkat_terakhir: "Format tanggal: YYYY-MM-DD.",
+  tmt_kerja_ukpd: "Format tanggal: YYYY-MM-DD.",
+  jenjang_pendidikan: "Contoh: SMA, D3, S1, S2, S3, PROFESI.",
+  email: "Opsional, tetapi jika diisi harus format email valid.",
+  pasangan_email: "Opsional, tetapi jika diisi harus format email valid.",
+  domisili_jalan: "Disimpan ke alamat domisili kolom jalan.",
+  domisili_kelurahan: "Disimpan ke alamat domisili kolom kelurahan.",
+  domisili_kecamatan: "Disimpan ke alamat domisili kolom kecamatan.",
+  domisili_kota_kabupaten: "Disimpan ke alamat domisili kolom kota/kabupaten.",
+  domisili_provinsi: "Disimpan ke alamat domisili kolom provinsi.",
+  ktp_jalan: "Disimpan ke alamat KTP kolom jalan.",
+  ktp_kelurahan: "Disimpan ke alamat KTP kolom kelurahan.",
+  ktp_kecamatan: "Disimpan ke alamat KTP kolom kecamatan.",
+  ktp_kota_kabupaten: "Disimpan ke alamat KTP kolom kota/kabupaten.",
+  ktp_provinsi: "Disimpan ke alamat KTP kolom provinsi."
+};
+
+const REQUIRED_IMPORT_KEYS = new Set(["nama", "nama_ukpd", "jenis_pegawai"]);
 
 export const PEGAWAI_EXPORT_COLUMNS = [
   { header: "No", value: (_row, index) => index + 1 },
@@ -118,27 +118,110 @@ export const PEGAWAI_EXPORT_COLUMNS = [
   { header: "BT", key: "bt" }
 ];
 
+const EXPORT_IMPORT_KEY_OVERRIDES = new Map([
+  ["NAMA JABATAN PERMENPAN RB NO 41 TAHUN 2018", "nama_jabatan_menpan_raw"],
+  ["JENIS KELAMIN\n(L/P)", "jenis_kelamin"],
+  ["JENJANG PENDIDIKAN (BERDASARKAN SK PANGKAT TERAKHIR)", "jenjang_pendidikan"]
+]);
+
+const IGNORED_EXPORT_IMPORT_KEYS = new Set(["kode_jenis_pegawai", "bt"]);
+
+function importKeyForExportColumn(column) {
+  if (!column?.header || column.header === "No") return "";
+  const override = EXPORT_IMPORT_KEY_OVERRIDES.get(column.header);
+  const key = override || column.key || "";
+  return IGNORED_EXPORT_IMPORT_KEYS.has(key) ? "" : key;
+}
+
+const PEGAWAI_IMPORT_TEMPLATE_KEYS = PEGAWAI_EXPORT_COLUMNS.map(importKeyForExportColumn);
+
+const LEGACY_IMPORT_COLUMNS = [
+  { key: "id_pegawai", label: "ID Pegawai", rule: PEGAWAI_IMPORT_COLUMN_RULES.id_pegawai }
+];
+
+function uniqueImportColumns(columns) {
+  const seen = new Set();
+  return columns.filter((column) => {
+    if (!column?.key || seen.has(column.key)) return false;
+    seen.add(column.key);
+    return true;
+  });
+}
+
+export const PEGAWAI_IMPORT_COLUMNS = uniqueImportColumns([
+  ...LEGACY_IMPORT_COLUMNS,
+  ...PEGAWAI_EXPORT_COLUMNS.map((column) => {
+    const key = importKeyForExportColumn(column);
+    if (!key) return null;
+    return {
+      key,
+      label: column.header,
+      required: REQUIRED_IMPORT_KEYS.has(key),
+      rule: PEGAWAI_IMPORT_COLUMN_RULES[key] || column.header
+    };
+  }).filter(Boolean)
+]);
+
 export const PEGAWAI_IMPORT_RULES = [
   "Gunakan sheet Pegawai untuk import. Sheet Contoh, Aturan, dan Referensi tidak akan diimport.",
-  "Baris pertama adalah nama kolom teknis. Jangan diubah, digeser, atau digabung.",
-  "Kolom wajib: nama, nama_ukpd, jenis_pegawai.",
+  "Baris pertama mengikuti struktur export Excel pegawai. File hasil export dapat diimport ulang setelah diperbarui.",
+  "Kolom wajib: NAMA (TANPA GELAR), NAMA UKPD, dan JENIS PEGAWAI.",
   "Kolom dengan referensi sudah memiliki dropdown validasi di sheet Pegawai. Sumber nilainya tetap ada di sheet Referensi.",
   "Jika id_pegawai terisi dan datanya ada, sistem akan update pegawai tersebut.",
   "Jika id_pegawai kosong, sistem mencari pegawai lama dari NIP, lalu NRK, lalu NIK. Jika tidak ditemukan, sistem membuat pegawai baru.",
   "Kolom kosong pada data update tidak akan menghapus nilai lama. Isi kolom hanya untuk nilai yang ingin dibuat atau diperbarui.",
   "nama_ukpd harus sama dengan referensi UKPD aktif di sistem. Wilayah dan jenis UKPD akan diambil otomatis dari referensi UKPD.",
+  "Admin UKPD hanya boleh import pegawai untuk UKPD sendiri. Jika NAMA UKPD kosong, sistem mengisi UKPD dari akun yang sedang login.",
   "Tanggal harus memakai format YYYY-MM-DD, misalnya 2024-01-31.",
   "Jenis pegawai, agama, jenis kontrak, pangkat/golongan, dan jabatan standar harus mengikuti sheet Referensi.",
-  "Import Excel hanya untuk data utama pegawai. Alamat, keluarga, dan riwayat detail tetap memakai form profil atau import DRH."
+  "Kolom DOMISILI dan KTP disimpan terpisah ke tabel alamat: jalan, kelurahan, kecamatan, kota/kabupaten, provinsi, dan kode wilayah.",
+  "Kolom SUAMI/ISTRI dan ANAK disimpan ke tabel keluarga."
 ];
 
-const DATE_FIELDS = ["tanggal_lahir", "tmt_pangkat_terakhir", "tmt_kerja_ukpd"];
+const DATE_FIELDS = [
+  "tanggal_lahir",
+  "tmt_pangkat_terakhir",
+  "tmt_kerja_ukpd",
+  "anak_1_tanggal_lahir",
+  "anak_2_tanggal_lahir",
+  "anak_3_tanggal_lahir"
+];
+const EMAIL_FIELDS = ["email", "pasangan_email"];
 const NUMERIC_ID_FIELDS = ["id_pegawai"];
 const REQUIRED_FIELDS = PEGAWAI_IMPORT_COLUMNS.filter((column) => column.required).map((column) => column.key);
 const TEMPLATE_VALIDATION_MAX_ROW = 10000;
-const JENIS_KELAMIN_OPTIONS = ["Perempuan", "Laki-laki"];
+const JENIS_KELAMIN_OPTIONS = ["P", "L", "Perempuan", "Laki-laki"];
 const KONDISI_OPTIONS = ["Aktif", "Cuti", "Tugas Belajar", "Tidak Aktif"];
 const STATUS_PERKAWINAN_OPTIONS = ["Belum Kawin", "Kawin", "Cerai Hidup", "Cerai Mati"];
+const ADDRESS_IMPORT_FIELD_MAP = [
+  ["jalan", "jalan"],
+  ["kelurahan", "kelurahan"],
+  ["kecamatan", "kecamatan"],
+  ["kota_kabupaten", "kota_kabupaten"],
+  ["provinsi", "provinsi"],
+  ["kode_provinsi", "kode_provinsi"],
+  ["kode_kota_kab", "kode_kota_kab"],
+  ["kode_kecamatan", "kode_kecamatan"],
+  ["kode_kelurahan", "kode_kelurahan"]
+];
+const PASANGAN_IMPORT_FIELD_MAP = {
+  pasangan_nama: "nama",
+  pasangan_no_tlp: "no_tlp",
+  pasangan_email: "email",
+  pasangan_pekerjaan: "pekerjaan"
+};
+const ANAK_IMPORT_FIELD_MAP = {
+  nama: "nama",
+  jenis_kelamin: "jenis_kelamin",
+  tempat_lahir: "tempat_lahir",
+  tanggal_lahir: "tanggal_lahir",
+  pekerjaan: "pekerjaan"
+};
+const RELATION_IMPORT_FIELDS = new Set([
+  ...["domisili", "ktp"].flatMap((prefix) => ADDRESS_IMPORT_FIELD_MAP.map(([source]) => `${prefix}_${source}`)),
+  ...Object.keys(PASANGAN_IMPORT_FIELD_MAP),
+  ...[1, 2, 3].flatMap((index) => Object.keys(ANAK_IMPORT_FIELD_MAP).map((field) => `anak_${index}_${field}`))
+]);
 
 function escapeXml(value) {
   return String(value ?? "")
@@ -263,6 +346,9 @@ function uniqueSorted(values) {
 function referenceConfig(ukpdRows = []) {
   return [
     { key: "jenis_kelamin", header: "Jenis Kelamin", values: JENIS_KELAMIN_OPTIONS, name: "ref_jenis_kelamin" },
+    { key: "anak_1_jenis_kelamin", header: "Jenis Kelamin Anak 1", values: JENIS_KELAMIN_OPTIONS, name: "ref_jenis_kelamin_anak_1" },
+    { key: "anak_2_jenis_kelamin", header: "Jenis Kelamin Anak 2", values: JENIS_KELAMIN_OPTIONS, name: "ref_jenis_kelamin_anak_2" },
+    { key: "anak_3_jenis_kelamin", header: "Jenis Kelamin Anak 3", values: JENIS_KELAMIN_OPTIONS, name: "ref_jenis_kelamin_anak_3" },
     { key: "agama", header: "Agama", values: AGAMA_OPTIONS, name: "ref_agama" },
     { key: "nama_ukpd", header: "Nama UKPD", values: uniqueSorted(ukpdRows.map((row) => row.nama_ukpd)), name: "ref_nama_ukpd" },
     { key: "jenis_pegawai", header: "Jenis Pegawai", values: JENIS_PEGAWAI_OPTIONS, name: "ref_jenis_pegawai" },
@@ -315,24 +401,30 @@ function buildPegawaiSheetValidations(headers, config) {
 }
 
 export async function buildPegawaiImportTemplate({ ukpdRows = [] } = {}) {
-  const headers = PEGAWAI_IMPORT_COLUMNS.map((column) => column.key);
+  const headers = PEGAWAI_EXPORT_COLUMNS.map((column) => column.header);
+  const headerKeys = PEGAWAI_IMPORT_TEMPLATE_KEYS;
   const config = referenceConfig(ukpdRows);
   const definedNames = buildTemplateDefinedNames(config);
+  const sampleUkpd = ukpdRows[0] || {};
   const sample = {
     nama: "Contoh Pegawai",
-    jenis_kelamin: "Perempuan",
+    nama_ukpd: sampleUkpd.nama_ukpd || "Dinas Kesehatan",
+    jenis_ukpd: sampleUkpd.jenis_ukpd || "Dinkes",
+    wilayah: sampleUkpd.wilayah || "Dinkes",
+    jenis_kelamin: "P",
     tempat_lahir: "Jakarta",
     tanggal_lahir: "1990-01-31",
     nik: "3171000000000001",
     agama: "Islam",
-    nama_ukpd: "Dinas Kesehatan",
     jenis_pegawai: "PNS",
     status_rumpun: "Tenaga Kesehatan",
     jenis_kontrak: "Tetap",
     nrk: "123456",
     nip: "199001312020121001",
     nama_jabatan_orb: "Analis Kesehatan",
+    nama_jabatan_menpan_raw: "Administrator Kesehatan Ahli Pertama",
     nama_jabatan_menpan: "Administrator Kesehatan Ahli Pertama",
+    struktur_atasan_langsung: "Kepala Subbagian",
     pangkat_golongan: "Penata Muda - III/a",
     tmt_pangkat_terakhir: "2024-04-01",
     jenjang_pendidikan: "S1",
@@ -340,14 +432,33 @@ export async function buildPegawaiImportTemplate({ ukpdRows = [] } = {}) {
     nama_universitas: "Universitas Indonesia",
     no_hp_pegawai: "081234567890",
     email: "pegawai@example.go.id",
+    domisili_jalan: "Jl. Medan Merdeka Selatan No. 8",
+    domisili_kelurahan: "Gambir",
+    domisili_kecamatan: "Gambir",
+    domisili_kota_kabupaten: "Kota Jakarta Pusat",
+    domisili_provinsi: "DKI Jakarta",
+    ktp_jalan: "Jl. Medan Merdeka Selatan No. 8",
+    ktp_kelurahan: "Gambir",
+    ktp_kecamatan: "Gambir",
+    ktp_kota_kabupaten: "Kota Jakarta Pusat",
+    ktp_provinsi: "DKI Jakarta",
+    pasangan_nama: "Contoh Pasangan",
+    pasangan_no_tlp: "081298765432",
+    pasangan_email: "pasangan@example.com",
+    pasangan_pekerjaan: "Karyawan",
+    anak_1_nama: "Contoh Anak",
+    anak_1_jenis_kelamin: "L",
+    anak_1_tempat_lahir: "Jakarta",
+    anak_1_tanggal_lahir: "2015-06-01",
+    anak_1_pekerjaan: "Pelajar",
     kondisi: "Aktif",
     status_perkawinan: "Kawin",
     tmt_kerja_ukpd: "2020-01-01"
   };
   const sheets = [
-    { name: "Pegawai", rows: [headers], validations: buildPegawaiSheetValidations(headers, config) },
-    { name: "Contoh", rows: [headers, headers.map((key) => sample[key] || "")] },
-    { name: "Aturan", rows: [["No", "Aturan"], ...PEGAWAI_IMPORT_RULES.map((rule, index) => [index + 1, rule]), ["", ""], ["Kolom", "Keterangan"], ...PEGAWAI_IMPORT_COLUMNS.map((column) => [column.key, column.rule || column.label])] },
+    { name: "Pegawai", rows: [headers], validations: buildPegawaiSheetValidations(headerKeys, config) },
+    { name: "Contoh", rows: [headers, headerKeys.map((key, index) => (headers[index] === "No" ? "1" : sample[key] || ""))] },
+    { name: "Aturan", rows: [["No", "Aturan"], ...PEGAWAI_IMPORT_RULES.map((rule, index) => [index + 1, rule]), ["", ""], ["Kolom Export", "Kunci Sistem", "Keterangan"], ...PEGAWAI_EXPORT_COLUMNS.map((column, index) => [column.header, headerKeys[index] || "(diabaikan)", PEGAWAI_IMPORT_COLUMN_RULES[headerKeys[index]] || column.header || "(diabaikan)"])] },
     { name: "Referensi", rows: referenceRows(config) }
   ];
 
@@ -411,13 +522,25 @@ function normalizeHeader(value) {
     .replace(/^_|_$/g, "");
 }
 
-const HEADER_ALIASES = new Map(
-  PEGAWAI_IMPORT_COLUMNS.flatMap((column) => [
-    [normalizeHeader(column.key), column.key],
-    [normalizeHeader(column.label), column.key]
-  ])
-);
-HEADER_ALIASES.set("jabatan_standar", "nama_jabatan_menpan");
+const HEADER_ALIASES = new Map();
+
+function setHeaderAlias(label, key, { overwrite = false } = {}) {
+  const normalized = normalizeHeader(label);
+  if (!normalized || !key) return;
+  if (!overwrite && HEADER_ALIASES.has(normalized)) return;
+  HEADER_ALIASES.set(normalized, key);
+}
+
+for (const column of PEGAWAI_IMPORT_COLUMNS) {
+  setHeaderAlias(column.key, column.key);
+  setHeaderAlias(column.label, column.key);
+}
+PEGAWAI_EXPORT_COLUMNS.forEach((column, index) => {
+  setHeaderAlias(column.header, PEGAWAI_IMPORT_TEMPLATE_KEYS[index]);
+});
+setHeaderAlias("jabatan_standar", "nama_jabatan_menpan", { overwrite: true });
+setHeaderAlias("tempat_lahir_anak_ke_2", "anak_2_tempat_lahir", { overwrite: true });
+setHeaderAlias("tempat_lahir_anak_2", "anak_2_tempat_lahir", { overwrite: true });
 
 function normalizeCellValue(value) {
   return String(value ?? "").trim().replace(/^`+/, "");
@@ -510,7 +633,12 @@ function parseSheetRows(xml, sharedStrings) {
 
 function parseRowsToObjects(rows) {
   const headerRow = rows[0] || [];
-  const headers = headerRow.map((value) => HEADER_ALIASES.get(normalizeHeader(value)) || "");
+  const headers = headerRow.map((value, columnIndex) => {
+    const normalized = normalizeHeader(value);
+    const expected = normalizeHeader(PEGAWAI_EXPORT_COLUMNS[columnIndex]?.header);
+    if (expected && normalized === expected) return PEGAWAI_IMPORT_TEMPLATE_KEYS[columnIndex] || "";
+    return HEADER_ALIASES.get(normalized) || "";
+  });
   return rows.slice(1).map((row, index) => {
     const record = {};
     headers.forEach((key, columnIndex) => {
@@ -589,6 +717,68 @@ function normalizeReferenceField(data, errors, field, allowed, normalize, label)
   }
 }
 
+function normalizeGenderValue(value) {
+  const text = normalizeCellValue(value);
+  const key = text.toUpperCase().replace(/[^A-Z]+/g, "");
+  if (!key) return "";
+  if (key === "P" || key === "PEREMPUAN" || key === "WANITA") return "Perempuan";
+  if (key === "L" || key === "LAKILAKI" || key === "PRIA") return "Laki-laki";
+  return text;
+}
+
+function hasObjectContent(object) {
+  return Object.values(object || {}).some((value) => normalizeCellValue(value));
+}
+
+function buildAddressImportSection(data, prefix) {
+  const entry = {};
+  for (const [sourceField, targetField] of ADDRESS_IMPORT_FIELD_MAP) {
+    const value = normalizeCellValue(data[`${prefix}_${sourceField}`]);
+    if (value) entry[targetField] = value;
+  }
+  return hasObjectContent(entry) ? entry : null;
+}
+
+function buildPegawaiImportRelations(data) {
+  const relations = {};
+  const alamat = {};
+  const domisili = buildAddressImportSection(data, "domisili");
+  const ktp = buildAddressImportSection(data, "ktp");
+  if (domisili) alamat.domisili = domisili;
+  if (ktp) alamat.ktp = ktp;
+  if (Object.keys(alamat).length) relations.alamat = alamat;
+
+  const pasangan = {};
+  for (const [sourceField, targetField] of Object.entries(PASANGAN_IMPORT_FIELD_MAP)) {
+    const value = normalizeCellValue(data[sourceField]);
+    if (value) pasangan[targetField] = value;
+  }
+  if (hasObjectContent(pasangan)) {
+    relations.pasangan = {
+      status_punya: "Ya",
+      ...pasangan
+    };
+  }
+
+  const anak = [1, 2, 3].map((index) => {
+    const entry = { urutan: index };
+    for (const [sourceSuffix, targetField] of Object.entries(ANAK_IMPORT_FIELD_MAP)) {
+      const sourceField = `anak_${index}_${sourceSuffix}`;
+      let value = normalizeCellValue(data[sourceField]);
+      if (targetField === "jenis_kelamin") value = normalizeGenderValue(value);
+      if (value) entry[targetField] = value;
+    }
+    return entry;
+  }).filter((entry) => hasObjectContent(Object.fromEntries(Object.entries(entry).filter(([key]) => key !== "urutan"))));
+  if (anak.length) relations.anak = anak;
+
+  for (const field of RELATION_IMPORT_FIELDS) {
+    delete data[field];
+  }
+
+  return relations;
+}
+
 export function normalizePegawaiImportRecord(record) {
   const errors = [];
   const data = {};
@@ -626,6 +816,10 @@ export function normalizePegawaiImportRecord(record) {
   normalizeReferenceField(data, errors, "pangkat_golongan", PANGKAT_GOLONGAN_OPTIONS, normalizePangkatGolonganOption, "Pangkat/golongan");
   normalizeReferenceField(data, errors, "nama_jabatan_menpan", JABATAN_STANDAR_OPTIONS, normalizeJabatanStandarOption, "Jabatan standar Kepgub 11");
 
+  for (const field of ["jenis_kelamin", "anak_1_jenis_kelamin", "anak_2_jenis_kelamin", "anak_3_jenis_kelamin"]) {
+    if (data[field]) data[field] = normalizeGenderValue(data[field]);
+  }
+
   for (const field of DATE_FIELDS) {
     if (!data[field]) continue;
     const date = normalizeDateValue(data[field]);
@@ -633,8 +827,15 @@ export function normalizePegawaiImportRecord(record) {
     if (!date.valid) addError(errors, field, `${field} harus memakai format YYYY-MM-DD.`);
   }
 
-  if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
-    addError(errors, "email", "Format email tidak valid.");
+  for (const field of EMAIL_FIELDS) {
+    if (data[field] && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data[field])) {
+      addError(errors, field, "Format email tidak valid.");
+    }
+  }
+
+  const relations = buildPegawaiImportRelations(data);
+  if (Object.keys(relations).length) {
+    Object.assign(data, relations);
   }
 
   return { data, errors };

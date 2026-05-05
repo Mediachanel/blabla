@@ -59,7 +59,7 @@ function duplicateKeysForRow(data) {
 }
 
 export async function POST(request) {
-  const { error } = await requireAuth([ROLES.SUPER_ADMIN], request);
+  const { user, error } = await requireAuth([ROLES.SUPER_ADMIN, ROLES.ADMIN_UKPD], request);
   if (error) return error;
 
   const formData = await request.formData();
@@ -95,9 +95,20 @@ export async function POST(request) {
   const validRows = [];
 
   for (const { rowNumber, record } of parsedRows) {
-    const normalized = normalizePegawaiImportRecord(record);
+    const recordForNormalize = user.role === ROLES.ADMIN_UKPD && !record.nama_ukpd
+      ? { ...record, nama_ukpd: user.nama_ukpd }
+      : record;
+    const normalized = normalizePegawaiImportRecord(recordForNormalize);
     const data = normalized.data;
     const errors = [...normalized.errors];
+
+    if (user.role === ROLES.ADMIN_UKPD) {
+      if (!data.nama_ukpd) {
+        data.nama_ukpd = user.nama_ukpd;
+      } else if (cleanKey(data.nama_ukpd) !== cleanKey(user.nama_ukpd)) {
+        errors.push({ field: "nama_ukpd", message: "Admin UKPD hanya boleh import pegawai untuk UKPD sendiri." });
+      }
+    }
 
     const ukpd = ukpdByName.get(cleanKey(data.nama_ukpd));
     if (!ukpd) {
@@ -138,10 +149,19 @@ export async function POST(request) {
   const imported = [];
   let created = 0;
   let updated = 0;
+  let writeErrorStatus = 422;
 
   for (const { rowNumber, data } of validRows) {
     try {
       const existing = await findExistingPegawai(pool, data);
+      if (existing && user.role === ROLES.ADMIN_UKPD && cleanKey(existing.nama_ukpd) !== cleanKey(user.nama_ukpd)) {
+        writeErrors.push({
+          rowNumber,
+          messages: ["Kunci pegawai pada baris ini sudah terdaftar pada UKPD lain, sehingga tidak boleh diperbarui oleh Admin UKPD."],
+          fields: ["nip", "nrk", "nik", "id_pegawai"]
+        });
+        continue;
+      }
       if (existing) {
         const updatePayload = removeBlankUpdateFields(data);
         await updatePegawaiData(existing.id_pegawai, {
@@ -159,6 +179,7 @@ export async function POST(request) {
         imported.push({ rowNumber, id_pegawai: createdRow.id_pegawai, nama: data.nama, status: "created" });
       }
     } catch (writeError) {
+      writeErrorStatus = 500;
       writeErrors.push({
         rowNumber,
         messages: [writeError.message || "Baris gagal disimpan."],
@@ -168,7 +189,7 @@ export async function POST(request) {
   }
 
   if (writeErrors.length) {
-    return fail("Sebagian data gagal disimpan.", 500, {
+    return fail("Sebagian data gagal disimpan.", writeErrorStatus, {
       rows: writeErrors,
       totalErrors: writeErrors.length,
       totalRows: parsedRows.length,

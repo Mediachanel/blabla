@@ -2,8 +2,9 @@ import { NextResponse } from "next/server";
 import { jwtVerify } from "jose";
 import { getJwtSecret } from "@/lib/auth/sessionConfig";
 
-const protectedRoutes = ["/dashboard", "/pegawai", "/usulan", "/import-drh", "/duk", "/qna-admin", "/profil"];
+const protectedRoutes = ["/dashboard", "/pegawai", "/usulan", "/import-pegawai", "/import-drh", "/duk", "/qna-admin", "/profil"];
 const roleRules = {
+  "/import-pegawai": ["SUPER_ADMIN", "ADMIN_UKPD"],
   "/import-drh": ["SUPER_ADMIN", "ADMIN_UKPD"],
   "/qna-admin": ["SUPER_ADMIN"],
   "/usulan": ["SUPER_ADMIN", "ADMIN_WILAYAH"]
@@ -43,5 +44,5 @@ export async function middleware(request) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/pegawai/:path*", "/usulan/:path*", "/import-drh/:path*", "/duk/:path*", "/qna-admin/:path*", "/profil/:path*"]
+  matcher: ["/dashboard/:path*", "/pegawai/:path*", "/usulan/:path*", "/import-pegawai/:path*", "/import-drh/:path*", "/duk/:path*", "/qna-admin/:path*", "/profil/:path*"]
 };

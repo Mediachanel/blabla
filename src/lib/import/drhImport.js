@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import wilayahRows from "@/data/generated/wilayah-resmi-kemendagri.json";
 
 function normalizeText(value) {
   return String(value || "").replace(/\s+/g, " ").trim();
@@ -7,6 +8,210 @@ function normalizeText(value) {
 function normalizeNullableText(value) {
   const text = normalizeText(value);
   return text || null;
+}
+
+const FRONT_TITLE_PATTERN = /^\s*(drg|dr|apt|ns)\.\s*/i;
+const FRONT_TITLE_KEYS = new Set(["dr", "drg", "apt", "ns"]);
+
+function normalizeFrontTitle(value) {
+  const key = String(value || "").replace(/[^a-z]/gi, "").toLowerCase();
+  if (key === "dr") return "dr.";
+  if (key === "drg") return "drg.";
+  if (key === "apt") return "Apt.";
+  if (key === "ns") return "Ns.";
+  return normalizeText(value);
+}
+
+function splitLeadingFrontTitles(value) {
+  const original = normalizeText(value);
+  let remaining = original;
+  const titles = [];
+
+  while (remaining) {
+    const match = remaining.match(FRONT_TITLE_PATTERN);
+    if (!match) break;
+    titles.push(normalizeFrontTitle(match[1]));
+    remaining = remaining.slice(match[0].length).trim();
+  }
+
+  const tokens = remaining.split(/\s+/).filter(Boolean);
+  while (tokens.length) {
+    const key = tokens[0].replace(/[^a-z]/gi, "").toLowerCase();
+    if (!FRONT_TITLE_KEYS.has(key)) break;
+    titles.push(normalizeFrontTitle(tokens[0]));
+    tokens.shift();
+    remaining = tokens.join(" ");
+  }
+
+  return {
+    gelar_depan: titles.join(", "),
+    nama: normalizeText(remaining) || original,
+  };
+}
+
+function normalizePegawaiTitle(pegawai = {}) {
+  const splitNama = splitLeadingFrontTitles(pegawai.nama);
+  const splitNamaLengkap = splitLeadingFrontTitles(pegawai.nama_lengkap);
+  const splitSource = splitNama.gelar_depan ? splitNama : splitNamaLengkap;
+
+  return {
+    ...pegawai,
+    nama: splitSource.gelar_depan ? splitSource.nama : pegawai.nama,
+    gelar_depan: normalizeNullableText(pegawai.gelar_depan) || normalizeNullableText(splitSource.gelar_depan),
+  };
+}
+
+function normalizeAddressToken(value) {
+  return normalizeText(value)
+    .replace(/[.,;:()/-]+/g, " ")
+    .replace(/\bKEL(?:URAHAN)?\b/gi, " ")
+    .replace(/\bKEC(?:AMATAN)?\b/gi, " ")
+    .replace(/\bKOTA\b/gi, " ")
+    .replace(/\bKAB(?:UPATEN)?\b/gi, " ")
+    .replace(/\bADMINISTRASI\b/gi, " ")
+    .replace(/\bPROV(?:INSI)?\b/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toUpperCase();
+}
+
+function cleanAddressPart(value) {
+  return normalizeText(value)
+    .replace(/^(kel(?:urahan)?|kec(?:amatan)?|kota|kab(?:upaten)?|prov(?:insi)?)\.?\s*/i, "")
+    .replace(/[.,;:\s]+$/g, "")
+    .trim();
+}
+
+function normalizeCityName(value) {
+  const text = cleanAddressPart(value);
+  const key = normalizeAddressToken(text);
+  if (!key) return null;
+  if (key.includes("KEPULAUAN SERIBU")) return "Kepulauan Seribu";
+  const jakartaMatch = key.match(/JAKARTA\s+(PUSAT|UTARA|BARAT|SELATAN|TIMUR)/);
+  if (!jakartaMatch) return text;
+  return `Jakarta ${jakartaMatch[1].charAt(0)}${jakartaMatch[1].slice(1).toLowerCase()}`;
+}
+
+function normalizeProvinceName(value) {
+  const key = normalizeAddressToken(value);
+  if (!key) return null;
+  if (key === "JAKARTA" || key.includes("DKI JAKARTA") || key.includes("DAERAH KHUSUS IBUKOTA JAKARTA")) {
+    return "DKI Jakarta";
+  }
+  return cleanAddressPart(value);
+}
+
+function getDkiAddressRows() {
+  if (!globalThis.__sisdmkDkiAddressRows) {
+    globalThis.__sisdmkDkiAddressRows = wilayahRows
+      .filter((row) => normalizeAddressToken(row.provinsi).includes("DKI JAKARTA"))
+      .map((row) => ({
+        ...row,
+        provinsi: "DKI Jakarta",
+        kota_kabupaten: normalizeCityName(row.kota_kabupaten) || row.kota_kabupaten,
+        _cityKey: normalizeAddressToken(normalizeCityName(row.kota_kabupaten) || row.kota_kabupaten),
+        _districtKey: normalizeAddressToken(row.kecamatan),
+        _villageKey: normalizeAddressToken(row.kelurahan)
+      }));
+  }
+  return globalThis.__sisdmkDkiAddressRows;
+}
+
+function normalizedTextContains(textKey, partKey) {
+  return Boolean(partKey) && new RegExp(`(?:^|\\s)${partKey.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?:\\s|$)`).test(textKey);
+}
+
+function findBestDkiAddressMatch(rawAddress, cityName = "") {
+  const textKey = normalizeAddressToken(rawAddress);
+  if (!textKey) return null;
+  const cityKey = normalizeAddressToken(cityName);
+  let best = null;
+
+  for (const row of getDkiAddressRows()) {
+    if (cityKey && normalizeAddressToken(row.kota_kabupaten) !== cityKey && !normalizedTextContains(textKey, row._cityKey)) {
+      continue;
+    }
+    const hasDistrict = normalizedTextContains(textKey, row._districtKey);
+    const hasVillage = normalizedTextContains(textKey, row._villageKey);
+    const hasCity = normalizedTextContains(textKey, row._cityKey) || Boolean(cityKey);
+    if (!hasCity || (!hasVillage && !hasDistrict)) continue;
+
+    const score = (hasVillage ? 1000 + row._villageKey.length : 0)
+      + (hasDistrict ? 100 + row._districtKey.length : 0)
+      + (hasCity ? 10 : 0);
+    if (!best || score > best.score) best = { row, score, hasVillage, hasDistrict };
+  }
+
+  return best?.row || null;
+}
+
+function removeAddressSegment(text, segment) {
+  const cleanSegment = cleanAddressPart(segment);
+  if (!cleanSegment) return text;
+  const escaped = cleanSegment.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\s+/g, "\\s+");
+  return text
+    .replace(new RegExp(`\\b(?:kel(?:urahan)?|kel\\.|kec(?:amatan)?|kec\\.|kota|kab(?:upaten)?|prov(?:insi)?)\\s*:?\\s*${escaped}\\b`, "ig"), " ")
+    .replace(new RegExp(`[,;\\s]+${escaped}\\s*$`, "i"), " ")
+    .replace(/\s+/g, " ")
+    .replace(/\s+([,;])/g, "$1")
+    .replace(/^[,;\s]+|[,;\s]+$/g, "")
+    .trim();
+}
+
+function extractLabeledAddressPart(text, labelPattern, stopPattern) {
+  const match = text.match(new RegExp(`\\b${labelPattern}\\s*:?\\s*(.+?)(?=\\s+(?:${stopPattern})\\b|[,;]|$)`, "i"));
+  return match ? cleanAddressPart(match[1]) : "";
+}
+
+function parseDrhAddress(rawAddress) {
+  const raw = normalizeText(rawAddress);
+  if (!raw) {
+    return {
+      jalan: null,
+      kelurahan: null,
+      kecamatan: null,
+      kota_kabupaten: null,
+      provinsi: null,
+      kode_provinsi: null,
+      kode_kota_kab: null,
+      kode_kecamatan: null,
+      kode_kelurahan: null
+    };
+  }
+
+  const cityPattern = "(?:KOTA\\s+ADMINISTRASI\\s+)?JAKARTA\\s+(?:PUSAT|UTARA|BARAT|SELATAN|TIMUR)|(?:KAB(?:UPATEN)?\\s+ADMINISTRASI\\s+)?KEPULAUAN\\s+SERIBU";
+  const stopPattern = `KEL(?:URAHAN)?\\.?|KEC(?:AMATAN)?\\.?|KOTA|KAB(?:UPATEN)?\\.?|PROV(?:INSI)?\\.?|${cityPattern}|DKI\\s+JAKARTA|DAERAH\\s+KHUSUS\\s+IBUKOTA\\s+JAKARTA`;
+  const kelurahan = extractLabeledAddressPart(raw, "KEL(?:URAHAN)?\\.?", stopPattern);
+  const kecamatan = extractLabeledAddressPart(raw, "KEC(?:AMATAN)?\\.?", stopPattern);
+  const cityMatch = raw.match(new RegExp(`\\b(${cityPattern})\\b`, "i"));
+  const explicitCity = cityMatch ? normalizeCityName(cityMatch[1]) : null;
+  const provinceMatch = raw.match(/\b(?:PROV(?:INSI)?\.?\s*)?(DKI\s+JAKARTA|DAERAH\s+KHUSUS\s+IBUKOTA\s+JAKARTA)\b/i);
+  const explicitProvince = provinceMatch ? normalizeProvinceName(provinceMatch[1]) : null;
+  const official = findBestDkiAddressMatch(raw, explicitCity || "");
+
+  const parsed = {
+    jalan: raw,
+    kelurahan: kelurahan || official?.kelurahan || null,
+    kecamatan: kecamatan || official?.kecamatan || null,
+    kota_kabupaten: explicitCity || official?.kota_kabupaten || null,
+    provinsi: explicitProvince || official?.provinsi || (explicitCity || official ? "DKI Jakarta" : null),
+    kode_provinsi: official?.kode_provinsi || null,
+    kode_kota_kab: official?.kode_kota_kab || null,
+    kode_kecamatan: official?.kode_kecamatan || null,
+    kode_kelurahan: official?.kode_kelurahan || null
+  };
+
+  for (const part of [
+    kelurahan,
+    kecamatan,
+    cityMatch?.[1],
+    provinceMatch?.[1]
+  ]) {
+    parsed.jalan = removeAddressSegment(parsed.jalan, part);
+  }
+
+  parsed.jalan = normalizeNullableText(parsed.jalan) || raw;
+  return parsed;
 }
 
 function normalizePersonName(value) {
@@ -154,7 +359,7 @@ async function findPegawai(connection, pegawai) {
   return candidates[0] || null;
 }
 
-function assertAllowedUkpdImport({ allowedUkpdName, existing, ukpd }) {
+function assertAllowedUkpdImport({ allowedUkpdName, existing, ukpd, parsedUnitKerja }) {
   const allowed = normalizeComparableName(allowedUkpdName);
   if (!allowed) return;
   const deny = (message) => {
@@ -164,15 +369,21 @@ function assertAllowedUkpdImport({ allowedUkpdName, existing, ukpd }) {
   };
 
   if (existing?.nama_ukpd && normalizeComparableName(existing.nama_ukpd) !== allowed) {
-    deny("Admin UKPD hanya dapat import DRH pegawai dari UKPD miliknya.");
+    deny(
+      `Admin UKPD hanya dapat import DRH pegawai dari UKPD miliknya. Pegawai ini sudah terdaftar di database pada UKPD "${existing.nama_ukpd}", sedangkan UKPD akun Anda "${allowedUkpdName}". Jika pegawai memang pindah unit, ubah UKPD pegawai lewat Data Pegawai atau gunakan akun Super Admin.`
+    );
   }
 
   if (ukpd?.nama_ukpd && normalizeComparableName(ukpd.nama_ukpd) !== allowed) {
-    deny("Unit kerja pada PDF DRH tidak sesuai dengan UKPD akun Anda.");
+    deny(
+      `Unit kerja pada PDF DRH tidak sesuai dengan UKPD akun Anda. Unit kerja terbaca/diedit "${ukpd.nama_ukpd}", sedangkan UKPD akun Anda "${allowedUkpdName}".`
+    );
   }
 
   if (!existing && !ukpd) {
-    deny("Unit kerja pada PDF DRH tidak ditemukan di referensi UKPD. Admin UKPD belum dapat membuat data pegawai tanpa UKPD yang valid.");
+    deny(
+      `Unit kerja pada PDF DRH "${normalizeText(parsedUnitKerja) || "-"}" tidak ditemukan di referensi UKPD. Admin UKPD belum dapat membuat data pegawai tanpa UKPD yang valid sesuai akun "${allowedUkpdName}".`
+    );
   }
 }
 
@@ -183,10 +394,11 @@ async function upsertPegawai(connection, parsed, options = {}) {
   const latestEducation = pickHighestFormalEducation(parsed?.riwayat_pendidikan);
   const ukpd = await findUkpd(connection, pegawai.unit_kerja);
   const existing = await findPegawai(connection, pegawai);
-  assertAllowedUkpdImport({ allowedUkpdName: options.allowedUkpdName, existing, ukpd });
+  assertAllowedUkpdImport({ allowedUkpdName: options.allowedUkpdName, existing, ukpd, parsedUnitKerja: pegawai.unit_kerja });
 
   const baseData = {
     nama: normalizePersonName(pegawai.nama || pegawai.nama_lengkap),
+    gelar_depan: normalizeNullableText(pegawai.gelar_depan),
     gelar_belakang: normalizeNullableText(pegawai.gelar_belakang),
     nrk: normalizeNullableText(pegawai.nrk),
     nip: normalizeNullableText(pegawai.nip),
@@ -248,6 +460,7 @@ async function upsertPegawai(connection, parsed, options = {}) {
     email: baseData.email,
     no_hp_pegawai: baseData.no_hp_pegawai,
     kondisi: baseData.kondisi,
+    gelar_depan: baseData.gelar_depan,
     gelar_belakang: baseData.gelar_belakang,
     created_at: new Date().toISOString().slice(0, 10),
   };
@@ -267,8 +480,8 @@ async function upsertPegawai(connection, parsed, options = {}) {
 }
 
 async function upsertDomisiliAlamat(connection, idPegawai, alamat) {
-  const jalan = normalizeNullableText(alamat);
-  if (!jalan) return false;
+  const parsed = parseDrhAddress(alamat);
+  if (!parsed.jalan) return false;
 
   const [rows] = await connection.query(
     "SELECT * FROM `alamat` WHERE `id_pegawai` = ? AND LOWER(`tipe`) = 'domisili' ORDER BY `id` ASC",
@@ -277,8 +490,33 @@ async function upsertDomisiliAlamat(connection, idPegawai, alamat) {
   const existing = rows[0] || null;
 
   if (existing) {
-    await connection.query("UPDATE `alamat` SET `jalan` = ? WHERE `id` = ?", [jalan, Number(existing.id)]);
-    return false;
+    await connection.query(
+      `UPDATE \`alamat\`
+       SET
+         \`jalan\` = ?,
+         \`kelurahan\` = COALESCE(?, \`kelurahan\`),
+         \`kecamatan\` = COALESCE(?, \`kecamatan\`),
+         \`kota_kabupaten\` = COALESCE(?, \`kota_kabupaten\`),
+         \`provinsi\` = COALESCE(?, \`provinsi\`),
+         \`kode_provinsi\` = COALESCE(?, \`kode_provinsi\`),
+         \`kode_kota_kab\` = COALESCE(?, \`kode_kota_kab\`),
+         \`kode_kecamatan\` = COALESCE(?, \`kode_kecamatan\`),
+         \`kode_kelurahan\` = COALESCE(?, \`kode_kelurahan\`)
+       WHERE \`id\` = ?`,
+      [
+        parsed.jalan,
+        parsed.kelurahan,
+        parsed.kecamatan,
+        parsed.kota_kabupaten,
+        parsed.provinsi,
+        parsed.kode_provinsi,
+        parsed.kode_kota_kab,
+        parsed.kode_kecamatan,
+        parsed.kode_kelurahan,
+        Number(existing.id)
+      ]
+    );
+    return true;
   }
 
   const nextId = await nextAlamatId(connection);
@@ -286,8 +524,21 @@ async function upsertDomisiliAlamat(connection, idPegawai, alamat) {
     `INSERT INTO \`alamat\` (
       \`id\`, \`id_pegawai\`, \`tipe\`, \`jalan\`, \`kelurahan\`, \`kecamatan\`, \`kota_kabupaten\`, \`provinsi\`,
       \`kode_provinsi\`, \`kode_kota_kab\`, \`kode_kecamatan\`, \`kode_kelurahan\`, \`created_at\`
-    ) VALUES (?, ?, 'domisili', ?, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, ?)`,
-    [nextId, Number(idPegawai), jalan, new Date().toISOString().slice(0, 10)]
+    ) VALUES (?, ?, 'domisili', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      nextId,
+      Number(idPegawai),
+      parsed.jalan,
+      parsed.kelurahan,
+      parsed.kecamatan,
+      parsed.kota_kabupaten,
+      parsed.provinsi,
+      parsed.kode_provinsi,
+      parsed.kode_kota_kab,
+      parsed.kode_kecamatan,
+      parsed.kode_kelurahan,
+      new Date().toISOString().slice(0, 10)
+    ]
   );
   return true;
 }
@@ -357,6 +608,10 @@ async function replaceSectionRows(connection, { table, idPegawai, rows, buildRec
 }
 
 export async function importDrhToDatabase(connection, parsed, options = {}) {
+  parsed = {
+    ...parsed,
+    pegawai: normalizePegawaiTitle(parsed?.pegawai || {}),
+  };
   const pegawaiResult = await upsertPegawai(connection, parsed, options);
   const idPegawai = Number(pegawaiResult.id_pegawai);
   const namaPegawai = normalizeNullableText(pegawaiResult.nama || parsed?.pegawai?.nama || parsed?.pegawai?.nama_lengkap);
@@ -396,7 +651,7 @@ export async function importDrhToDatabase(connection, parsed, options = {}) {
       id_pegawai: idPegawai,
       nip: nipPegawai,
       nama_pegawai: namaPegawai,
-      gelar_depan: null,
+      gelar_depan: normalizeNullableText(parsed?.pegawai?.gelar_depan),
       gelar_belakang: normalizeNullableText(parsed?.pegawai?.gelar_belakang),
       jenis_jabatan: normalizeNullableText(item.jenis_jabatan),
       lokasi: normalizeNullableText(item.lokasi),

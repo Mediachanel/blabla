@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   CheckCircle2,
   FileCheck2,
@@ -292,7 +292,7 @@ function ActionPanel({
             <FileCheck2 className="h-4 w-4 text-dinkes-700" />
             <h3 className="text-sm font-semibold text-slate-900">Checklist Dokumen</h3>
           </div>
-          <p className="mb-3 text-xs text-slate-500">Upload PDF maksimal {CHECKLIST_DOCUMENT_MAX_MB} MB untuk setiap item checklist.</p>
+          <p className="mb-3 text-xs text-slate-500">Lihat PDF yang sudah diunggah, lalu centang item yang valid. Upload dipakai hanya untuk menambah atau mengganti dokumen.</p>
           <div className="space-y-2">
             {Object.entries(CHECKLIST_LABELS).map(([key, label]) => {
               const document = verifyForm.dokumen_checklist?.[key];
@@ -303,9 +303,12 @@ function ActionPanel({
                     <div className="min-w-0">
                       <p className="font-medium text-slate-800">{label}</p>
                       {document ? (
-                        <a className="mt-1 block truncate text-xs font-semibold text-dinkes-700 hover:underline" href={document.url} target="_blank" rel="noreferrer">
-                          {document.name} ({formatFileSize(document.size)})
-                        </a>
+                        <div className="mt-2 flex flex-wrap items-center gap-2">
+                          <a className="inline-flex items-center rounded-lg border border-dinkes-200 bg-white px-3 py-1.5 text-xs font-semibold text-dinkes-700 hover:bg-dinkes-50" href={document.url} target="_blank" rel="noreferrer">
+                            Lihat PDF
+                          </a>
+                          <span className="max-w-[260px] truncate text-xs text-slate-500">{document.name} ({formatFileSize(document.size)})</span>
+                        </div>
                       ) : (
                         <p className="mt-1 text-xs text-slate-500">Belum ada PDF</p>
                       )}
@@ -518,6 +521,7 @@ export default function UsulanPutusJfPage() {
   const [panelMode, setPanelMode] = useState(null);
   const [activeId, setActiveId] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
+  const detailSectionRef = useRef(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [stageFilter, setStageFilter] = useState("");
@@ -675,6 +679,13 @@ export default function UsulanPutusJfPage() {
       verif_checklist: parseChecklist(item.verif_checklist, CHECKLIST_LABELS),
       dokumen_checklist: parseChecklistDocuments(item.dokumen_checklist, CHECKLIST_LABELS, "putus-jf", item.id)
     });
+  }
+
+  function openDetail(item) {
+    setSelectedId(item.id);
+    window.setTimeout(() => {
+      detailSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
   }
 
   function updateRow(updatedItem) {
@@ -963,7 +974,7 @@ export default function UsulanPutusJfPage() {
               ]}
               actions={(item) => (
                 <div className="flex flex-wrap gap-2">
-                  <button className="btn-secondary" type="button" onClick={() => setSelectedId(item.id)}>Detail</button>
+                  <button className="btn-secondary" type="button" onClick={() => openDetail(item)}>Detail</button>
                   <button className="btn-secondary" type="button" onClick={() => openEdit(item)}>
                     <SquarePen className="h-4 w-4" />
                     Edit
@@ -978,7 +989,7 @@ export default function UsulanPutusJfPage() {
           )}
 
           {selected ? (
-            <section className="surface p-5">
+            <section ref={detailSectionRef} className="surface p-5">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div>
                   <p className="text-sm font-semibold text-slate-500">Detail Usulan Putus JF</p>
@@ -1070,9 +1081,12 @@ export default function UsulanPutusJfPage() {
                           <div className="min-w-0">
                             <span>{entry.label}</span>
                             {entry.document ? (
-                              <a className="mt-1 block truncate text-xs font-semibold text-dinkes-700 hover:underline" href={entry.document.url} target="_blank" rel="noreferrer">
-                                {entry.document.name} ({formatFileSize(entry.document.size)})
-                              </a>
+                              <div className="mt-2 flex flex-wrap items-center gap-2">
+                                <a className="inline-flex items-center rounded-lg border border-dinkes-200 bg-white px-3 py-1.5 text-xs font-semibold text-dinkes-700 hover:bg-dinkes-50" href={entry.document.url} target="_blank" rel="noreferrer">
+                                  Lihat PDF
+                                </a>
+                                <span className="max-w-[260px] truncate text-xs text-slate-500">{entry.document.name} ({formatFileSize(entry.document.size)})</span>
+                              </div>
                             ) : (
                               <p className="mt-1 text-xs text-slate-500">Belum ada PDF</p>
                             )}

@@ -82,6 +82,18 @@ Detail lengkap ada di [CasaOS Deployment](docs/CASAOS.md).
 
 Pastikan database `si_data` bisa diakses dari container lewat host yang diset di `POSTGRES_HOST`/`POSTGRES_HOSTS`. Untuk skenario ini, pakai `docker-compose.casaos.yml`.
 
+Jika source project sudah ada di CasaOS, deploy bisa memakai script:
+
+```bash
+sh scripts/deploy-casaos.sh --app-origin http://IP-CASAOS:3000 --postgres-password "PASSWORD_POSTGRES"
+```
+
+Untuk deploy ulang dan menulis ulang `.env.casaos`:
+
+```bash
+sh scripts/deploy-casaos.sh --force-env --app-origin http://IP-CASAOS:3000 --postgres-password "PASSWORD_POSTGRES"
+```
+
 Lalu deploy:
 
 ```bash

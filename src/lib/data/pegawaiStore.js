@@ -51,6 +51,11 @@ const PEGAWAI_DATE_COLUMNS = new Set([
   "created_at"
 ]);
 
+const PEGAWAI_NUMBER_COLUMNS = new Set([
+  "id_ukpd",
+  "ukpd_id"
+]);
+
 const PEGAWAI_DASHBOARD_COLUMNS = [
   "id_pegawai",
   "nama",
@@ -184,6 +189,7 @@ function normalizeDateInput(value) {
 
 function normalizePegawaiColumnValue(column, value) {
   if (PEGAWAI_DATE_COLUMNS.has(column)) return normalizeDateInput(value);
+  if (PEGAWAI_NUMBER_COLUMNS.has(column)) return normalizeNumberInput(value);
   return value ?? null;
 }
 

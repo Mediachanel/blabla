@@ -215,6 +215,7 @@ Terapis Wicara Penyelia
 Terapis Wicara Terampil
 Wakil Direktur Administrasi Umum Dan Keuangan
 Wakil Direktur Pelayanan
+Wakil Kepala Dinas
 `;
 
 function normalizeText(value) {

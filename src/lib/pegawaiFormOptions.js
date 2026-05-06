@@ -10,6 +10,7 @@ import {
 } from "@/lib/pegawaiReferenceOptions";
 
 const PENDIDIKAN_OPTIONS = ["SD", "SMP", "SMA", "D3", "D4", "S1", "S2", "S3", "PROFESI"];
+const JABATAN_ORB_FALLBACK_OPTIONS = ["Wakil Kepala Dinas"];
 
 function normalizeText(value) {
   return String(value || "").trim();
@@ -42,7 +43,7 @@ export async function getPegawaiFormOptions() {
   const [pegawaiRows, ukpdRows] = await Promise.all([getPegawaiData(), getUkpdData()]);
 
   const statusRumpunOptions = uniqueSorted(pegawaiRows.map((item) => item.status_rumpun));
-  const jabatanOrbOptions = uniqueSorted(pegawaiRows.map((item) => item.nama_jabatan_orb));
+  const jabatanOrbOptions = uniqueSorted([...JABATAN_ORB_FALLBACK_OPTIONS, ...pegawaiRows.map((item) => item.nama_jabatan_orb)]);
   const ukpdOptions = uniqueSorted(ukpdRows.map((item) => item.nama_ukpd));
   const pendidikanOptions = uniqueSorted([...PENDIDIKAN_OPTIONS, ...pegawaiRows.map((item) => normalizeUpper(item.jenjang_pendidikan))]);
 

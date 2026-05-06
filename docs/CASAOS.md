@@ -7,8 +7,11 @@ Deployment ini hanya untuk SI Kepegawaian:
 - App container: `sisdmk2-app`
 - App folder: `/DATA/AppData/si-kepegawaian`
 - Database utama: `si_data`
-- PostgreSQL existing: `pasir-postgres`
+- PostgreSQL existing: `pasarkita-postgres`
+- PostgreSQL admin/user existing: `pasarkita`
 - Docker network: `sisdmk2-network`
+- Domain produksi: `https://dinkes.kepegawaian.media`
+- Port host app: `8091`
 
 PasarKita tidak perlu dideploy ulang dan tidak disentuh oleh script ini.
 
@@ -20,7 +23,16 @@ Jalankan command ini langsung di terminal CasaOS/DietPi sebagai root. Pastikan p
 mkdir -p /DATA/AppData/si-kepegawaian
 cd /DATA/AppData/si-kepegawaian
 curl -fsSL https://raw.githubusercontent.com/Mediachanel/SI_DATA_pgAdmin4/main/scripts/deploy-casaos-github.sh -o deploy-casaos-github.sh
-sh deploy-casaos-github.sh --install-deps --force-env --app-origin https://info.kepegawaian.media --postgres-container pasir-postgres
+sh deploy-casaos-github.sh \
+  --install-deps \
+  --force-env \
+  --app-port 8091 \
+  --app-origin https://dinkes.kepegawaian.media \
+  --postgres-container pasarkita-postgres \
+  --postgres-admin-user pasarkita \
+  --postgres-user pasarkita \
+  --postgres-password 'PASSWORD_POSTGRES_PASARKITA' \
+  --postgres-database si_data
 ```
 
 Jika `curl` belum ada:
@@ -37,6 +49,41 @@ docker compose -f docker-compose.casaos.yml up -d --build
 docker exec sisdmk2-app npm run check:postgres
 ```
 
+## Konfigurasi Server Saat Ini
+
+Server CasaOS/DietPi yang dipakai saat ini memiliki container database:
+
+```text
+pasarkita-postgres
+```
+
+Env PostgreSQL container tersebut:
+
+```text
+POSTGRES_DB=pasarkita
+POSTGRES_USER=pasarkita
+POSTGRES_PASSWORD=PASSWORD_POSTGRES_PASARKITA
+```
+
+Aplikasi SI Kepegawaian tetap memakai database PostgreSQL sendiri bernama `si_data` di container PostgreSQL yang sama. Script deploy akan membuat/cek database `si_data` dengan user `pasarkita`. Database `pasarkita` milik aplikasi PasarKita tidak dihapus.
+
+Untuk melihat env PostgreSQL di server:
+
+```bash
+docker inspect pasarkita-postgres --format '{{range .Config.Env}}{{println .}}{{end}}' | grep -E 'POSTGRES|PG'
+```
+
+Catatan penting: container lama `sikepeg-api` memakai MariaDB/MySQL, bukan PostgreSQL:
+
+```text
+DB_HOST=host.docker.internal
+DB_NAME=sisdmk2
+DB_PORT=3306
+DB_USER=root
+```
+
+Jangan memakai env `DB_*` untuk app baru ini. App Next.js baru membaca env `POSTGRES_*`.
+
 ## Restore Data `si_data`
 
 Karena data pegawai tidak berasal dari seed dummy di repo, upload dump lokal `si_data.pg16.sql.tgz` lewat File Manager CasaOS dulu. Misalnya file berada di `/DATA/Downloads/si_data.pg16.sql.tgz`.
@@ -47,8 +94,13 @@ Lalu jalankan deploy sekaligus restore:
 cd /DATA/AppData/si-kepegawaian
 sh deploy-casaos-github.sh \
   --force-env \
-  --app-origin https://info.kepegawaian.media \
-  --postgres-container pasir-postgres \
+  --app-port 8091 \
+  --app-origin https://dinkes.kepegawaian.media \
+  --postgres-container pasarkita-postgres \
+  --postgres-admin-user pasarkita \
+  --postgres-user pasarkita \
+  --postgres-password 'PASSWORD_POSTGRES_PASARKITA' \
+  --postgres-database si_data \
   --restore-dump /DATA/Downloads/si_data.pg16.sql.tgz
 ```
 
@@ -66,7 +118,7 @@ Jangan restore `pasar_kita` untuk alur ini, karena database PasarKita sudah ada 
 docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 docker logs --tail 80 sisdmk2-app
 docker exec sisdmk2-app npm run check:postgres
-docker exec -it pasir-postgres psql -U postgres -d si_data -c "\dt"
+docker exec -it pasarkita-postgres psql -U pasarkita -d si_data -c "\dt"
 ```
 
 ## Deploy Ulang Tanpa Restore
@@ -75,7 +127,15 @@ Untuk update kode berikutnya setelah push ke GitHub:
 
 ```bash
 cd /DATA/AppData/si-kepegawaian
-sh deploy-casaos-github.sh --app-origin https://info.kepegawaian.media --postgres-container pasir-postgres
+sh deploy-casaos-github.sh \
+  --force-env \
+  --app-port 8091 \
+  --app-origin https://dinkes.kepegawaian.media \
+  --postgres-container pasarkita-postgres \
+  --postgres-admin-user pasarkita \
+  --postgres-user pasarkita \
+  --postgres-password 'PASSWORD_POSTGRES_PASARKITA' \
+  --postgres-database si_data
 ```
 
 Jika ingin menjalankan Docker Compose manual dari folder app, pastikan env CasaOS ikut dibaca. Tanpa env file ini, compose bisa gagal dengan pesan `POSTGRES_PASSWORD is missing`.
@@ -94,23 +154,66 @@ Jika container PostgreSQL CasaOS tidak punya role `postgres`, jalankan dengan us
 
 ```bash
 sh deploy-casaos-github.sh \
-  --postgres-container pasir-postgres \
+  --postgres-container pasarkita-postgres \
   --postgres-admin-user NAMA_USER_ADMIN \
   --postgres-user NAMA_USER_APP \
   --postgres-password 'PASSWORD_USER_APP' \
   --force-env \
-  --app-origin https://info.kepegawaian.media
+  --app-port 8091 \
+  --app-origin https://dinkes.kepegawaian.media
 ```
 
 ## Cloudflare Tunnel
 
-Jika memakai domain `info.kepegawaian.media`, arahkan ingress Cloudflare Tunnel ke port host aplikasi:
+Jika memakai domain `dinkes.kepegawaian.media`, arahkan ingress Cloudflare Tunnel ke port host aplikasi:
 
 ```yaml
 ingress:
-  - hostname: info.kepegawaian.media
-    service: http://localhost:3000
+  - hostname: dinkes.kepegawaian.media
+    service: http://172.31.254.202:8091
   - service: http_status:404
 ```
 
-Jika Anda memilih `--app-port 8080`, service tunnel harus menjadi `http://localhost:8080`.
+Jika IP CasaOS berubah, sesuaikan bagian `172.31.254.202`. Jika menjalankan tunnel di host yang sama, `service` juga bisa diarahkan ke `http://localhost:8091`.
+
+## Troubleshooting Build CasaOS
+
+Jika build sukses tetapi container gagal dibuat karena nama sudah dipakai:
+
+```text
+Conflict. The container name "/sisdmk2-app" is already in use
+```
+
+Hapus container app lama lalu deploy ulang:
+
+```bash
+docker rm -f sisdmk2-app
+cd /DATA/AppData/si-kepegawaian
+sh deploy-casaos-github.sh \
+  --force-env \
+  --app-port 8091 \
+  --app-origin https://dinkes.kepegawaian.media \
+  --postgres-container pasarkita-postgres \
+  --postgres-admin-user pasarkita \
+  --postgres-user pasarkita \
+  --postgres-password 'PASSWORD_POSTGRES_PASARKITA' \
+  --postgres-database si_data
+```
+
+Jika gagal karena port `3000` sudah dipakai, gunakan `--app-port 8091` seperti command di atas.
+
+Jika muncul:
+
+```text
+getaddrinfo ENOTFOUND pasir-postgres
+```
+
+Berarti nama container database salah. Server ini memakai `pasarkita-postgres`.
+
+Jika muncul:
+
+```text
+password authentication failed for user "postgres"
+```
+
+Berarti user PostgreSQL salah. Server ini memakai user `pasarkita`, bukan `postgres`.

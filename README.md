@@ -67,13 +67,31 @@ Alur ini mengikuti pola PasarKita: jalankan script dari terminal CasaOS/DietPi, 
 mkdir -p /DATA/AppData/si-kepegawaian
 cd /DATA/AppData/si-kepegawaian
 curl -fsSL https://raw.githubusercontent.com/Mediachanel/SI_DATA_pgAdmin4/main/scripts/deploy-casaos-github.sh -o deploy-casaos-github.sh
-sh deploy-casaos-github.sh --install-deps --force-env --app-origin https://info.kepegawaian.media --postgres-container pasir-postgres
+sh deploy-casaos-github.sh \
+  --install-deps \
+  --force-env \
+  --app-port 8091 \
+  --app-origin https://dinkes.kepegawaian.media \
+  --postgres-container pasarkita-postgres \
+  --postgres-admin-user pasarkita \
+  --postgres-user pasarkita \
+  --postgres-password 'PASSWORD_POSTGRES_PASARKITA' \
+  --postgres-database si_data
 ```
 
 Jika dump `si_data.pg16.sql.tgz` sudah di-upload ke CasaOS, deploy sekaligus restore:
 
 ```bash
-sh deploy-casaos-github.sh --force-env --app-origin https://info.kepegawaian.media --postgres-container pasir-postgres --restore-dump /DATA/Downloads/si_data.pg16.sql.tgz
+sh deploy-casaos-github.sh \
+  --force-env \
+  --app-port 8091 \
+  --app-origin https://dinkes.kepegawaian.media \
+  --postgres-container pasarkita-postgres \
+  --postgres-admin-user pasarkita \
+  --postgres-user pasarkita \
+  --postgres-password 'PASSWORD_POSTGRES_PASARKITA' \
+  --postgres-database si_data \
+  --restore-dump /DATA/Downloads/si_data.pg16.sql.tgz
 ```
 
 Detail lengkap ada di [CasaOS Deployment](docs/CASAOS.md).

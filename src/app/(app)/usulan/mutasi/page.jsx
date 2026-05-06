@@ -91,6 +91,16 @@ function optionsWithCurrent(options, current) {
   return uniqueOptions([...options, current]);
 }
 
+async function parseApiResponse(response, fallbackMessage) {
+  const contentType = response.headers.get("content-type") || "";
+  if (contentType.includes("application/json")) {
+    return response.json();
+  }
+  const text = await response.text().catch(() => "");
+  const summary = text.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().slice(0, 180);
+  throw new Error(summary || fallbackMessage);
+}
+
 function getPegawaiJabatan(item) {
   return item?.nama_jabatan_menpan || item?.nama_jabatan_orb || item?.jabatan || "";
 }
@@ -609,7 +619,7 @@ export default function UsulanMutasiPage() {
     const timer = setTimeout(async () => {
       try {
         const response = await fetch(`/api/pegawai?nrk=${encodeURIComponent(nrk)}&pageSize=10`, { cache: "no-store" });
-        const payload = await response.json();
+        const payload = await parseApiResponse(response, "Pencarian pegawai gagal.");
         if (!response.ok || !payload.success) throw new Error(payload.message || "Data pegawai gagal dicari.");
         const pegawai = (payload.data?.rows || []).find((item) => normalizeText(item.nrk) === nrk);
         if (cancelled) return;
@@ -755,7 +765,7 @@ export default function UsulanMutasiPage() {
         method: "POST",
         body: formData
       });
-      const payload = await response.json();
+      const payload = await parseApiResponse(response, "Dokumen checklist gagal diunggah.");
       if (!response.ok || !payload.success) throw new Error(payload.message || "Dokumen checklist gagal diunggah.");
       latestItem = payload.data;
     }
@@ -796,7 +806,7 @@ export default function UsulanMutasiPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(panelMode === "edit" ? { id: activeId, ...sanitizeFormPayload() } : sanitizeFormPayload())
       });
-      const payload = await response.json();
+      const payload = await parseApiResponse(response, "Usulan mutasi gagal disimpan.");
       if (!response.ok || !payload.success) throw new Error(payload.message || "Usulan mutasi gagal disimpan.");
       const uploadedItem = await uploadPendingDocuments(payload.data.id, pendingFormFiles);
       updateRow(uploadedItem || payload.data);
@@ -819,7 +829,7 @@ export default function UsulanMutasiPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, status, keterangan, verif_checklist })
       });
-      const payload = await response.json();
+      const payload = await parseApiResponse(response, "Verifikasi usulan mutasi gagal disimpan.");
       if (!response.ok || !payload.success) throw new Error(payload.message || "Verifikasi usulan mutasi gagal disimpan.");
       updateRow(payload.data);
       closePanel();
@@ -847,7 +857,7 @@ export default function UsulanMutasiPage() {
         method: "POST",
         body: formData
       });
-      const payload = await response.json();
+      const payload = await parseApiResponse(response, "Dokumen checklist gagal diunggah.");
       if (!response.ok || !payload.success) throw new Error(payload.message || "Dokumen checklist gagal diunggah.");
       updateRow(payload.data);
       setVerifyForm((current) => ({
@@ -872,7 +882,7 @@ export default function UsulanMutasiPage() {
       if (!response.ok) {
         let message = "Cetak form pertimbangan mutasi gagal dibuat.";
         try {
-          const payload = await response.json();
+          const payload = await parseApiResponse(response, "Cetak pertimbangan mutasi gagal dibuat.");
           message = payload.message || message;
         } catch {
           // Use the default message when the response is not JSON.

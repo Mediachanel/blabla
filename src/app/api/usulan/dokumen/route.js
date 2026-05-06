@@ -5,6 +5,7 @@ import { ROLES } from "@/lib/constants/roles";
 import { requireAuth } from "@/lib/auth/requireAuth";
 import { fail, ok } from "@/lib/helpers/response";
 import { getConnectedPool } from "@/lib/db/postgres";
+import { ensureUsulanSchema } from "@/lib/db/ensureUsulanSchema";
 import {
   CHECKLIST_DOCUMENT_MAX_BYTES,
   getChecklistLabels,
@@ -136,6 +137,7 @@ export async function GET(request) {
   }
 
   const pool = await getConnectedPool();
+  await ensureUsulanSchema(pool);
   const current = await ensureAccessibleItem(pool, user, type, id);
   if (!current) return fail("Usulan tidak ditemukan atau tidak dapat diakses.", 404);
 
@@ -204,6 +206,7 @@ export async function POST(request) {
   }
 
   const pool = await getConnectedPool();
+  await ensureUsulanSchema(pool);
   const current = await ensureAccessibleItem(pool, user, type, id);
   if (!current) return fail("Usulan tidak ditemukan atau tidak dapat diakses.", 404);
 

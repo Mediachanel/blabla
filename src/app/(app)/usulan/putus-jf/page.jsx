@@ -86,6 +86,16 @@ function optionsWithCurrent(options, current) {
   return uniqueOptions([...options, current]);
 }
 
+async function parseApiResponse(response, fallbackMessage) {
+  const contentType = response.headers.get("content-type") || "";
+  if (contentType.includes("application/json")) {
+    return response.json();
+  }
+  const text = await response.text().catch(() => "");
+  const summary = text.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().slice(0, 180);
+  throw new Error(summary || fallbackMessage);
+}
+
 function getPegawaiJabatan(item) {
   return item?.nama_jabatan_menpan || item?.nama_jabatan_orb || item?.jabatan || "";
 }
@@ -567,7 +577,7 @@ export default function UsulanPutusJfPage() {
     const timer = setTimeout(async () => {
       try {
         const response = await fetch(`/api/pegawai?nrk=${encodeURIComponent(nrk)}&pageSize=10`, { cache: "no-store" });
-        const payload = await response.json();
+        const payload = await parseApiResponse(response, "Pencarian pegawai gagal.");
         if (!response.ok || !payload.success) throw new Error(payload.message || "Data pegawai gagal dicari.");
         const pegawai = (payload.data?.rows || []).find((item) => normalizeText(item.nrk) === nrk);
         if (cancelled) return;
@@ -709,7 +719,7 @@ export default function UsulanPutusJfPage() {
         method: "POST",
         body: formData
       });
-      const payload = await response.json();
+      const payload = await parseApiResponse(response, "Dokumen checklist gagal diunggah.");
       if (!response.ok || !payload.success) throw new Error(payload.message || "Dokumen checklist gagal diunggah.");
       latestItem = payload.data;
     }
@@ -740,7 +750,7 @@ export default function UsulanPutusJfPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(panelMode === "edit" ? { id: activeId, ...payloadBody } : payloadBody)
       });
-      const payload = await response.json();
+      const payload = await parseApiResponse(response, "Usulan putus JF gagal disimpan.");
       if (!response.ok || !payload.success) throw new Error(payload.message || "Usulan putus JF gagal disimpan.");
       const uploadedItem = await uploadPendingDocuments(payload.data.id, pendingFormFiles);
       updateRow(uploadedItem || payload.data);
@@ -763,7 +773,7 @@ export default function UsulanPutusJfPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, status, keterangan, verif_checklist })
       });
-      const payload = await response.json();
+      const payload = await parseApiResponse(response, "Verifikasi usulan putus JF gagal disimpan.");
       if (!response.ok || !payload.success) throw new Error(payload.message || "Verifikasi usulan putus JF gagal disimpan.");
       updateRow(payload.data);
       closePanel();
@@ -786,7 +796,7 @@ export default function UsulanPutusJfPage() {
         let message = "Cetak usulan putus JF gagal dibuat.";
         const contentType = response.headers.get("Content-Type") || "";
         if (contentType.includes("application/json")) {
-          const payload = await response.json();
+          const payload = await parseApiResponse(response, "Cetak usulan putus JF gagal dibuat.");
           message = payload.message || message;
         }
         throw new Error(message);
@@ -825,7 +835,7 @@ export default function UsulanPutusJfPage() {
         method: "POST",
         body: formData
       });
-      const payload = await response.json();
+      const payload = await parseApiResponse(response, "Dokumen checklist gagal diunggah.");
       if (!response.ok || !payload.success) throw new Error(payload.message || "Dokumen checklist gagal diunggah.");
       updateRow(payload.data);
       setVerifyForm((current) => ({

@@ -3,6 +3,7 @@ import { ROLES } from "@/lib/constants/roles";
 import { requireAuth } from "@/lib/auth/requireAuth";
 import { fail, ok } from "@/lib/helpers/response";
 import { getConnectedPool } from "@/lib/db/postgres";
+import { ensureUsulanSchema } from "@/lib/db/ensureUsulanSchema";
 
 const textField = z.string().optional().default("");
 const nullableNumber = z.union([z.coerce.number(), z.null()]).optional().nullable();
@@ -110,6 +111,7 @@ export async function GET() {
   if (error) return error;
 
   const pool = await getConnectedPool();
+  await ensureUsulanSchema(pool);
   const scope = buildScopeClause("s", user);
   const [rows] = await pool.query(
     `SELECT s.*
@@ -133,6 +135,7 @@ export async function POST(request) {
   }
 
   const pool = await getConnectedPool();
+  await ensureUsulanSchema(pool);
   const data = {
     ...parsed.data,
     status: "Diusulkan",
@@ -157,6 +160,7 @@ export async function PUT(request) {
   if (!parsed.success) return fail("Validasi pembaruan usulan putus JF gagal.", 422, parsed.error.flatten());
 
   const pool = await getConnectedPool();
+  await ensureUsulanSchema(pool);
   const current = await ensureAccessibleItem(pool, user, parsed.data.id);
   if (!current) return fail("Usulan putus JF tidak ditemukan atau tidak dapat diakses.", 404);
 

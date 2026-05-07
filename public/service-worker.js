@@ -1,4 +1,4 @@
-const CACHE_NAME = "sikepeg-pwa-v1";
+const CACHE_NAME = "sikepeg-pwa-v2";
 
 const PRECACHE_URLS = [
   "/",
@@ -42,6 +42,10 @@ self.addEventListener("fetch", (event) => {
   }
 
   if (url.pathname.startsWith("/api/")) {
+    return;
+  }
+
+  if (url.pathname.startsWith("/_next/")) {
     return;
   }
 

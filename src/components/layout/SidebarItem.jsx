@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { ChevronDown } from "lucide-react";
 
-export default function SidebarItem({ item, collapsed, onNavigate }) {
+export default function SidebarItem({ item, collapsed, onNavigate, drawer = false }) {
   const pathname = usePathname();
   const router = useRouter();
   const Icon = item.icon;
@@ -14,17 +14,17 @@ export default function SidebarItem({ item, collapsed, onNavigate }) {
     return (
       <div>
         <div
-          className={`flex min-h-10 items-center rounded-md text-[13px] font-semibold leading-tight transition ${collapsed ? "justify-center px-2 py-2" : "gap-3 px-3 py-2.5"} ${active ? "bg-dinkes-500 text-white shadow-button" : "text-slate-600 hover:bg-slate-50"}`}
+          className={`flex min-h-11 items-center rounded-xl text-[13px] font-semibold leading-tight transition ${drawer ? "gap-3 px-3 py-2.5" : "md:justify-center md:px-2 md:py-2.5 lg:justify-start"} ${collapsed ? "lg:justify-center lg:px-2 lg:py-2.5" : drawer ? "" : "lg:gap-3 lg:px-3 lg:py-2.5"} ${active ? "bg-dinkes-600 text-white shadow-button" : "text-slate-600 hover:bg-dinkes-50 hover:text-dinkes-800"}`}
           title={collapsed ? item.label : undefined}
         >
           <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
-          {!collapsed ? <span className="min-w-0 flex-1">{item.label}</span> : null}
-          {!collapsed ? <ChevronDown className={`h-4 w-4 transition ${active ? "text-white/80" : "text-dinkes-500"}`} aria-hidden="true" /> : null}
+          {!collapsed ? <span className={`${drawer ? "block" : "hidden lg:block"} min-w-0 flex-1`}>{item.label}</span> : null}
+          {!collapsed ? <ChevronDown className={`${drawer ? "block" : "hidden lg:block"} h-4 w-4 transition ${active ? "text-white/80" : "text-dinkes-500"}`} aria-hidden="true" /> : null}
         </div>
         {!collapsed ? (
-          <div className="mt-1.5 space-y-1 rounded-md bg-[#f5f7fb] py-2 pl-4 pr-2">
+          <div className="mt-1.5 hidden space-y-1 rounded-xl bg-slate-50 py-2 pl-4 pr-2 lg:block">
             {item.children.map((child) => (
-              <SidebarItem key={child.href} item={child} collapsed={false} onNavigate={onNavigate} />
+              <SidebarItem key={child.href} item={child} collapsed={false} onNavigate={onNavigate} drawer={drawer} />
             ))}
           </div>
         ) : null}
@@ -35,14 +35,14 @@ export default function SidebarItem({ item, collapsed, onNavigate }) {
   const content = (
     <>
       <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
-      {!collapsed ? <span>{item.label}</span> : null}
+      {!collapsed ? <span className={drawer ? "" : "hidden lg:inline"}>{item.label}</span> : null}
     </>
   );
 
   if (item.action === "logout") {
     return (
       <button
-        className={`flex min-h-10 w-full items-center rounded-md text-left text-[13px] font-medium leading-tight text-slate-600 transition hover:bg-slate-100 focus-ring ${collapsed ? "justify-center px-2 py-2" : "gap-3 px-3 py-2.5"}`}
+        className={`flex min-h-11 w-full items-center rounded-xl text-left text-[13px] font-medium leading-tight text-slate-600 transition hover:bg-slate-100 focus-ring ${drawer ? "gap-3 px-3 py-2.5" : "md:justify-center md:px-2 md:py-2.5 lg:justify-start"} ${collapsed ? "lg:justify-center lg:px-2 lg:py-2.5" : drawer ? "" : "lg:gap-3 lg:px-3 lg:py-2.5"}`}
         type="button"
         title={collapsed ? item.label : undefined}
         onClick={async () => {
@@ -61,7 +61,7 @@ export default function SidebarItem({ item, collapsed, onNavigate }) {
       onClick={onNavigate}
       href={item.href}
       title={collapsed ? item.label : undefined}
-      className={`flex min-h-10 items-center rounded-md text-[13px] font-medium leading-tight transition focus-ring ${collapsed ? "justify-center px-2 py-2" : "gap-3 px-3 py-2.5"} ${active ? "bg-dinkes-500 text-white shadow-button" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"}`}
+      className={`flex min-h-11 items-center rounded-xl text-[13px] font-medium leading-tight transition focus-ring ${drawer ? "gap-3 px-3 py-2.5" : "md:justify-center md:px-2 md:py-2.5 lg:justify-start"} ${collapsed ? "lg:justify-center lg:px-2 lg:py-2.5" : drawer ? "" : "lg:gap-3 lg:px-3 lg:py-2.5"} ${active ? "bg-dinkes-600 text-white shadow-button" : "text-slate-600 hover:bg-dinkes-50 hover:text-dinkes-800"}`}
     >
       {content}
     </Link>

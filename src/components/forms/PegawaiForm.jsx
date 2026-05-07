@@ -900,12 +900,12 @@ function InputField({ name, register, error, touched, dirty, options = [], requi
   ].join(" ");
 
   return (
-    <label className="space-y-2">
-      <div className="flex items-center gap-2">
-        <span className="label">{labels[name] || name}</span>
+    <label className="min-w-0 space-y-2">
+      <div className="flex min-w-0 flex-wrap items-center gap-2">
+        <span className="label min-w-0 break-words">{labels[name] || name}</span>
         {required ? <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-rose-700">Wajib</span> : null}
       </div>
-      <div className="relative">
+      <div className="relative min-w-0">
         {options.length ? (
           <select className={sharedClassName} disabled={disabled} {...register(name)}>
             <option value="">{`Pilih ${String(labels[name] || name).toLowerCase()}`}</option>
@@ -945,7 +945,7 @@ function AddressCard({
   ];
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+    <div className="min-w-0 rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
       <div className="mb-4">
         <h4 className="text-sm font-semibold text-slate-900">{title}</h4>
         <p className="mt-1 text-xs leading-5 text-slate-500">{helperTexts.alamat}</p>
@@ -965,9 +965,9 @@ function AddressCard({
           const selectedValue = values?.[codeField] || "";
           const isValid = Boolean((touchedFields?.[codeField] || dirtyFields?.[codeField]) && !errors?.[codeField] && selectedValue);
           return (
-            <label key={level.key} className="space-y-2">
+            <label key={level.key} className="min-w-0 space-y-2">
               <span className="label">{level.label}</span>
-              <div className="relative">
+              <div className="relative min-w-0">
                 <select
                   className={[
                     "input",
@@ -1004,17 +1004,17 @@ function RepeatableAccordion({ section, control, register, formState, referenceO
   }, [hasSectionError]);
 
   return (
-    <div className={`rounded-2xl border bg-white ${hasSectionError ? "border-rose-300" : "border-slate-200"}`}>
+    <div className={`min-w-0 rounded-2xl border bg-white ${hasSectionError ? "border-rose-300" : "border-slate-200"}`}>
       <button
         type="button"
-        className="flex w-full items-start justify-between gap-4 px-4 py-4 text-left"
+        className="flex w-full flex-col gap-3 px-4 py-4 text-left sm:flex-row sm:items-start sm:justify-between"
         onClick={() => setOpen((current) => !current)}
       >
-        <div>
+        <div className="min-w-0">
           <h4 className="text-sm font-semibold text-slate-900">{section.title}</h4>
           <p className="mt-1 text-xs leading-5 text-slate-500">{section.description}</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
           {hasSectionError ? (
             <span className="rounded-full bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700">Perlu diperbaiki</span>
           ) : null}
@@ -1035,9 +1035,9 @@ function RepeatableAccordion({ section, control, register, formState, referenceO
           {fields.length ? (
             <div className="space-y-4">
               {fields.map((field, index) => (
-                <div key={field.id} className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
-                  <div className="mb-4 flex items-center justify-between gap-3">
-                    <div>
+                <div key={field.id} className="min-w-0 rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+                  <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="min-w-0">
                       <p className="text-sm font-semibold text-slate-900">{section.title} #{index + 1}</p>
                       <p className="text-xs text-slate-500">Isi hanya data yang memang dibutuhkan.</p>
                     </div>
@@ -1613,12 +1613,12 @@ export default function PegawaiForm({ initialData, mode = "create" }) {
           header={<Stepper steps={stepConfig} activeStep={activeStep} onStepChange={goToStep} />}
           body={activeStepNode}
           footer={
-            <div className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 backdrop-blur">
-              <div className="mx-auto flex max-w-[1400px] flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between lg:px-8">
+          <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-etpp md:fixed md:inset-x-0 md:bottom-0 md:z-30 md:rounded-none md:border-x-0 md:border-b-0 md:bg-white/95 md:shadow-[0_-12px_30px_rgba(15,23,42,0.08)] md:backdrop-blur">
+              <div className="mx-auto flex max-w-[1400px] flex-col gap-3 md:px-4 md:py-3 sm:flex-row sm:items-center sm:justify-between lg:px-8">
                 <div className="text-sm text-slate-500">
                   {draftSavedAt ? `Draft tersimpan otomatis: ${formatSavedAt(draftSavedAt)}` : "Draft belum disimpan."}
                 </div>
-                <div className="flex flex-wrap items-center justify-end gap-3">
+                <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center sm:justify-end sm:gap-3">
                   <button type="button" className="btn-secondary" onClick={() => router.back()}>
                     Batal
                   </button>

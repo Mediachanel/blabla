@@ -14,7 +14,9 @@ export async function GET(request) {
     q: searchParams.get("q") || "",
     status: searchParams.get("status") || "",
     wilayah: searchParams.get("wilayah") || "",
-    ukpd: searchParams.get("ukpd") || ""
+    ukpd: searchParams.get("ukpd") || "",
+    jabatan: searchParams.get("jabatan") || "",
+    rumpun: searchParams.get("rumpun") || ""
   });
   const buffer = await buildPegawaiExportWorkbook({ rows });
   const date = new Date().toISOString().slice(0, 10);

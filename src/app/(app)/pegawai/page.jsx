@@ -20,6 +20,9 @@ export default function PegawaiPage() {
   const [rows, setRows] = useState([]);
   const [totalRows, setTotalRows] = useState(0);
   const [ukpdOptions, setUkpdOptions] = useState([]);
+  const [jabatanOptions, setJabatanOptions] = useState([]);
+  const [rumpunOptions, setRumpunOptions] = useState([]);
+  const [filterAccess, setFilterAccess] = useState({ canFilterWilayah: true, canFilterUkpd: true });
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
@@ -27,6 +30,8 @@ export default function PegawaiPage() {
   const [status, setStatus] = useState("");
   const [wilayah, setWilayah] = useState("");
   const [ukpd, setUkpd] = useState("");
+  const [jabatan, setJabatan] = useState("");
+  const [rumpun, setRumpun] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -35,7 +40,7 @@ export default function PegawaiPage() {
 
   useEffect(() => {
     const controller = new AbortController();
-    const params = new URLSearchParams({ q: search, status, wilayah, ukpd, page: String(page), pageSize: String(pageSize) });
+    const params = new URLSearchParams({ q: search, status, wilayah, ukpd, jabatan, rumpun, page: String(page), pageSize: String(pageSize) });
     setLoading(true);
     setErrorMessage("");
     fetch(`/api/pegawai?${params}`, { signal: controller.signal })
@@ -45,7 +50,14 @@ export default function PegawaiPage() {
         const data = payload.data || {};
         setRows(data.rows || []);
         setTotalRows(data.total || 0);
-        setUkpdOptions(data.filters?.ukpdOptions || []);
+        const filters = data.filters || {};
+        setUkpdOptions(filters.ukpdOptions || []);
+        setJabatanOptions(filters.jabatanOptions || []);
+        setRumpunOptions(filters.rumpunOptions || []);
+        setFilterAccess({
+          canFilterWilayah: filters.canFilterWilayah !== false,
+          canFilterUkpd: filters.canFilterUkpd !== false
+        });
       })
       .catch((error) => {
         if (error.name !== "AbortError") {
@@ -58,10 +70,10 @@ export default function PegawaiPage() {
         if (!controller.signal.aborted) setLoading(false);
       });
     return () => controller.abort();
-  }, [search, status, wilayah, ukpd, page, pageSize, refreshKey]);
+  }, [search, status, wilayah, ukpd, jabatan, rumpun, page, pageSize, refreshKey]);
 
   const maxPage = Math.max(1, Math.ceil(totalRows / pageSize));
-  const hasActiveFilters = Boolean(search || status || wilayah || ukpd);
+  const hasActiveFilters = Boolean(search || status || wilayah || ukpd || jabatan || rumpun);
 
   async function removePegawai() {
     setDeleteLoading(true);
@@ -88,7 +100,7 @@ export default function PegawaiPage() {
     setExportLoading(true);
     setErrorMessage("");
     try {
-      const params = new URLSearchParams({ q: search, status, wilayah, ukpd });
+      const params = new URLSearchParams({ q: search, status, wilayah, ukpd, jabatan, rumpun });
       const response = await fetch(`/api/pegawai/export?${params}`);
       if (!response.ok) {
         const payload = await response.json().catch(() => null);
@@ -126,7 +138,7 @@ export default function PegawaiPage() {
         description="Kelola data pegawai dengan filter berbasis role. Admin wilayah dan UKPD tetap dibatasi oleh API."
         breadcrumbs={[{ label: "Data Pegawai" }]}
         action={
-          <div className="flex flex-wrap gap-2">
+          <div className="grid gap-2 sm:flex sm:flex-wrap sm:justify-end">
             <button className="btn-secondary" type="button" onClick={exportPegawai} disabled={exportLoading}>
               <Download className="h-4 w-4" />
               {exportLoading ? "Mengekspor..." : "Export Excel"}
@@ -140,8 +152,10 @@ export default function PegawaiPage() {
         onSearch={(value) => { setSearch(value); setPage(1); }}
         filters={[
           { name: "status", label: "Semua status", value: status, onChange: (value) => { setStatus(value); setPage(1); }, options: JENIS_PEGAWAI_OPTIONS },
-          { name: "wilayah", label: "Semua wilayah", value: wilayah, onChange: (value) => { setWilayah(value); setPage(1); }, options: WILAYAH },
-          { name: "ukpd", label: "Semua UKPD", value: ukpd, onChange: (value) => { setUkpd(value); setPage(1); }, options: ukpdOptions }
+          ...(filterAccess.canFilterWilayah ? [{ name: "wilayah", label: "Semua wilayah", value: wilayah, onChange: (value) => { setWilayah(value); setPage(1); }, options: WILAYAH }] : []),
+          ...(filterAccess.canFilterUkpd ? [{ name: "ukpd", label: "Semua UKPD", value: ukpd, onChange: (value) => { setUkpd(value); setPage(1); }, options: ukpdOptions }] : []),
+          { name: "jabatan", label: "Semua jabatan", value: jabatan, onChange: (value) => { setJabatan(value); setPage(1); }, options: jabatanOptions },
+          { name: "rumpun", label: "Semua rumpun", value: rumpun, onChange: (value) => { setRumpun(value); setPage(1); }, options: rumpunOptions }
         ]}
         actions={hasActiveFilters ? (
           <button
@@ -152,6 +166,8 @@ export default function PegawaiPage() {
               setStatus("");
               setWilayah("");
               setUkpd("");
+              setJabatan("");
+              setRumpun("");
               setPage(1);
             }}
           >
@@ -172,7 +188,7 @@ export default function PegawaiPage() {
             showNumber
             startNumber={(page - 1) * pageSize + 1}
             actions={(item) => (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center justify-end gap-1 sm:gap-2">
                 <Link className="rounded-lg p-2 text-dinkes-700 hover:bg-dinkes-50 focus-ring" href={`/pegawai/${item.id_pegawai}`} aria-label="Lihat profil" title="Lihat profil"><Eye className="h-4 w-4" /></Link>
                 <Link className="rounded-lg p-2 text-slate-700 hover:bg-slate-100 focus-ring" href={`/pegawai/${item.id_pegawai}/edit`} aria-label="Edit" title="Edit"><Edit className="h-4 w-4" /></Link>
                 <button className="rounded-lg p-2 text-rose-600 hover:bg-rose-50 focus-ring" onClick={() => setDeleteTarget(item)} aria-label="Hapus" title="Hapus"><Trash2 className="h-4 w-4" /></button>
@@ -181,9 +197,9 @@ export default function PegawaiPage() {
           />
         )}
       </div>
-      <footer className="mt-4 flex flex-col gap-3 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
+      <footer className="mt-4 flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-3 text-sm text-slate-600 shadow-etpp sm:flex-row sm:items-center sm:justify-between">
         <span>Menampilkan {rows.length} dari {totalRows} pegawai</span>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="grid gap-2 sm:flex sm:flex-wrap sm:items-center">
           <label className="flex items-center gap-2">
             <span>Per halaman</span>
             <select

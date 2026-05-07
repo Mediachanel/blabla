@@ -81,14 +81,14 @@ export default function ConfirmDeleteModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 grid place-items-center bg-slate-950/40 px-4"
+      className="fixed inset-0 z-50 grid items-end bg-slate-950/40 px-3 pb-3 sm:place-items-center sm:p-4"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget && !loading) onCancel?.();
       }}
     >
       <article
         ref={dialogRef}
-        className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl"
+        className="w-full max-w-md rounded-3xl bg-white p-5 shadow-2xl sm:p-6"
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
@@ -106,7 +106,7 @@ export default function ConfirmDeleteModal({
           </button>
         </div>
         <p id={descriptionId} className="mt-4 text-sm leading-6 text-slate-600">{description}</p>
-        <footer className="mt-6 flex justify-end gap-3">
+        <footer className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
           <button type="button" className="btn-secondary" onClick={onCancel} disabled={loading} data-autofocus>{cancelLabel}</button>
           <button type="button" className={confirmClassName} onClick={onConfirm} disabled={loading}>
             {loading ? (loadingLabel || `${confirmLabel}...`) : confirmLabel}

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Sidebar from "@/components/layout/Sidebar";
 import Topbar from "@/components/layout/Topbar";
 import MobileSidebar from "@/components/layout/MobileSidebar";
+import MobileBottomNav from "@/components/layout/MobileBottomNav";
 
 const IDLE_TIMEOUT_MS = 15 * 60 * 1000;
 const ACTIVITY_EVENTS = ["mousedown", "mousemove", "keydown", "scroll", "touchstart", "click"];
@@ -89,13 +90,14 @@ export default function AppShell({ children }) {
   }
 
   return (
-    <div className="min-h-screen bg-[#f7f8fb] print:bg-white">
+    <div className="min-h-screen bg-[#F6F9FC] print:bg-white">
       <Sidebar user={user} collapsed={collapsed} onToggle={() => setCollapsed((value) => !value)} />
       <MobileSidebar user={user} open={mobileOpen} onClose={() => setMobileOpen(false)} />
-      <div className={`transition-[padding] duration-200 print:pl-0 ${collapsed ? "lg:pl-14" : "lg:pl-[200px]"}`}>
+      <div className={`transition-[padding] duration-200 print:pl-0 md:pl-16 ${collapsed ? "lg:pl-16" : "lg:pl-64"}`}>
         <Topbar user={user} onOpenMenu={() => setMobileOpen(true)} collapsed={collapsed} onToggleSidebar={() => setCollapsed((value) => !value)} />
-        <main className="px-4 py-5 print:p-0 sm:px-6">{children}</main>
+        <main className="mx-auto w-full max-w-[1600px] px-4 pb-28 pt-4 print:p-0 sm:px-6 md:pb-8 lg:px-8">{children}</main>
       </div>
+      <MobileBottomNav user={user} />
     </div>
   );
 }

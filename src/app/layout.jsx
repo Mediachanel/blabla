@@ -26,6 +26,21 @@ export default function RootLayout({ children }) {
             __html: `
               if ("serviceWorker" in navigator) {
                 window.addEventListener("load", function () {
+                  if (["localhost", "127.0.0.1"].includes(window.location.hostname)) {
+                    navigator.serviceWorker.getRegistrations().then(function (registrations) {
+                      registrations.forEach(function (registration) {
+                        registration.unregister();
+                      });
+                    });
+                    if ("caches" in window) {
+                      caches.keys().then(function (keys) {
+                        keys.forEach(function (key) {
+                          caches.delete(key);
+                        });
+                      });
+                    }
+                    return;
+                  }
                   navigator.serviceWorker.register("/service-worker.js").catch(function (error) {
                     console.error("Service worker registration failed:", error);
                   });

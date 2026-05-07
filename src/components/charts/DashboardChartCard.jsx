@@ -1,7 +1,7 @@
 "use client";
 
 import { ArcElement, BarElement, CategoryScale, Chart as ChartJS, Legend, LinearScale, LineController, LineElement, PointElement, Tooltip } from "chart.js";
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Bar, Doughnut } from "react-chartjs-2";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, LineController, LineElement, PointElement, ArcElement, Tooltip, Legend);
@@ -53,6 +53,7 @@ const valueLabelsPlugin = {
   id: "dashboardValueLabels",
   afterDatasetsDraw(chart, _args, pluginOptions = {}) {
     if (pluginOptions.display === false) return;
+    const compact = Boolean(pluginOptions.compact);
     const { ctx, chartArea } = chart;
     const isDoughnut = chart.config.type === "doughnut";
     const horizontal = chart.options.indexAxis === "y";
@@ -84,25 +85,26 @@ const valueLabelsPlugin = {
         const labelRadius = innerRadius + ringWidth * (percent < 5 ? 0.72 : 0.56);
         const labelX = x + Math.cos(angle) * labelRadius;
         const labelY = y + Math.sin(angle) * labelRadius;
-        const fontSize = percent < 5 ? 9 : percent < 10 ? 10 : 11;
+        const fontSize = compact ? 8 : percent < 5 ? 9 : percent < 10 ? 10 : 11;
 
         drawText(ctx, formatNumber(value), labelX, labelY, {
           color: "#0f172a",
-          font: `500 ${fontSize}px Inter, Arial, sans-serif`,
-          stroke: false
+          font: `700 ${fontSize}px Inter, Arial, sans-serif`,
+          stroke: compact,
+          strokeColor: "rgba(255,255,255,0.95)"
         });
       });
 
       const center = meta.data[0]?.getProps(["x", "y"], true);
       if (center && total) {
-        drawText(ctx, "Total", center.x, center.y - 9, {
+        drawText(ctx, "Total", center.x, center.y - (compact ? 6 : 9), {
           color: "#64748b",
-          font: "600 10px Inter, Arial, sans-serif",
+          font: `600 ${compact ? 7 : 10}px Inter, Arial, sans-serif`,
           stroke: false
         });
-        drawText(ctx, formatNumber(total), center.x, center.y + 7, {
+        drawText(ctx, formatNumber(total), center.x, center.y + (compact ? 6 : 7), {
           color: "#0f172a",
-          font: "800 15px Inter, Arial, sans-serif",
+          font: `800 ${compact ? 10 : 15}px Inter, Arial, sans-serif`,
           stroke: false
         });
       }
@@ -129,11 +131,11 @@ const valueLabelsPlugin = {
           const right = Math.max(...bars.map((bar) => bar.x));
           const y = bars[0].y;
           if (right + 4 > chartArea.right + 46) return;
-          drawText(ctx, formatNumber(total), right + 5, y, {
-            align: "left",
-            color: "#334155",
-            font: "700 10px Inter, Arial, sans-serif"
-          });
+        drawText(ctx, formatNumber(total), right + 5, y, {
+          align: "left",
+          color: "#334155",
+          font: `700 ${compact ? 8 : 10}px Inter, Arial, sans-serif`
+        });
         } else {
           const top = Math.min(...bars.map((bar) => bar.y));
           const x = bars[0].x;
@@ -141,7 +143,7 @@ const valueLabelsPlugin = {
           drawText(ctx, formatNumber(total), x, top - 5, {
             baseline: "bottom",
             color: "#334155",
-            font: "700 9px Inter, Arial, sans-serif"
+          font: `700 ${compact ? 8 : 9}px Inter, Arial, sans-serif`
           });
         }
       });
@@ -158,7 +160,7 @@ const valueLabelsPlugin = {
           align: horizontal ? "left" : "center",
           baseline: horizontal ? "middle" : "bottom",
           color: "#334155",
-          font: "700 10px Inter, Arial, sans-serif"
+          font: `700 ${compact ? 8 : 10}px Inter, Arial, sans-serif`
         });
       });
     });
@@ -210,9 +212,19 @@ export default function DashboardChartCard({
   datasets,
   horizontal = false,
   stacked = false,
-  heightClass = "h-72"
+  heightClass = "h-64 sm:h-56"
 }) {
   const chartRef = useRef(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 767px)");
+    const update = () => setIsMobile(media.matches);
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
+
   const flatTotal = values.reduce((sum, value) => sum + Number(value || 0), 0);
   const chartDatasets = datasets?.length
     ? datasets.map((dataset, index) => {
@@ -254,6 +266,7 @@ export default function DashboardChartCard({
     maintainAspectRatio: false,
     plugins: {
       legend: {
+        display: !isMobile,
         position: type === "doughnut" ? "bottom" : "top",
         align: "start",
         labels: {
@@ -284,33 +297,36 @@ export default function DashboardChartCard({
       }
     },
     layout: {
-      padding: {
-        top: type === "bar" ? 20 : 4,
-        right: type === "bar" && horizontal ? 52 : 8
-      }
+      padding: isMobile
+        ? { top: 6, right: 2, left: 0, bottom: 0 }
+        : {
+            top: type === "bar" ? 20 : 4,
+            right: type === "bar" && horizontal ? 52 : 8
+          }
     }
   };
 
   return (
-    <article className="surface p-5">
+    <article className="surface min-w-0 overflow-hidden p-4">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-base font-semibold text-slate-900">{title}</h2>
-        <button className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50" onClick={() => downloadChart(chartRef, title)} type="button">
+        <h2 className="min-w-0 text-base font-bold text-slate-900">{title}</h2>
+        <button className="hidden rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 sm:inline-flex" onClick={() => downloadChart(chartRef, title)} type="button">
           Unduh PNG
         </button>
       </div>
-      <div className={`mt-4 ${heightClass}`} role="img" aria-label={`Grafik ${title}`}>
+      <div className={`mt-3 min-w-0 ${heightClass}`} role="img" aria-label={`Grafik ${title}`}>
         {type === "doughnut" ? (
           <Doughnut
             ref={chartRef}
             data={data}
             options={{
               ...commonOptions,
-              cutout: "55%",
+              cutout: isMobile ? "62%" : "55%",
               plugins: {
                 ...commonOptions.plugins,
-                legend: { ...commonOptions.plugins.legend, position: "bottom", align: "center" },
-                tooltip: commonOptions.plugins.tooltip
+                legend: { ...commonOptions.plugins.legend, display: !isMobile, position: "bottom", align: "center" },
+                tooltip: commonOptions.plugins.tooltip,
+                dashboardValueLabels: { display: true, compact: isMobile }
               }
             }}
             plugins={[valueLabelsPlugin]}
@@ -327,14 +343,38 @@ export default function DashboardChartCard({
                   stacked,
                   beginAtZero: true,
                   grid: { color: "#e5e7eb" },
-                  ticks: { color: "#64748b", font: { size: 10 }, maxRotation: horizontal ? 0 : 55, minRotation: horizontal ? 0 : 55 }
+                  ticks: {
+                    autoSkip: true,
+                    maxTicksLimit: isMobile ? 4 : 8,
+                    color: "#64748b",
+                    font: { size: isMobile ? 9 : 10 },
+                    maxRotation: isMobile ? 0 : (horizontal ? 0 : 55),
+                    minRotation: 0,
+                    callback(value) {
+                      const label = this.getLabelForValue?.(value) ?? value;
+                      return isMobile && String(label).length > 8 ? `${String(label).slice(0, 8)}...` : label;
+                    }
+                  }
                 },
                 y: {
                   stacked,
                   beginAtZero: true,
                   grid: { color: "#e5e7eb" },
-                  ticks: { color: "#64748b", font: { size: 10 } }
+                  ticks: {
+                    autoSkip: true,
+                    maxTicksLimit: isMobile ? 4 : 8,
+                    color: "#64748b",
+                    font: { size: isMobile ? 9 : 10 },
+                    callback(value) {
+                      const label = horizontal && this.getLabelForValue ? this.getLabelForValue(value) : value;
+                      return isMobile && String(label).length > 12 ? `${String(label).slice(0, 12)}...` : label;
+                    }
+                  }
                 }
+              },
+              plugins: {
+                ...commonOptions.plugins,
+                dashboardValueLabels: { display: true, compact: isMobile }
               }
             }}
             plugins={[valueLabelsPlugin]}
@@ -342,13 +382,14 @@ export default function DashboardChartCard({
         )}
       </div>
       {summaryRows.length ? (
-        <div className="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 border-t border-slate-100 pt-3">
+        <div className="mt-3 flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 border-t border-slate-100 pt-3 md:gap-x-4 md:gap-y-2">
           {summaryRows.map((row) => (
-            <div key={row.label} className="inline-flex items-center gap-1.5 text-[11px] text-slate-600">
+            <div key={row.label} className="inline-flex min-w-0 items-center gap-1.5 text-[11px] text-slate-600">
               <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: row.color }} />
-              <span>{row.label}</span>
+              <span className="max-w-24 truncate md:max-w-none">{row.label}</span>
               <span className="font-bold tabular-nums text-slate-900">
-                {formatNumber(row.value)}{row.percent ? ` (${row.percent})` : ""}
+                {formatNumber(row.value)}
+                <span className="hidden sm:inline">{row.percent ? ` (${row.percent})` : ""}</span>
               </span>
             </div>
           ))}

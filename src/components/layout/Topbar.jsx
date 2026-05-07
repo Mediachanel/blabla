@@ -48,13 +48,16 @@ export default function Topbar({ user, onOpenMenu, collapsed, onToggleSidebar })
   const [accountOpen, setAccountOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const searchRef = useRef(null);
+  const mobileSearchRef = useRef(null);
   const accountRef = useRef(null);
   const trimmedQuery = query.trim();
   const resultListId = "topbar-search-results";
 
   useEffect(() => {
     function handlePointerDown(event) {
-      if (!searchRef.current?.contains(event.target)) setOpen(false);
+      const insideDesktopSearch = searchRef.current?.contains(event.target);
+      const insideMobileSearch = mobileSearchRef.current?.contains(event.target);
+      if (!insideDesktopSearch && !insideMobileSearch) setOpen(false);
       if (!accountRef.current?.contains(event.target)) setAccountOpen(false);
     }
 
@@ -151,13 +154,13 @@ export default function Topbar({ user, onOpenMenu, collapsed, onToggleSidebar })
   }
 
   return (
-    <header className="sticky top-0 z-30 border-b border-[#e9edf3] bg-white print:hidden">
-      <div className="flex h-16 items-center justify-between gap-4 px-4 sm:px-6">
-        <div className="flex min-w-0 flex-1 items-center gap-4">
-          <button className="rounded-md bg-[#f5f7fb] p-2.5 text-slate-600 hover:bg-slate-100 focus-ring lg:hidden" onClick={onOpenMenu} aria-label="Buka menu">
+    <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/90 backdrop-blur print:hidden">
+      <div className="flex h-16 items-center gap-2 px-3 sm:px-6 md:justify-between">
+        <button className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 focus-ring md:hidden" onClick={onOpenMenu} aria-label="Buka menu">
             <Menu className="h-5 w-5" />
-          </button>
-          <button className="hidden rounded-md bg-[#f5f7fb] p-2.5 text-slate-600 hover:bg-slate-100 focus-ring lg:inline-flex" onClick={onToggleSidebar} aria-label={collapsed ? "Buka sidebar" : "Tutup sidebar"}>
+        </button>
+        <div className="flex min-w-0 flex-1 items-center gap-4">
+          <button className="hidden rounded-xl bg-slate-100 p-2.5 text-slate-600 hover:bg-slate-200 focus-ring lg:inline-flex" onClick={onToggleSidebar} aria-label={collapsed ? "Buka sidebar" : "Tutup sidebar"}>
             {collapsed ? <PanelLeftOpen className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
           </button>
           <nav className="hidden min-w-0 items-center gap-2 text-sm font-medium md:flex" aria-label="Breadcrumb">
@@ -165,12 +168,12 @@ export default function Topbar({ user, onOpenMenu, collapsed, onToggleSidebar })
             <span className="text-slate-300">/</span>
             <span className="truncate text-slate-600">{breadcrumbFromPath(pathname)}</span>
           </nav>
-          <div className="relative ml-auto hidden w-[26rem] xl:block" ref={searchRef}>
+          <div className="relative ml-auto hidden w-full max-w-xl md:block" ref={searchRef}>
             <label className="sr-only" htmlFor="topbar-search-input">Pencarian cepat</label>
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
             <input
               id="topbar-search-input"
-              className="input h-10 rounded-md border-[#d8dde6] py-2 pl-9 pr-10"
+              className="input h-10 rounded-xl border-slate-200 bg-slate-50 py-2 pl-9 pr-10"
               placeholder="Cari pegawai atau UKPD"
               value={query}
               onChange={(event) => {
@@ -194,7 +197,7 @@ export default function Topbar({ user, onOpenMenu, collapsed, onToggleSidebar })
               </button>
             ) : null}
             {open && trimmedQuery.length >= 2 ? (
-              <div id={resultListId} className="absolute left-0 top-full mt-2 w-[28rem] overflow-hidden rounded-lg border border-slate-200 bg-white shadow-2xl" role="listbox">
+              <div id={resultListId} className="absolute left-0 top-full mt-2 w-full min-w-[28rem] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl" role="listbox">
                 {errorMessage ? (
                   <div className="px-4 py-3 text-sm text-rose-700">{errorMessage}</div>
                 ) : results.length ? (
@@ -229,10 +232,66 @@ export default function Topbar({ user, onOpenMenu, collapsed, onToggleSidebar })
             ) : null}
           </div>
         </div>
-        <div className="flex shrink-0 items-center gap-4">
+        <div className="relative min-w-0 flex-1 md:hidden" ref={mobileSearchRef}>
+          <label className="sr-only" htmlFor="mobile-topbar-search-input">Pencarian cepat</label>
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
+          <input
+            id="mobile-topbar-search-input"
+            className="input h-10 rounded-xl border-slate-200 bg-slate-50 py-2 pl-9 pr-8 text-sm"
+            placeholder="Cari pegawai..."
+            value={query}
+            onChange={(event) => {
+              setQuery(event.target.value);
+              setOpen(true);
+            }}
+            onFocus={() => {
+              if (trimmedQuery.length >= 2) setOpen(true);
+            }}
+            onKeyDown={handleSearchKeyDown}
+            aria-autocomplete="list"
+            aria-controls={`${resultListId}-mobile`}
+            aria-expanded={open}
+          />
+          {query ? (
+            <button type="button" className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 focus-ring" onClick={clearSearch} aria-label="Bersihkan pencarian">
+              <X className="h-4 w-4" />
+            </button>
+          ) : null}
+          {open && trimmedQuery.length >= 2 ? (
+            <div id={`${resultListId}-mobile`} className="absolute inset-x-0 top-full mt-2 max-h-80 overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-2xl" role="listbox">
+              {errorMessage ? (
+                <div className="px-4 py-3 text-sm text-rose-700">{errorMessage}</div>
+              ) : results.length ? (
+                results.map((item, index) => {
+                  const active = index === activeIndex;
+                  return (
+                    <Link
+                      key={item.id_pegawai}
+                      href={`/pegawai/${item.id_pegawai}`}
+                      className={`block px-4 py-3 text-sm transition ${active ? "bg-dinkes-50 text-dinkes-800" : "text-slate-700 hover:bg-slate-50"}`}
+                      role="option"
+                      aria-selected={active}
+                      onClick={closeSearch}
+                    >
+                      <span className="block font-semibold text-slate-950">{item.nama || "-"}</span>
+                      <span className="mt-1 block truncate text-xs text-slate-500">
+                        {item.nip || "Tanpa NIP"} | {primaryPosition(item)} | {item.nama_ukpd || "-"}
+                      </span>
+                    </Link>
+                  );
+                })
+              ) : loading ? (
+                <div className="px-4 py-3 text-sm text-slate-500">Memuat hasil pencarian...</div>
+              ) : (
+                <div className="px-4 py-3 text-sm text-slate-500">Data tidak ditemukan.</div>
+              )}
+            </div>
+          ) : null}
+        </div>
+        <div className="flex shrink-0 items-center gap-2 md:gap-4">
           <span className="hidden text-sm font-medium text-slate-400 md:inline">{formatToday()}</span>
           <span className="hidden h-8 w-px bg-[#e5e7eb] md:block" aria-hidden="true" />
-          <button className="relative rounded-full p-2 text-dinkes-600 hover:bg-dinkes-50 focus-ring" type="button" aria-label="Notifikasi">
+          <button className="relative hidden rounded-full p-2 text-dinkes-600 hover:bg-dinkes-50 focus-ring sm:inline-flex md:inline-flex" type="button" aria-label="Notifikasi">
             <Bell className="h-5 w-5" />
             <span className="absolute right-0 top-0 rounded-full bg-[#f13296] px-1.5 py-0.5 text-[10px] font-bold leading-none text-white">0</span>
           </button>

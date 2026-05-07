@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ChevronLeft, ChevronRight, Download, Eye, Search, SlidersHorizontal } from "lucide-react";
 import PageHeader from "@/components/layout/PageHeader";
 import ErrorState from "@/components/ui/ErrorState";
+import { normalizePangkatGolonganOption } from "@/lib/pegawaiReferenceOptions";
 
 const PANGKAT_RANK = [
   ["IV/e", "iv/e", "pembina utama"],
@@ -111,6 +112,11 @@ function valueOrDash(value) {
   return value || "-";
 }
 
+function formatPangkatGolongan(value) {
+  const normalized = normalizePangkatGolonganOption(value);
+  return valueOrDash(normalized || value);
+}
+
 function rankBadgeClass(number) {
   if (number <= 3) return "bg-govgold-100 text-govgold-700 ring-govgold-300";
   if (number <= 10) return "bg-dinkes-50 text-dinkes-700 ring-dinkes-200";
@@ -140,10 +146,10 @@ function RankBadge({ number }) {
 }
 
 function PangkatBadge({ value }) {
-  const text = valueOrDash(value);
+  const text = formatPangkatGolongan(value);
 
   return (
-    <span className={`inline-flex w-full max-w-[180px] items-center justify-center rounded-md px-3 py-1.5 text-center text-xs font-bold leading-5 ring-1 ${pangkatBadgeClass(value)}`} title={text}>
+    <span className={`inline-flex w-full max-w-[220px] items-center justify-center rounded-md px-3 py-1.5 text-center text-xs font-bold leading-5 ring-1 ${pangkatBadgeClass(value)}`} title={text}>
       <span className="truncate">{text}</span>
     </span>
   );
@@ -404,7 +410,7 @@ export default function DukPage() {
     setPage(1);
   }, [jabatan, pangkat, search, ukpd]);
 
-  const pangkatOptions = useMemo(() => [...new Set(rows.map((item) => item.pangkat_golongan).filter(Boolean))].sort((a, b) => pangkatRank(a) - pangkatRank(b) || a.localeCompare(b, "id")), [rows]);
+  const pangkatOptions = useMemo(() => [...new Set(rows.map((item) => formatPangkatGolongan(item.pangkat_golongan)).filter((item) => item !== "-"))].sort((a, b) => pangkatRank(a) - pangkatRank(b) || a.localeCompare(b, "id")), [rows]);
   const jabatanOptions = useMemo(() => [...new Set(rows.map((item) => item.nama_jabatan_menpan).filter(Boolean))], [rows]);
   const ukpdOptions = useMemo(() => [...new Set(rows.map((item) => item.nama_ukpd).filter(Boolean))].sort((a, b) => a.localeCompare(b, "id")), [rows]);
 
@@ -413,7 +419,7 @@ export default function DukPage() {
     return rows.filter((item) => {
       const matchSearch = [item.nama, item.nip, item.nama_ukpd, item.nama_jabatan_menpan, item.program_studi].join(" ").toLowerCase().includes(query);
       return matchSearch
-        && (!pangkat || item.pangkat_golongan === pangkat)
+        && (!pangkat || formatPangkatGolongan(item.pangkat_golongan) === pangkat)
         && (!jabatan || item.nama_jabatan_menpan === jabatan)
         && (!ukpd || item.nama_ukpd === ukpd);
     }).sort((a, b) => (
@@ -427,7 +433,7 @@ export default function DukPage() {
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const safePage = Math.min(page, totalPages);
   const paginatedRows = filtered.slice((safePage - 1) * pageSize, safePage * pageSize);
-  const topPangkat = filtered.find((item) => item.pangkat_golongan)?.pangkat_golongan || "";
+  const topPangkat = formatPangkatGolongan(filtered.find((item) => item.pangkat_golongan)?.pangkat_golongan);
   const hasActiveFilters = Boolean(search || pangkat || jabatan || ukpd);
 
   function exportDuk() {
@@ -438,7 +444,7 @@ export default function DukPage() {
         index + 1,
         item.nama,
         item.nip,
-        item.pangkat_golongan,
+        formatPangkatGolongan(item.pangkat_golongan),
         item.tmt_pangkat_terakhir,
         item.nama_jabatan_menpan,
         pendidikanLabel(item),

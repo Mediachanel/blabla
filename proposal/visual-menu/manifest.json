@@ -1,0 +1,80 @@
+[
+  {
+    "label": "Login",
+    "slug": "00-login",
+    "path": "/login",
+    "auth": false,
+    "wait": 1800,
+    "file": "proposal/visual-menu/00-login.png"
+  },
+  {
+    "label": "Dashboard",
+    "slug": "01-dashboard",
+    "path": "/dashboard",
+    "wait": 5500,
+    "file": "proposal/visual-menu/01-dashboard.png"
+  },
+  {
+    "label": "Data Pegawai",
+    "slug": "02-data-pegawai",
+    "path": "/pegawai",
+    "wait": 4500,
+    "file": "proposal/visual-menu/02-data-pegawai.png"
+  },
+  {
+    "label": "Tambah Pegawai",
+    "slug": "03-tambah-pegawai",
+    "path": "/pegawai/new",
+    "wait": 2500,
+    "file": "proposal/visual-menu/03-tambah-pegawai.png"
+  },
+  {
+    "label": "Usulan Mutasi",
+    "slug": "04-usulan-mutasi",
+    "path": "/usulan/mutasi",
+    "wait": 4500,
+    "file": "proposal/visual-menu/04-usulan-mutasi.png"
+  },
+  {
+    "label": "Usulan Putus JF",
+    "slug": "05-usulan-putus-jf",
+    "path": "/usulan/putus-jf",
+    "wait": 4500,
+    "file": "proposal/visual-menu/05-usulan-putus-jf.png"
+  },
+  {
+    "label": "Import Excel Pegawai",
+    "slug": "06-import-excel-pegawai",
+    "path": "/import-pegawai",
+    "wait": 2500,
+    "file": "proposal/visual-menu/06-import-excel-pegawai.png"
+  },
+  {
+    "label": "Import DRH",
+    "slug": "07-import-drh",
+    "path": "/import-drh",
+    "wait": 2500,
+    "file": "proposal/visual-menu/07-import-drh.png"
+  },
+  {
+    "label": "Daftar Urut Kepangkatan",
+    "slug": "08-duk",
+    "path": "/duk",
+    "wait": 4500,
+    "file": "proposal/visual-menu/08-duk.png"
+  },
+  {
+    "label": "QnA Admin",
+    "slug": "09-qna-admin",
+    "path": "/qna-admin",
+    "wait": 4500,
+    "file": "proposal/visual-menu/09-qna-admin.png"
+  },
+  {
+    "label": "Profil Akun",
+    "slug": "10-profil-akun",
+    "path": "/profil",
+    "wait": 2500,
+    "file": "proposal/visual-menu/10-profil-akun.png"
+  }
+]

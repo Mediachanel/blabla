@@ -61,7 +61,7 @@ const PEGAWAI_LIST_SELECT = [
   "COALESCE(NULLIF(p.`wilayah`, ''), u.`wilayah`, '-') AS `wilayah`"
 ].join(", ");
 
-async function getPegawaiPage({ user, q, nrk, status, wilayah, ukpd, page, pageSize, exportAll = false }) {
+async function getPegawaiPage({ user, q, nrk, status, wilayah, ukpd, jabatan, rumpun, page, pageSize, exportAll = false }) {
   const pool = await getConnectedPool();
   const where = [];
   const params = [];
@@ -94,6 +94,8 @@ async function getPegawaiPage({ user, q, nrk, status, wilayah, ukpd, page, pageS
   if (status) addWhere(where, params, "p.`jenis_pegawai` = ?", [status]);
   if (wilayah) addWhere(where, params, "COALESCE(NULLIF(p.`wilayah`, ''), u.`wilayah`) = ?", [wilayah]);
   if (ukpd) addWhere(where, params, "p.`nama_ukpd` = ?", [ukpd]);
+  if (jabatan) addWhere(where, params, "COALESCE(NULLIF(p.`nama_jabatan_menpan`, ''), p.`nama_jabatan_orb`) = ?", [jabatan]);
+  if (rumpun) addWhere(where, params, "p.`status_rumpun` = ?", [rumpun]);
 
   const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
   const joinSql = "LEFT JOIN `ukpd` u ON u.`nama_ukpd` = p.`nama_ukpd`";
@@ -115,19 +117,45 @@ async function getPegawaiPage({ user, q, nrk, status, wilayah, ukpd, page, pageS
   );
 
   let ukpdRows = [];
+  let jabatanRows = [];
+  let rumpunRows = [];
   if (!exportAll) {
     const scopedUkpdWhere = [];
     const scopedUkpdParams = [];
+    const scopedPegawaiWhere = [];
+    const scopedPegawaiParams = [];
     if (user.role === ROLES.ADMIN_UKPD) {
       addWhere(scopedUkpdWhere, scopedUkpdParams, "`nama_ukpd` = ?", [user.nama_ukpd]);
+      addWhere(scopedPegawaiWhere, scopedPegawaiParams, "p.`nama_ukpd` = ?", [user.nama_ukpd]);
     } else if (user.role === ROLES.ADMIN_WILAYAH) {
       addWhere(scopedUkpdWhere, scopedUkpdParams, "`wilayah` = ?", [user.wilayah]);
+      addWhere(scopedPegawaiWhere, scopedPegawaiParams, "COALESCE(NULLIF(p.`wilayah`, ''), u.`wilayah`) = ?", [user.wilayah]);
     } else if (user.role !== ROLES.SUPER_ADMIN) {
       addWhere(scopedUkpdWhere, scopedUkpdParams, "1 = 0");
+      addWhere(scopedPegawaiWhere, scopedPegawaiParams, "1 = 0");
     }
     [ukpdRows] = await pool.query(
       `SELECT DISTINCT \`nama_ukpd\` FROM \`ukpd\` ${scopedUkpdWhere.length ? `WHERE ${scopedUkpdWhere.join(" AND ")}` : ""} ORDER BY \`nama_ukpd\` ASC`,
       scopedUkpdParams
+    );
+    [jabatanRows] = await pool.query(
+      `SELECT DISTINCT COALESCE(NULLIF(p.\`nama_jabatan_menpan\`, ''), p.\`nama_jabatan_orb\`) AS jabatan
+       FROM \`pegawai\` p
+       ${joinSql}
+       ${scopedPegawaiWhere.length ? `WHERE ${scopedPegawaiWhere.join(" AND ")} AND` : "WHERE"}
+       COALESCE(NULLIF(p.\`nama_jabatan_menpan\`, ''), p.\`nama_jabatan_orb\`) IS NOT NULL
+       AND COALESCE(NULLIF(p.\`nama_jabatan_menpan\`, ''), p.\`nama_jabatan_orb\`) <> ''
+       ORDER BY jabatan ASC`,
+      scopedPegawaiParams
+    );
+    [rumpunRows] = await pool.query(
+      `SELECT DISTINCT p.\`status_rumpun\` AS rumpun
+       FROM \`pegawai\` p
+       ${joinSql}
+       ${scopedPegawaiWhere.length ? `WHERE ${scopedPegawaiWhere.join(" AND ")} AND` : "WHERE"}
+       p.\`status_rumpun\` IS NOT NULL AND p.\`status_rumpun\` <> ''
+       ORDER BY rumpun ASC`,
+      scopedPegawaiParams
     );
   }
 
@@ -137,7 +165,11 @@ async function getPegawaiPage({ user, q, nrk, status, wilayah, ukpd, page, pageS
     page,
     pageSize,
     filters: {
-      ukpdOptions: ukpdRows.map((row) => row.nama_ukpd).filter(Boolean)
+      ukpdOptions: ukpdRows.map((row) => row.nama_ukpd).filter(Boolean),
+      jabatanOptions: jabatanRows.map((row) => row.jabatan).filter(Boolean),
+      rumpunOptions: rumpunRows.map((row) => row.rumpun).filter(Boolean),
+      canFilterWilayah: user.role === ROLES.SUPER_ADMIN,
+      canFilterUkpd: user.role === ROLES.SUPER_ADMIN || user.role === ROLES.ADMIN_WILAYAH
     }
   };
 }
@@ -151,11 +183,13 @@ export async function GET(request) {
   const status = searchParams.get("status") || "";
   const wilayah = searchParams.get("wilayah") || "";
   const ukpd = searchParams.get("ukpd") || "";
+  const jabatan = searchParams.get("jabatan") || "";
+  const rumpun = searchParams.get("rumpun") || "";
   const page = numberParam(searchParams.get("page"), 1, 1, 100000);
   const pageSize = numberParam(searchParams.get("pageSize"), 10, 10, 100);
   const exportAll = searchParams.get("export") === "1";
 
-  return ok(await getPegawaiPage({ user, q, nrk, status, wilayah, ukpd, page, pageSize, exportAll }));
+  return ok(await getPegawaiPage({ user, q, nrk, status, wilayah, ukpd, jabatan, rumpun, page, pageSize, exportAll }));
 }
 
 export async function POST(request) {

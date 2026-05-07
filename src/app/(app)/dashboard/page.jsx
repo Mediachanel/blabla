@@ -3,7 +3,7 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { BarChart3, BriefcaseMedical, ChevronDown, ChevronRight, Download, FilePlus2, GraduationCap, Home, PieChart, Search, ShieldCheck, UserRoundCheck, UsersRound } from "lucide-react";
+import { BarChart3, BriefcaseMedical, ChevronDown, ChevronRight, Download, GraduationCap, Home, PieChart, Search, ShieldCheck, UserRoundCheck, UsersRound } from "lucide-react";
 import KpiCard from "@/components/cards/KpiCard";
 import DataTable from "@/components/tables/DataTable";
 import StatusBadge from "@/components/ui/StatusBadge";
@@ -11,7 +11,7 @@ import ErrorState from "@/components/ui/ErrorState";
 
 const DashboardChartCard = dynamic(() => import("@/components/charts/DashboardChartCard"), {
   ssr: false,
-  loading: () => <div className="h-80 animate-pulse rounded-2xl bg-white" />
+  loading: () => <div className="h-56 animate-pulse rounded-2xl bg-white" />
 });
 
 const analyticsTabs = [
@@ -100,6 +100,14 @@ function buildPivotAggregates(rows, labelKey) {
     if (row.jenis_pegawai === "PJLP") item.pjlp += jumlah;
   }
   return [...map.values()].sort((a, b) => a.label.localeCompare(b.label));
+}
+
+function CountPill({ value }) {
+  return (
+    <span className="rounded-full bg-dinkes-50 px-2.5 py-1 text-xs font-bold tabular-nums text-dinkes-700">
+      {formatNumber(value)}
+    </span>
+  );
 }
 
 function PivotDrillPanel({ mode, query }) {
@@ -192,8 +200,56 @@ function PivotDrillPanel({ mode, query }) {
       <h3 className="text-sm font-semibold text-slate-900">Rincian Pivot: {title}</h3>
       {loadingTree ? <p className="mt-3 text-sm text-slate-500">Memuat struktur...</p> : null}
       {treeError ? <p className="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700" role="alert">{treeError}</p> : null}
-      <p className="mt-2 text-xs text-slate-500">Geser horizontal untuk melihat kolom jumlah per jenis pegawai.</p>
-      <div className="table-scroll mt-3 max-w-[1100px] rounded-xl border border-slate-200 bg-white">
+      <div className="mt-3 space-y-2 md:hidden">
+        {tree.map((group1) => {
+          const isOpen1 = Boolean(open1[group1.label]);
+          return (
+            <article key={group1.label} className="rounded-2xl border border-slate-200 bg-white p-3">
+              <button className="flex w-full items-center justify-between gap-3 text-left" onClick={() => toggleLevel1(group1.label)} type="button">
+                <span className="flex min-w-0 items-center gap-2 text-sm font-bold text-slate-900">
+                  {isOpen1 ? <ChevronDown className="h-4 w-4 shrink-0" /> : <ChevronRight className="h-4 w-4 shrink-0" />}
+                  <span className="truncate">{group1.label}</span>
+                </span>
+                <CountPill value={group1.total} />
+              </button>
+              {isOpen1 ? (
+                <div className="mt-3 space-y-2 border-t border-slate-100 pt-3">
+                  {group1.children.map((group2) => {
+                    const nodeKey = `${group1.label}::${group2.label}`;
+                    const isOpen2 = Boolean(open2[nodeKey]);
+                    const employeeData = employeesByNode[nodeKey];
+                    return (
+                      <div key={nodeKey} className="rounded-xl bg-slate-50 p-2.5">
+                        <button className="flex w-full items-center justify-between gap-3 text-left" onClick={() => toggleLevel2(group1.label, group2.label)} type="button">
+                          <span className="flex min-w-0 items-center gap-2 text-sm font-semibold text-slate-800">
+                            {isOpen2 ? <ChevronDown className="h-4 w-4 shrink-0" /> : <ChevronRight className="h-4 w-4 shrink-0" />}
+                            <span className="truncate">{group2.label}</span>
+                          </span>
+                          <CountPill value={group2.total} />
+                        </button>
+                        {isOpen2 ? (
+                          <div className="mt-2 space-y-2">
+                            {(employeeData?.items || []).map((employee) => (
+                              <Link key={employee.id_pegawai} className="flex items-center justify-between gap-3 rounded-lg bg-white px-3 py-2 text-sm" href={`/pegawai/${employee.id_pegawai}`}>
+                                <span className="min-w-0 truncate text-slate-700">{employee.nama}</span>
+                                <span className="shrink-0 text-xs font-bold text-dinkes-700">Profil</span>
+                              </Link>
+                            ))}
+                            {loadingNode === nodeKey ? <p className="px-3 py-2 text-xs text-slate-500">Memuat pegawai...</p> : null}
+                          </div>
+                        ) : null}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : null}
+            </article>
+          );
+        })}
+        {!loadingTree && !tree.length ? <p className="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-8 text-center text-sm text-slate-500">Data drilldown tidak ditemukan.</p> : null}
+      </div>
+      <p className="mt-2 hidden text-xs text-slate-500 md:block">Geser horizontal untuk melihat kolom jumlah per jenis pegawai.</p>
+      <div className="table-scroll mt-3 hidden max-w-[1100px] rounded-xl border border-slate-200 bg-white md:block">
         <table className="w-full min-w-[860px] table-fixed">
           <colgroup>
             <col className="w-[300px]" />
@@ -402,7 +458,84 @@ function UkpdDrillPanel({ query }) {
       <h3 className="text-sm font-semibold text-slate-900">Rincian Pivot: UKPD -&gt; Rumpun -&gt; Jabatan -&gt; Pegawai</h3>
       {loadingTree ? <p className="mt-3 text-sm text-slate-500">Memuat struktur...</p> : null}
       {treeError ? <p className="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700" role="alert">{treeError}</p> : null}
-      <div className="table-scroll mt-3 max-w-[1180px] rounded-xl border border-slate-200 bg-white">
+      <div className="mt-3 space-y-2 md:hidden">
+        {groupedTree.map(([wilayah, items]) => (
+          <section key={wilayah} className="rounded-2xl border border-slate-200 bg-white p-3">
+            <h4 className="mb-2 text-xs font-bold uppercase tracking-wide text-dinkes-700">Wilayah {wilayah}</h4>
+            <div className="space-y-2">
+              {items.map((ukpd) => {
+                const isOpen1 = Boolean(open1[ukpd.label]);
+                return (
+                  <article key={ukpd.label} className="rounded-xl bg-slate-50 p-2.5">
+                    <button className="flex w-full items-center justify-between gap-3 text-left" onClick={() => setOpen1((s) => ({ ...s, [ukpd.label]: !s[ukpd.label] }))} type="button">
+                      <span className="flex min-w-0 items-center gap-2 text-sm font-bold text-slate-900">
+                        {isOpen1 ? <ChevronDown className="h-4 w-4 shrink-0" /> : <ChevronRight className="h-4 w-4 shrink-0" />}
+                        <span className="truncate">{ukpd.label}</span>
+                      </span>
+                      <CountPill value={ukpd.total} />
+                    </button>
+                    {isOpen1 ? (
+                      <div className="mt-2 space-y-2">
+                        {ukpd.children.map((rumpun) => {
+                          const key2 = `${ukpd.label}::${rumpun.label}`;
+                          const isOpen2 = Boolean(open2[key2]);
+                          return (
+                            <div key={key2} className="rounded-lg bg-white p-2">
+                              <button className="flex w-full items-center justify-between gap-3 text-left" onClick={() => setOpen2((s) => ({ ...s, [key2]: !s[key2] }))} type="button">
+                                <span className="flex min-w-0 items-center gap-2 text-sm font-semibold text-slate-800">
+                                  {isOpen2 ? <ChevronDown className="h-4 w-4 shrink-0" /> : <ChevronRight className="h-4 w-4 shrink-0" />}
+                                  <span className="truncate">{rumpun.label}</span>
+                                </span>
+                                <CountPill value={rumpun.total} />
+                              </button>
+                              {isOpen2 ? (
+                                <div className="mt-2 space-y-2">
+                                  {rumpun.children.map((jabatan) => {
+                                    const key3 = `${ukpd.label}::${rumpun.label}::${jabatan.label}`;
+                                    const isOpen3 = Boolean(open3[key3]);
+                                    const employeeData = employeesByNode[key3];
+                                    return (
+                                      <div key={key3} className="rounded-lg bg-slate-50 p-2">
+                                        <button className="flex w-full items-center justify-between gap-3 text-left" onClick={async () => {
+                                          const next = !open3[key3];
+                                          setOpen3((s) => ({ ...s, [key3]: next }));
+                                          if (next) await loadEmployees(ukpd.label, rumpun.label, jabatan.label, pageByNode[key3] || 1);
+                                        }} type="button">
+                                          <span className="flex min-w-0 items-center gap-2 text-sm text-slate-700">
+                                            {isOpen3 ? <ChevronDown className="h-4 w-4 shrink-0" /> : <ChevronRight className="h-4 w-4 shrink-0" />}
+                                            <span className="truncate">{jabatan.label}</span>
+                                          </span>
+                                          <CountPill value={jabatan.total} />
+                                        </button>
+                                        {isOpen3 ? (
+                                          <div className="mt-2 space-y-2">
+                                            {(employeeData?.items || []).map((employee) => (
+                                              <Link key={employee.id_pegawai} className="flex items-center justify-between gap-3 rounded-lg bg-white px-3 py-2 text-sm" href={`/pegawai/${employee.id_pegawai}`}>
+                                                <span className="min-w-0 truncate text-slate-700">{employee.nama}</span>
+                                                <span className="shrink-0 text-xs font-bold text-dinkes-700">Profil</span>
+                                              </Link>
+                                            ))}
+                                            {loadingNode === key3 ? <p className="px-3 py-2 text-xs text-slate-500">Memuat pegawai...</p> : null}
+                                          </div>
+                                        ) : null}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              ) : null}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : null}
+                  </article>
+                );
+              })}
+            </div>
+          </section>
+        ))}
+      </div>
+      <div className="table-scroll mt-3 hidden max-w-[1180px] rounded-xl border border-slate-200 bg-white md:block">
         <table className="w-full min-w-[940px] table-fixed">
           <colgroup>
             <col className="w-[64px]" />
@@ -761,11 +894,11 @@ function DashboardMiniStats({ cards = [] }) {
   if (!cards.length) return null;
 
   return (
-    <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+    <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
       {cards.map((card) => (
         <div key={card.label} className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{card.label}</p>
-          <strong className="mt-1 block text-2xl font-bold tabular-nums text-slate-950">{formatNumber(card.value)}</strong>
+          <strong className="mt-1 block text-xl font-bold tabular-nums text-slate-950">{formatNumber(card.value)}</strong>
           {card.helper ? <p className="mt-1 text-xs text-slate-500">{card.helper}</p> : null}
         </div>
       ))}
@@ -794,7 +927,7 @@ function DashboardMenuCharts({
   if (!activeView) return null;
 
   return (
-    <section className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-soft">
+    <section className="mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-soft">
       <nav className="flex gap-1 overflow-x-auto bg-emerald-600 px-3 py-2" aria-label="Menu dashboard">
         {menuItems.map((item) => {
           const Icon = dashboardMenuIcons[item.id] || BarChart3;
@@ -838,10 +971,9 @@ function DashboardMenuCharts({
             </label>
           ) : null}
         </header>
-        <DashboardMiniStats cards={activeView.statCards || []} />
-        <section className="mt-4 grid gap-5 xl:grid-cols-2">
+        <section className="mt-4 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-3 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden xl:grid xl:grid-cols-2 xl:overflow-visible xl:pb-0">
           {(activeView.charts || []).map((chart) => (
-            <div key={chart.id || chart.title} className={chart.fullWidth ? "xl:col-span-2" : ""}>
+            <div key={chart.id || chart.title} className={`w-full min-w-full snap-start ${chart.fullWidth ? "xl:col-span-2" : ""}`}>
               <DashboardChartCard
                 title={chart.title}
                 type={chart.type || "bar"}
@@ -851,7 +983,7 @@ function DashboardMenuCharts({
                 datasets={chart.datasets}
                 horizontal={Boolean(chart.horizontal)}
                 stacked={Boolean(chart.stacked)}
-                heightClass={chart.heightClass || "h-80"}
+                heightClass={chart.heightClass || "h-64 sm:h-56"}
               />
             </div>
           ))}
@@ -992,12 +1124,11 @@ export default function DashboardPage() {
 
   return (
     <>
-      <header className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <h1 className="text-2xl font-bold tracking-tight text-slate-950">Selamat datang</h1>
-        <Link className="btn-primary" href="/pegawai/new"><FilePlus2 className="h-4 w-4" /> Tambah Pegawai</Link>
+      <header className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <h1 className="text-xl font-bold tracking-tight text-slate-950 sm:text-2xl">Selamat datang</h1>
       </header>
 
-      <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+      <section className="grid grid-cols-3 gap-3 xl:grid-cols-6">
         <KpiCard title="Total Pegawai" value={data.summary.total} percentage="100%" helper="Jumlah Pegawai Seluruh UKPD" icon={UsersRound} />
         <KpiCard title="PNS/CPNS" value={data.summary.pnsCpns} percentage={formatPercent(data.summary.pnsCpns, totalPegawai)} helper="ASN aktif" icon={ShieldCheck} tone="green" />
         <KpiCard title="PPPK" value={data.summary.pppk} percentage={formatPercent(data.summary.pppk, totalPegawai)} helper="Penuh waktu" icon={UserRoundCheck} tone="gold" />
@@ -1025,7 +1156,7 @@ export default function DashboardPage() {
       {analytics ? (
         <DashboardAnalyticsPanel analytics={analytics} />
       ) : (
-        <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-soft">
+        <section className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-soft">
           <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <h2 className="text-lg font-semibold text-slate-950">Analitik Detail</h2>
             <button className="btn-secondary" type="button" onClick={loadAnalytics} disabled={analyticsLoading}>

@@ -30,7 +30,7 @@ export default function MobileSidebar({ user, open, onClose }) {
         </header>
         <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-5" aria-label="Menu mobile">
           {menu.map((item) => (
-            <SidebarItem key={item.label} item={item} collapsed={false} onNavigate={onClose} />
+            <SidebarItem key={item.label} item={item} collapsed={false} onNavigate={onClose} drawer />
           ))}
         </nav>
       </aside>

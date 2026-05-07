@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import StatusBadge from "@/components/ui/StatusBadge";
 import ErrorState from "@/components/ui/ErrorState";
+import { normalizePangkatGolonganOption } from "@/lib/pegawaiReferenceOptions";
 
 const tabs = [
   { id: "overview", label: "Ringkasan" },
@@ -44,6 +45,11 @@ function hasValue(value) {
 
 function valueOrDash(value) {
   return hasValue(value) ? value : "-";
+}
+
+function formatPangkatGolongan(value) {
+  const normalized = normalizePangkatGolonganOption(value);
+  return valueOrDash(normalized || value);
 }
 
 function fullNameWithTitle(pegawai) {
@@ -162,8 +168,8 @@ function InfoGrid({ items, columns = "lg:grid-cols-2" }) {
   return (
     <dl className={`grid gap-3 sm:grid-cols-2 ${columns}`}>
       {visibleItems.map((item) => (
-        <div key={item.label} className="rounded-lg border border-slate-200 bg-white px-4 py-3">
-          <dt className="text-xs font-bold uppercase tracking-wide text-slate-500">{item.label}</dt>
+        <div key={item.label} className="rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3">
+          <dt className="text-[11px] font-bold uppercase tracking-wide text-slate-500">{item.label}</dt>
           <dd className="mt-1 break-words text-sm font-semibold leading-6 text-slate-950">
             {item.type ? <LinkValue type={item.type} value={item.value} /> : item.value}
           </dd>
@@ -176,9 +182,9 @@ function InfoGrid({ items, columns = "lg:grid-cols-2" }) {
 function SectionCard({ id, title, description, children }) {
   if (!children) return null;
   return (
-    <section id={id} className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+    <section id={id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-etpp sm:p-5">
       <div className="mb-4">
-        <h2 className="text-lg font-extrabold text-slate-950">{title}</h2>
+        <h2 className="text-base font-bold text-slate-950 sm:text-lg">{title}</h2>
         {description ? <p className="mt-1 text-sm leading-6 text-slate-600">{description}</p> : null}
       </div>
       {children}
@@ -196,7 +202,7 @@ function EmptyTabState({ label = "Belum ada data" }) {
 
 function TabsNavigation({ activeTab, onChange }) {
   return (
-    <div className="sticky top-0 z-20 border-b border-slate-200 bg-slate-50/95 py-3 backdrop-blur">
+    <div className="rounded-2xl border border-slate-200 bg-white p-2 shadow-etpp">
       <div className="flex gap-2 overflow-x-auto">
         {tabs.map((tab) => {
           const active = activeTab === tab.id;
@@ -206,8 +212,8 @@ function TabsNavigation({ activeTab, onChange }) {
               type="button"
               onClick={() => onChange(tab.id)}
               className={[
-                "whitespace-nowrap rounded-lg px-4 py-2 text-sm font-bold transition",
-                active ? "bg-dinkes-700 text-white shadow-sm" : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-dinkes-50 hover:text-dinkes-800"
+                "whitespace-nowrap rounded-xl px-4 py-2 text-sm font-bold transition",
+                active ? "bg-dinkes-700 text-white shadow-sm" : "text-slate-600 hover:bg-dinkes-50 hover:text-dinkes-800"
               ].join(" ")}
             >
               {tab.label}
@@ -242,50 +248,57 @@ function ProfileSummary({ pegawai, computed, onPrint }) {
   const name = fullNameWithTitle(pegawai);
   const isActive = String(pegawai.kondisi || "").toLowerCase().includes("aktif");
   const summaryItems = [
-    { label: "UKPD", value: pegawai.nama_ukpd },
-    { label: "Status Pegawai", value: pegawai.jenis_pegawai },
-    { label: "Pangkat/Golongan", value: pegawai.pangkat_golongan },
-    { label: "Masa Kerja", value: computed.masaKerja },
-    { label: "Kontak Utama", value: pegawai.email || pegawai.no_hp_pegawai }
+    { label: "UKPD", value: pegawai.nama_ukpd, icon: MapPin },
+    { label: "Pangkat/Gol.", value: formatPangkatGolongan(pegawai.pangkat_golongan), icon: FileText },
+    { label: "Masa Kerja", value: computed.masaKerja, icon: BriefcaseBusiness },
+    { label: "Kontak", value: pegawai.email || pegawai.no_hp_pegawai, icon: Phone }
   ];
 
   return (
-    <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-      <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-        <div className="flex min-w-0 gap-4">
-          <div className="grid h-20 w-20 shrink-0 place-items-center rounded-lg bg-dinkes-700 text-2xl font-extrabold uppercase text-white shadow-sm">
+    <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-etpp">
+      <div className="border-b border-slate-100 bg-gradient-to-br from-dinkes-50 via-white to-slate-50 p-4 sm:p-5">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="flex min-w-0 gap-4">
+            <div className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-dinkes-700 text-xl font-extrabold uppercase text-white shadow-sm sm:h-20 sm:w-20 sm:text-2xl">
             {initials(pegawai.nama)}
-          </div>
-          <div className="min-w-0">
-            <div className="flex flex-wrap gap-2">
-              <StatusBadge status={isActive ? "Aktif" : "Tidak Aktif"} />
-              <StatusBadge status={pegawai.jenis_pegawai} />
             </div>
-            <h1 className="mt-3 break-words text-2xl font-extrabold tracking-normal text-slate-950 lg:text-3xl">{name}</h1>
-            <p className="mt-1 text-base font-semibold text-slate-600">{computed.jabatan}</p>
+            <div className="min-w-0">
+              <div className="flex flex-wrap gap-2">
+                <StatusBadge status={isActive ? "Aktif" : "Tidak Aktif"} />
+                <StatusBadge status={pegawai.jenis_pegawai} />
+              </div>
+              <h1 className="mt-2 break-words text-xl font-extrabold tracking-normal text-slate-950 sm:text-2xl lg:text-3xl">{name}</h1>
+              <p className="mt-1 line-clamp-2 text-sm font-semibold leading-6 text-slate-600 sm:text-base">{computed.jabatan}</p>
+              <p className="mt-1 text-xs font-medium text-slate-500">{valueOrDash(pegawai.nip)} | {valueOrDash(pegawai.nrk)}</p>
+            </div>
           </div>
-        </div>
-        <div className="flex flex-wrap gap-2 print:hidden">
-          <Link className="btn-primary" href={`/pegawai/${pegawai.id_pegawai}/edit`}>
-            <Edit className="h-4 w-4" />
-            Edit Profil
-          </Link>
-          <button className="btn-secondary" type="button" onClick={onPrint}>
-            <Printer className="h-4 w-4" />
-            Cetak Profil
-          </button>
-          <button className="btn-secondary" type="button" onClick={onPrint}>
-            <Download className="h-4 w-4" />
-            Export PDF
-          </button>
+          <div className="flex gap-2 print:hidden sm:flex-wrap sm:justify-end">
+            <Link className="btn-primary flex-1 px-3 sm:flex-none" href={`/pegawai/${pegawai.id_pegawai}/edit`}>
+              <Edit className="h-4 w-4" />
+              Edit
+            </Link>
+            <button className="btn-secondary min-w-11 px-3 sm:min-w-0" type="button" onClick={onPrint} aria-label="Cetak profil" title="Cetak">
+              <Printer className="h-4 w-4" />
+              <span className="hidden sm:inline">Cetak</span>
+            </button>
+            <button className="btn-secondary min-w-11 px-3 sm:min-w-0" type="button" onClick={onPrint} aria-label="Export PDF" title="PDF">
+              <Download className="h-4 w-4" />
+              <span className="hidden sm:inline">PDF</span>
+            </button>
+          </div>
         </div>
       </div>
 
-      <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+      <div className="grid gap-3 p-4 sm:grid-cols-2 sm:p-5 xl:grid-cols-4">
         {filterFilledItems(summaryItems).map((item) => (
-          <div key={item.label} className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
-            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">{item.label}</p>
-            <p className="mt-1 line-clamp-2 text-sm font-extrabold text-slate-950">{item.value}</p>
+          <div key={item.label} className="flex min-w-0 items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white text-dinkes-700 ring-1 ring-slate-200">
+              <item.icon className="h-4 w-4" aria-hidden="true" />
+            </span>
+            <div className="min-w-0">
+              <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500">{item.label}</p>
+              <p className="mt-1 line-clamp-2 text-sm font-extrabold leading-5 text-slate-950">{item.value}</p>
+            </div>
           </div>
         ))}
       </div>
@@ -296,8 +309,27 @@ function ProfileSummary({ pegawai, computed, onPrint }) {
 function CompactListTable({ columns, data, rowKey = "id" }) {
   if (!data?.length) return null;
   return (
-    <div className="overflow-hidden rounded-lg border border-slate-200">
-      <div className="table-scroll">
+    <div>
+      <div className="grid gap-3 md:hidden">
+        {data.map((row, index) => (
+          <article key={row[rowKey] || `${rowKey}-${index}`} className="rounded-2xl border border-slate-200 bg-white p-4">
+            <h3 className="text-sm font-bold text-slate-950">
+              {columns[1]?.render ? columns[1].render(row, index) : valueOrDash(row[columns[1]?.key] || row[columns[0]?.key])}
+            </h3>
+            <dl className="mt-3 grid gap-2">
+              {columns.map((column) => (
+                <div key={column.key} className="grid grid-cols-[92px_1fr] gap-3 border-t border-slate-100 pt-2 text-sm">
+                  <dt className="text-[11px] font-bold uppercase tracking-wide text-slate-400">{column.header}</dt>
+                  <dd className="min-w-0 break-words text-right font-semibold text-slate-700">
+                    {column.render ? column.render(row, index) : valueOrDash(row[column.key])}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </article>
+        ))}
+      </div>
+      <div className="table-scroll hidden overflow-hidden rounded-2xl border border-slate-200 md:block">
         <table className="w-full min-w-[720px] table-fixed border-collapse">
           <thead className="bg-slate-50">
             <tr>
@@ -326,14 +358,14 @@ function CompactListTable({ columns, data, rowKey = "id" }) {
 function HistoryAccordion({ title, description, columns, data }) {
   if (!data?.length) return null;
   return (
-    <details className="group rounded-lg border border-slate-200 bg-white shadow-sm">
+    <details className="group rounded-2xl border border-slate-200 bg-white shadow-etpp">
       <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-4">
         <div>
-          <h3 className="text-base font-extrabold text-slate-950">{title}</h3>
+          <h3 className="text-base font-bold text-slate-950">{title}</h3>
           {description ? <p className="mt-1 text-sm text-slate-500">{description}</p> : null}
         </div>
         <div className="flex items-center gap-3">
-          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">{data.length} data</span>
+          <span className="rounded-full bg-dinkes-50 px-3 py-1 text-xs font-bold text-dinkes-700">{data.length} data</span>
           <ChevronDown className="h-5 w-5 text-slate-500 transition group-open:rotate-180" />
         </div>
       </summary>
@@ -417,21 +449,21 @@ const jabatanColumns = [
   { key: "tmt_jabatan", header: "TMT", render: (item) => formatDate(item.tmt_jabatan) },
   { key: "nama_jabatan_menpan", header: "Jabatan", render: (item) => valueOrDash(item.nama_jabatan_menpan || item.nama_jabatan_orb) },
   { key: "nama_ukpd", header: "UKPD" },
-  { key: "pangkat_golongan", header: "Pangkat" },
+  { key: "pangkat_golongan", header: "Pangkat/Gol.", render: (item) => formatPangkatGolongan(item.pangkat_golongan) },
   { key: "nomor_sk", header: "No SK" },
   { key: "tanggal_sk", header: "Tgl SK", render: (item) => formatDate(item.tanggal_sk) }
 ];
 
 const gajiColumns = [
   { key: "tmt_gaji", header: "TMT", render: (item) => formatDate(item.tmt_gaji) },
-  { key: "pangkat_golongan", header: "Pangkat" },
+  { key: "pangkat_golongan", header: "Pangkat/Gol.", render: (item) => formatPangkatGolongan(item.pangkat_golongan) },
   { key: "gaji_pokok", header: "Gaji Pokok", render: (item) => formatNumber(item.gaji_pokok) },
   { key: "nomor_sk", header: "No SK" }
 ];
 
 const pangkatColumns = [
   { key: "tmt_pangkat", header: "TMT", render: (item) => formatDate(item.tmt_pangkat) },
-  { key: "pangkat_golongan", header: "Pangkat" },
+  { key: "pangkat_golongan", header: "Pangkat/Gol.", render: (item) => formatPangkatGolongan(item.pangkat_golongan) },
   { key: "lokasi", header: "Lokasi" },
   { key: "nomor_sk", header: "No SK" },
   { key: "tanggal_sk", header: "Tgl SK", render: (item) => formatDate(item.tanggal_sk) }
@@ -702,7 +734,7 @@ const jabatanPrintColumns = [
   { key: "tmt_jabatan", header: "TMT", width: "10%", align: "center", render: (row) => formatDrhDate(row.tmt_jabatan) },
   { key: "lokasi", header: "LOKASI", width: "23%" },
   { key: "nama_jabatan_menpan", header: "JABATAN", render: (row) => row.nama_jabatan_menpan || row.nama_jabatan_orb },
-  { key: "pangkat_golongan", header: "PANGKAT", width: "13%" },
+  { key: "pangkat_golongan", header: "PANGKAT/GOL", width: "13%", render: (row) => formatPangkatGolongan(row.pangkat_golongan) },
   { key: "eselon", header: "ESL", width: "5.5%", align: "center" },
   { key: "nomor_sk", header: "NO.SK", width: "13%" },
   { key: "tanggal_sk", header: "TGL.SK", width: "9.5%", align: "center", render: (row) => formatDrhDate(row.tanggal_sk) }
@@ -711,7 +743,7 @@ const jabatanPrintColumns = [
 const gajiPrintColumns = [
   { key: "no", header: "NO", width: "4.5%", align: "center", render: printRowNumber },
   { key: "tmt_gaji", header: "TMT", width: "14%", align: "center", render: (row) => formatDrhDate(row.tmt_gaji) },
-  { key: "pangkat_golongan", header: "PANGKAT", width: "28%" },
+  { key: "pangkat_golongan", header: "PANGKAT/GOL", width: "28%", render: (row) => formatPangkatGolongan(row.pangkat_golongan) },
   { key: "gaji_pokok", header: "GAJI", width: "18%", render: (row) => formatPrintNumber(row.gaji_pokok) },
   { key: "nomor_sk", header: "NO.SK", width: "19%" },
   { key: "tanggal_sk", header: "TGL.SK", width: "16.5%", align: "center", render: (row) => formatDrhDate(row.tanggal_sk) }
@@ -720,7 +752,7 @@ const gajiPrintColumns = [
 const pangkatPrintColumns = [
   { key: "no", header: "NO", width: "4.5%", align: "center", render: printRowNumber },
   { key: "tmt_pangkat", header: "TMT", width: "11%", align: "center", render: (row) => formatDrhDate(row.tmt_pangkat) },
-  { key: "pangkat_golongan", header: "PANGKAT", width: "16%" },
+  { key: "pangkat_golongan", header: "PANGKAT/GOL", width: "16%", render: (row) => formatPangkatGolongan(row.pangkat_golongan) },
   { key: "lokasi", header: "LOKASI" },
   { key: "nomor_sk", header: "NO.SK", width: "17%" },
   { key: "tanggal_sk", header: "TGL.SK", width: "11%", align: "center", render: (row) => formatDrhDate(row.tanggal_sk) }
@@ -1089,22 +1121,22 @@ export default function DetailPegawaiPage() {
         <TabsNavigation activeTab={activeTab} onChange={changeTab} />
 
         <div className="grid gap-5 xl:grid-cols-[1fr_220px]">
-        <main className="space-y-5">
+        <main className="space-y-4">
           {activeTab === "overview" ? (
             <>
               <SectionCard id="summary" title="Ringkasan Pegawai" description="Data paling sering dipakai untuk identifikasi cepat.">
                 <div className="grid gap-4 lg:grid-cols-3">
-                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
                     <BriefcaseBusiness className="h-5 w-5 text-dinkes-700" />
                     <p className="mt-3 text-xs font-bold uppercase tracking-wide text-slate-500">Jabatan</p>
                     <p className="mt-1 text-sm font-extrabold text-slate-950">{computed.jabatan}</p>
                   </div>
-                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
                     <MapPin className="h-5 w-5 text-dinkes-700" />
                     <p className="mt-3 text-xs font-bold uppercase tracking-wide text-slate-500">UKPD</p>
                     <p className="mt-1 text-sm font-extrabold text-slate-950">{valueOrDash(pegawai.nama_ukpd)}</p>
                   </div>
-                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
                     <FileText className="h-5 w-5 text-dinkes-700" />
                     <p className="mt-3 text-xs font-bold uppercase tracking-wide text-slate-500">Total Riwayat</p>
                     <p className="mt-1 text-sm font-extrabold text-slate-950">{formatNumber(computed.totalRiwayat)}</p>
@@ -1163,7 +1195,7 @@ export default function DetailPegawaiPage() {
                     { label: "Jabatan Pergub", value: pegawai.nama_jabatan_orb },
                     { label: "Jabatan Standar Kepgub 11", value: pegawai.nama_jabatan_menpan },
                     { label: "Atasan Langsung", value: pegawai.struktur_atasan_langsung },
-                    { label: "Pangkat / Golongan", value: pegawai.pangkat_golongan },
+                    { label: "Pangkat / Golongan", value: formatPangkatGolongan(pegawai.pangkat_golongan) },
                     { label: "TMT Pangkat", value: formatDate(computed.tmtPangkatTerbaru) }
                   ]}
                 />

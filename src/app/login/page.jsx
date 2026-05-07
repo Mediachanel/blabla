@@ -430,9 +430,6 @@ function LoginCard() {
 }
 
 function LoginShell() {
-  const [quickSearch, setQuickSearch] = useState("");
-  const [showHelp, setShowHelp] = useState(false);
-
   const timestamp = useMemo(() => {
     return new Intl.DateTimeFormat("id-ID", {
       weekday: "short",
@@ -445,22 +442,13 @@ function LoginShell() {
     }).format(new Date());
   }, []);
 
-  function applyQuickAction(keyword) {
-    setQuickSearch(keyword);
-    setShowHelp(true);
-    if (typeof document !== "undefined") {
-      document.getElementById("qna-layanan")?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-  }
-
   return (
     <>
       <a href="#konten-utama" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-white focus:px-4 focus:py-3 focus:text-sm focus:font-semibold focus:text-dinkes-600 focus:shadow-lg">
         Lewati ke konten utama
       </a>
 
-      <div className="min-h-screen overflow-hidden bg-[#f5f5f5] text-slate-900">
-        <div className="absolute inset-0 -z-10 opacity-70 [background-image:linear-gradient(160deg,transparent_0%,transparent_42%,rgba(203,213,225,0.35)_42.2%,transparent_43%),linear-gradient(20deg,transparent_0%,transparent_62%,rgba(203,213,225,0.28)_62.2%,transparent_63%)]" />
+      <div className="min-h-screen overflow-hidden bg-[#F6F9FC] text-slate-900">
 
         <header className="border-b border-white/70 bg-white/85 backdrop-blur">
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
@@ -480,12 +468,10 @@ function LoginShell() {
           </div>
         </header>
 
-        <main id="konten-utama" className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8 lg:py-10">
-          <section className="grid min-h-[420px] overflow-hidden rounded-xl bg-dinkes-500 shadow-[0_24px_80px_rgba(64,137,246,0.22)] lg:grid-cols-[1fr_0.86fr]">
-            <section className="relative flex min-h-[330px] flex-col justify-center overflow-hidden bg-dinkes-500 p-7 text-white sm:p-10 lg:p-12" aria-labelledby="hero-heading">
-              <div className="absolute -right-20 -top-24 h-56 w-56 rounded-full border-[28px] border-white/10" aria-hidden="true" />
-              <div className="absolute bottom-8 right-8 hidden h-32 w-32 rounded-full bg-white/10 lg:block" aria-hidden="true" />
-              <span className="w-fit rounded-md border border-white/30 bg-white/12 px-4 py-2 text-xs font-bold shadow-sm backdrop-blur">
+        <main id="konten-utama" className="mx-auto grid min-h-[calc(100vh-116px)] w-full max-w-7xl px-4 py-5 sm:px-6 lg:px-8">
+          <section className="grid overflow-hidden rounded-3xl bg-dinkes-600 shadow-[0_24px_80px_rgba(64,137,246,0.22)] lg:grid-cols-[1fr_0.86fr]">
+            <section className="relative flex min-h-[330px] flex-col justify-center overflow-hidden bg-dinkes-600 p-7 text-white sm:p-10 lg:p-12" aria-labelledby="hero-heading">
+              <span className="w-fit rounded-xl border border-white/30 bg-white/12 px-4 py-2 text-xs font-bold shadow-sm backdrop-blur">
                 Informasi Kepegawaian
               </span>
               <h1 id="hero-heading" className="mt-7 max-w-3xl text-3xl font-bold leading-tight tracking-normal text-white sm:text-4xl lg:text-5xl">
@@ -494,40 +480,13 @@ function LoginShell() {
               <p className="mt-5 max-w-2xl text-base font-medium leading-7 text-dinkes-50 sm:text-lg">
                 Akses layanan kepegawaian, informasi pengembangan karir, pendayagunaan pegawai, dan pusat tanya jawab dalam satu halaman yang mudah dipahami.
               </p>
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-                <button type="button" onClick={() => setShowHelp((value) => !value)} className="inline-flex w-full items-center justify-center rounded-md bg-white px-5 py-3 text-sm font-bold text-dinkes-700 transition hover:bg-dinkes-50 focus-ring sm:w-auto">
-                  {showHelp ? "Sembunyikan Bantuan" : "Buka Bantuan Kepegawaian"}
-                </button>
-              </div>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-dinkes-50/90">
-                Temukan aturan, syarat, dan alur layanan tanpa membuka dokumen panjang.
+              <p className="mt-6 max-w-2xl text-sm leading-6 text-dinkes-50/90">
+                Gunakan akun resmi UKPD atau admin untuk masuk ke dashboard, data pegawai, usulan, dan laporan.
               </p>
             </section>
 
             <LoginCard />
           </section>
-
-          {showHelp ? (
-          <section aria-labelledby="quick-action-heading" className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <div className="rounded-xl border border-dinkes-100 bg-white p-5 shadow-sm md:col-span-2 xl:col-span-4">
-              <h2 id="quick-action-heading" className="text-lg font-bold text-slate-900">Akses Cepat Informasi Layanan</h2>
-              <p className="mt-2 text-sm leading-6 text-slate-500">Gunakan shortcut ini untuk langsung memfilter pusat QnA sesuai layanan yang paling sering dicari.</p>
-            </div>
-            {QUICK_ACTIONS.map((action) => (
-              <button
-                key={action.title}
-                type="button"
-                onClick={() => applyQuickAction(action.keyword)}
-                className="rounded-xl border border-dinkes-100 bg-white p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-dinkes-200 hover:bg-dinkes-50/70 focus-ring"
-              >
-                <p className="text-base font-bold text-slate-900">{action.title}</p>
-                <p className="mt-2 text-sm leading-6 text-slate-500">{action.description}</p>
-              </button>
-            ))}
-          </section>
-          ) : null}
-
-          {showHelp ? <QnaSection quickSearch={quickSearch} onResetQuickSearch={() => setQuickSearch("")} /> : null}
         </main>
 
         <footer className="mx-auto max-w-7xl px-4 pb-8 pt-2 text-center text-xs text-slate-500 sm:px-6 lg:px-8">

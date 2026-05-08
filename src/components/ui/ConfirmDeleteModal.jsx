@@ -32,7 +32,7 @@ export default function ConfirmDeleteModal({
   const Icon = isDanger ? AlertTriangle : CheckCircle2;
   const iconClassName = isDanger ? "bg-rose-50 text-rose-600" : "bg-emerald-50 text-emerald-600";
   const confirmClassName = isDanger
-    ? "inline-flex items-center justify-center rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-rose-700 focus-ring disabled:opacity-60"
+    ? "inline-flex items-center justify-center rounded-lg bg-rose-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-rose-700 focus-ring disabled:opacity-60"
     : "btn-primary disabled:opacity-60";
 
   useEffect(() => {
@@ -88,7 +88,7 @@ export default function ConfirmDeleteModal({
     >
       <article
         ref={dialogRef}
-        className="w-full max-w-md rounded-3xl bg-white p-5 shadow-2xl sm:p-6"
+        className="w-full max-w-md rounded-lg bg-white p-5 shadow-2xl sm:p-6"
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
@@ -96,7 +96,7 @@ export default function ConfirmDeleteModal({
       >
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-3">
-            <span className={`rounded-full p-2 ${iconClassName}`}>
+            <span className={`rounded-lg p-2 ${iconClassName}`}>
               <Icon className="h-5 w-5" aria-hidden="true" />
             </span>
             <h2 id={titleId} className="text-lg font-semibold text-slate-900">{title}</h2>

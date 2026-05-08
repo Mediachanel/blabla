@@ -6,7 +6,7 @@ import { Bar, Doughnut } from "react-chartjs-2";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, LineController, LineElement, PointElement, ArcElement, Tooltip, Legend);
 
-const defaultColors = ["#18a8e0", "#13a8be", "#22c55e", "#14b8a6", "#10b981", "#8b5cf6", "#f97316", "#ef4444"];
+const defaultColors = ["#00346d", "#d4af37", "#005914", "#325ea0", "#88d982", "#735c00", "#ba1a1a", "#64748b"];
 
 function formatNumber(value) {
   return Number(value || 0).toLocaleString("id-ID");
@@ -235,7 +235,7 @@ export default function DashboardChartCard({
           backgroundColor: dataset.backgroundColor || (isLine ? "rgba(56, 189, 248, 0.16)" : defaultColors[index % defaultColors.length]),
           borderColor: color,
           borderWidth: isLine ? dataset.borderWidth ?? 2 : dataset.borderWidth,
-          borderRadius: !isLine && type === "bar" ? 2 : 0,
+          borderRadius: !isLine && type === "bar" ? 4 : 0,
           maxBarThickness: isLine ? undefined : (horizontal ? 14 : 18),
           categoryPercentage: isLine ? undefined : 0.9,
           barPercentage: isLine ? undefined : 0.85,
@@ -274,7 +274,7 @@ export default function DashboardChartCard({
           boxHeight: 11,
           usePointStyle: true,
           pointStyle: "circle",
-          color: "#475569",
+          color: "#434750",
           font: { size: 11 }
         }
       },
@@ -309,8 +309,8 @@ export default function DashboardChartCard({
   return (
     <article className="surface min-w-0 overflow-hidden p-4">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="min-w-0 text-base font-bold text-slate-900">{title}</h2>
-        <button className="hidden rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 sm:inline-flex" onClick={() => downloadChart(chartRef, title)} type="button">
+        <h2 className="min-w-0 font-display text-base font-bold text-dinkes-900">{title}</h2>
+        <button className="hidden rounded-md border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-dinkes-600 hover:bg-dinkes-50 hover:text-dinkes-800 sm:inline-flex" onClick={() => downloadChart(chartRef, title)} type="button">
           Unduh PNG
         </button>
       </div>

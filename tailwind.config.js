@@ -5,29 +5,33 @@ module.exports = {
     extend: {
       colors: {
         dinkes: {
-          50: "#eef5ff",
-          100: "#dbeafe",
-          200: "#bfdbfe",
-          300: "#93c5fd",
-          400: "#60a5fa",
-          500: "#4089f6",
-          600: "#2872dc",
-          700: "#1d5db8",
-          800: "#1e4c91",
-          900: "#1d3f73"
+          50: "#f1f6ff",
+          100: "#d6e3ff",
+          200: "#aac7ff",
+          300: "#7da9f3",
+          400: "#4f85d5",
+          500: "#325ea0",
+          600: "#1a4b8c",
+          700: "#124687",
+          800: "#00346d",
+          900: "#001b3e"
         },
         govgold: {
           50: "#fff9eb",
-          100: "#ffefc5",
-          300: "#ffd86b",
-          500: "#d89b17",
-          700: "#95640e"
+          100: "#ffe088",
+          300: "#fed65b",
+          500: "#d4af37",
+          700: "#735c00"
         }
       },
+      fontFamily: {
+        sans: ["Inter", "Segoe UI", "system-ui", "sans-serif"],
+        display: ["Public Sans", "Inter", "Segoe UI", "system-ui", "sans-serif"]
+      },
       boxShadow: {
-        soft: "0 18px 50px rgba(64, 137, 246, 0.10)",
-        etpp: "0 10px 28px rgba(15, 23, 42, 0.06)",
-        button: "0 4px 12px rgba(64, 137, 246, 0.28)"
+        soft: "0 12px 28px rgba(15, 23, 42, 0.08)",
+        etpp: "0 1px 2px rgba(15, 23, 42, 0.04)",
+        button: "0 8px 18px rgba(0, 52, 109, 0.18)"
       }
     }
   },

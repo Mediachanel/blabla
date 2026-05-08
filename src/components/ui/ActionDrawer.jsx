@@ -25,11 +25,11 @@ export default function ActionDrawer({ open, title, description, onClose, childr
 
   return (
     <div className="fixed inset-0 z-[80]">
-      <div className="absolute inset-0 bg-slate-950/30 backdrop-blur-[1px]" onClick={onClose} />
-      <aside className="absolute right-0 top-0 flex h-full w-full max-w-[720px] flex-col border-l border-slate-200 bg-white shadow-[-18px_0_45px_rgba(15,23,42,0.16)]" role="dialog" aria-modal="true" aria-label={title}>
+      <div className="absolute inset-0 bg-slate-950/35 backdrop-blur-[1px]" onClick={onClose} />
+      <aside className="absolute right-0 top-0 flex h-full w-full max-w-[720px] flex-col border-l border-slate-200 bg-white shadow-[-12px_0_32px_rgba(15,23,42,0.14)]" role="dialog" aria-modal="true" aria-label={title}>
         <header className="flex shrink-0 items-start justify-between gap-4 border-b border-slate-200 px-5 py-5 sm:px-7">
           <div className="min-w-0">
-            <h2 className="text-xl font-extrabold leading-tight text-slate-950">{title}</h2>
+            <h2 className="font-display text-xl font-bold leading-tight text-dinkes-900">{title}</h2>
             {description ? <p className="mt-1 text-sm leading-6 text-slate-500">{description}</p> : null}
           </div>
           <button className="rounded-md p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 focus-ring" type="button" onClick={onClose} aria-label="Tutup panel">

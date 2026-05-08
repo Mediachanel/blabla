@@ -3,11 +3,11 @@
 export default function Stepper({ steps, activeStep, onStepChange }) {
   return (
     <div className="surface overflow-hidden">
-      <div className="border-b border-slate-200 bg-gradient-to-r from-dinkes-50 via-white to-sky-50 px-4 py-3 sm:px-5 sm:py-4">
+      <div className="border-b border-slate-200 bg-white px-4 py-3 sm:px-5 sm:py-4">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-dinkes-700">Progress Pengisian</p>
-            <h2 className="mt-1 text-base font-semibold text-slate-900 sm:text-lg">Step {activeStep + 1} dari {steps.length}</h2>
+            <p className="section-label text-dinkes-800">Progress Pengisian</p>
+            <h2 className="mt-1 font-display text-base font-bold text-slate-900 sm:text-lg">Step {activeStep + 1} dari {steps.length}</h2>
           </div>
           <div className="shrink-0 text-right">
             <p className="text-xl font-semibold text-dinkes-700 sm:text-2xl">{Math.round(((activeStep + 1) / steps.length) * 100)}%</p>
@@ -16,7 +16,7 @@ export default function Stepper({ steps, activeStep, onStepChange }) {
         </div>
         <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-200">
           <div
-            className="h-full rounded-full bg-gradient-to-r from-dinkes-600 to-sky-500 transition-all duration-300"
+            className="h-full rounded-full bg-dinkes-800 transition-all duration-300"
             style={{ width: `${((activeStep + 1) / steps.length) * 100}%` }}
           />
         </div>
@@ -31,8 +31,8 @@ export default function Stepper({ steps, activeStep, onStepChange }) {
                 type="button"
                 onClick={() => onStepChange(index)}
                 className={[
-                  "flex w-full min-w-0 items-center gap-2 rounded-2xl border px-3 py-2.5 text-left transition",
-                  status === "active" ? "border-dinkes-300 bg-dinkes-50 shadow-sm" : "",
+                  "flex w-full min-w-0 items-center gap-2 rounded-lg border px-3 py-2.5 text-left transition",
+                  status === "active" ? "border-dinkes-300 bg-dinkes-50" : "",
                   status === "done" ? "border-emerald-200 bg-emerald-50 hover:border-emerald-300" : "",
                   status === "upcoming" ? "border-slate-200 bg-white hover:border-slate-300" : ""
                 ].join(" ")}
@@ -40,7 +40,7 @@ export default function Stepper({ steps, activeStep, onStepChange }) {
                 <span
                   className={[
                     "mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold",
-                    status === "active" ? "bg-dinkes-700 text-white" : "",
+                    status === "active" ? "bg-dinkes-800 text-white" : "",
                     status === "done" ? "bg-emerald-600 text-white" : "",
                     status === "upcoming" ? "bg-slate-100 text-slate-500" : ""
                   ].join(" ")}

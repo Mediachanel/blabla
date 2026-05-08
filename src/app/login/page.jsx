@@ -5,7 +5,6 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   Bell,
-  Building2,
   CalendarClock,
   Camera,
   ChevronDown,
@@ -14,7 +13,6 @@ import {
   EyeOff,
   FileQuestion,
   Fingerprint,
-  HeartPulse,
   IdCard,
   Landmark,
   Loader2,
@@ -50,6 +48,20 @@ const BIOMETRIC_OPTIONS = [
 ];
 
 const FACE_SCAN_TIMEOUT_MS = 10_000;
+
+function safeNextPath(value) {
+  const raw = String(value || "").trim();
+  if (!raw || !raw.startsWith("/") || raw.startsWith("//") || raw.startsWith("/\\")) return "/dashboard";
+  if (/^[a-z][a-z0-9+.-]*:/i.test(raw)) return "/dashboard";
+
+  try {
+    const parsed = new URL(raw, window.location.origin);
+    if (parsed.origin !== window.location.origin) return "/dashboard";
+    return `${parsed.pathname}${parsed.search}${parsed.hash}` || "/dashboard";
+  } catch {
+    return "/dashboard";
+  }
+}
 
 function escapeRegex(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -315,7 +327,7 @@ function JakartaSilhouette({ compact = false }) {
   );
 }
 
-function LoginCard() {
+function LoginCard({ onOpenQna }) {
   const router = useRouter();
   const usernameRef = useRef(null);
   const passwordRef = useRef(null);
@@ -334,6 +346,47 @@ function LoginCard() {
   const [passkeyLoading, setPasskeyLoading] = useState("");
   const [faceDialog, setFaceDialog] = useState({ open: false, status: "idle", message: "" });
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberUser, setRememberUser] = useState(false);
+
+  function persistRememberedUser(username) {
+    if (typeof window === "undefined") return;
+
+    try {
+      if (rememberUser) {
+        window.localStorage.setItem("sidata:rememberUser", "1");
+        window.localStorage.setItem("sidata:username", username);
+        return;
+      }
+
+      window.localStorage.removeItem("sidata:rememberUser");
+      window.localStorage.removeItem("sidata:username");
+    } catch {
+      // Local storage can be unavailable in private or managed browser modes.
+    }
+  }
+
+  function updateRememberUser(checked) {
+    setRememberUser(checked);
+    if (checked || typeof window === "undefined") return;
+
+    try {
+      window.localStorage.removeItem("sidata:rememberUser");
+      window.localStorage.removeItem("sidata:username");
+    } catch {
+      // Ignore storage failures; login should keep working.
+    }
+  }
+
+  function showLoginNotice(message) {
+    setFormError("");
+    setBiometricNotice(message);
+  }
+
+  function openPublicQna(keyword = "") {
+    setFormError("");
+    setBiometricNotice("");
+    onOpenQna?.(keyword);
+  }
 
   function focusLoginField(field) {
     const isDesktop = typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches;
@@ -400,9 +453,10 @@ function LoginCard() {
         return;
       }
       const nextPath = typeof window !== "undefined"
-        ? new URLSearchParams(window.location.search).get("next")
-        : "";
-      router.replace(nextPath || "/dashboard");
+        ? safeNextPath(new URLSearchParams(window.location.search).get("next"))
+        : "/dashboard";
+      persistRememberedUser(form.username.trim());
+      router.replace(nextPath);
     } catch {
       setFormError("Login belum berhasil. Silakan coba lagi.");
     } finally {
@@ -584,9 +638,10 @@ function LoginCard() {
       }
 
       const nextPath = typeof window !== "undefined"
-        ? new URLSearchParams(window.location.search).get("next")
-        : "";
-      router.replace(nextPath || "/dashboard");
+        ? safeNextPath(new URLSearchParams(window.location.search).get("next"))
+        : "/dashboard";
+      persistRememberedUser(username);
+      router.replace(nextPath);
     } catch (error) {
       const cancelled = error?.name === "NotAllowedError";
       setBiometricNotice(cancelled ? "Verifikasi biometrik dibatalkan." : (error.message || "Login passkey belum berhasil."));
@@ -656,31 +711,46 @@ function LoginCard() {
   }, [faceDialog.open, faceDialog.status]);
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    try {
+      const shouldRemember = window.localStorage.getItem("sidata:rememberUser") === "1";
+      const savedUsername = window.localStorage.getItem("sidata:username") || "";
+      setRememberUser(shouldRemember);
+      if (shouldRemember && savedUsername) {
+        setForm((current) => current.username ? current : { ...current, username: savedUsername });
+      }
+    } catch {
+      // Keep the form usable even when storage access is blocked.
+    }
+  }, []);
+
+  useEffect(() => {
     return () => {
       stopFaceCamera();
     };
   }, []);
 
   return (
-    <aside aria-labelledby="login-heading" className="relative flex min-h-screen w-full justify-center overflow-hidden bg-[#effbff] px-0 text-slate-900 sm:min-h-[720px] sm:items-center sm:px-6 sm:py-8 lg:min-h-full lg:items-center lg:bg-transparent lg:px-0 lg:py-0">
-      <form className="relative flex min-h-screen w-full max-w-[430px] flex-col overflow-hidden bg-[#f7fffb] shadow-[0_28px_90px_rgba(14,116,144,0.18)] sm:min-h-[720px] sm:rounded-[2rem] sm:ring-1 sm:ring-white/80 lg:hidden" onSubmit={submit} noValidate>
-        <section className="relative overflow-hidden bg-[radial-gradient(circle_at_18%_18%,rgba(255,255,255,0.22),transparent_24%),radial-gradient(circle_at_84%_12%,rgba(167,243,208,0.34),transparent_26%),linear-gradient(145deg,#0f5ea8,#1287c7_52%,#10b981)] px-5 pb-16 pt-5 text-white">
+    <aside aria-label="Form masuk SI-SDMK" className="relative flex min-h-screen w-full min-w-0 justify-center overflow-x-hidden bg-[#f8f9fa] px-0 text-slate-900 sm:min-h-[720px] sm:items-center sm:px-6 sm:py-8 lg:min-h-full lg:items-center lg:overflow-visible lg:bg-transparent lg:px-0 lg:py-0">
+      <form aria-labelledby="login-heading" className="relative flex min-h-screen w-full max-w-[430px] flex-col overflow-hidden border-slate-200 bg-white sm:min-h-[720px] sm:rounded-lg sm:border lg:hidden" onSubmit={submit} noValidate>
+        <section className="relative overflow-hidden bg-dinkes-800 px-5 pb-16 pt-5 text-white">
           <div className="relative z-10 flex items-center justify-between gap-4">
             <div className="flex min-w-0 items-center gap-3">
               <span className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-xl bg-white p-1.5 shadow-sm">
                 <Image src={dinkesLogo} alt="Logo Dinas Kesehatan DKI Jakarta" className="h-full w-full object-contain" priority />
               </span>
               <div className="min-w-0">
-                <p className="truncate text-base font-extrabold leading-tight text-white">SI-DATA</p>
+                <p className="truncate text-base font-extrabold leading-tight text-white">SI-SDMK</p>
                 <p className="truncate text-[11px] font-semibold text-white/75">Dinkes DKI Jakarta</p>
               </div>
             </div>
             <div className="flex shrink-0 items-center gap-2">
-              <button type="button" className="relative grid h-10 w-10 place-items-center rounded-xl bg-white/10 text-white backdrop-blur transition hover:bg-white/20 focus-ring" aria-label="Notifikasi">
+              <button type="button" onClick={() => showLoginNotice("Notifikasi akan tampil setelah Anda berhasil masuk.")} className="relative grid h-10 w-10 place-items-center rounded-xl bg-white/10 text-white backdrop-blur transition hover:bg-white/20 focus-ring" aria-label="Notifikasi">
                 <Bell className="h-5 w-5" aria-hidden="true" />
                 <span className="absolute right-2.5 top-2.5 h-2.5 w-2.5 rounded-full bg-emerald-300 ring-2 ring-[#0f6fa8]" />
               </button>
-              <button type="button" className="grid h-10 w-10 place-items-center rounded-xl bg-white/10 text-white backdrop-blur transition hover:bg-white/20 focus-ring" aria-label="Buka menu">
+              <button type="button" onClick={() => showLoginNotice("Menu utama tersedia setelah login. Untuk informasi layanan, buka QnA publik di bawah halaman ini.")} className="grid h-10 w-10 place-items-center rounded-xl bg-white/10 text-white backdrop-blur transition hover:bg-white/20 focus-ring" aria-label="Buka menu">
                 <Menu className="h-5 w-5" aria-hidden="true" />
               </button>
             </div>
@@ -689,7 +759,7 @@ function LoginCard() {
           <div className="relative z-10 mt-8 max-w-[280px]">
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/75">Selamat datang</p>
             <h2 id="login-heading" className="mt-3 text-3xl font-extrabold leading-tight tracking-normal text-white">
-              Masuk ke SI-DATA Mobile
+              Masuk ke SI-SDMK Mobile
             </h2>
             <p className="mt-3 text-sm font-medium leading-6 text-white/80">
               Akses data pegawai, usulan, DUK, dan QnA layanan kepegawaian.
@@ -702,14 +772,14 @@ function LoginCard() {
           <JakartaSilhouette compact />
         </section>
 
-        <section className="relative z-10 -mt-10 flex flex-1 flex-col rounded-t-[2rem] bg-[#f7fffb] px-5 pb-6 pt-6">
-          <div className="rounded-2xl bg-white p-4 shadow-[0_18px_46px_rgba(14,116,144,0.12)] ring-1 ring-cyan-100">
+        <section className="relative z-10 -mt-10 flex flex-1 flex-col rounded-t-lg bg-white px-5 pb-6 pt-6">
+          <div className="rounded-lg border border-slate-200 bg-white p-4">
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-600">Akun resmi</p>
+                <p className="text-xs font-bold uppercase tracking-wide text-dinkes-800">Akun resmi</p>
                 <p className="mt-1 text-sm font-semibold text-slate-700">Gunakan UKPD ID Anda</p>
               </div>
-              <span className="grid h-11 w-11 place-items-center rounded-xl bg-cyan-50 text-cyan-700">
+              <span className="grid h-11 w-11 place-items-center rounded-lg bg-dinkes-50 text-dinkes-800">
                 <LockKeyhole className="h-5 w-5" aria-hidden="true" />
               </span>
             </div>
@@ -718,12 +788,12 @@ function LoginCard() {
               <label htmlFor="username" className="block">
                 <span className="sr-only">Username / UKPD ID</span>
                 <span className="relative block">
-                  <UserRound className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-cyan-500" aria-hidden="true" />
+                  <UserRound className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-dinkes-700" aria-hidden="true" />
                   <input
                     id="username"
                     ref={usernameRef}
                     name="username"
-                    className={`h-12 w-full rounded-xl border px-12 text-sm font-medium text-slate-800 outline-none transition placeholder:text-slate-400 focus:ring-2 ${fieldErrors.username ? "border-amber-300 bg-amber-50 focus:border-amber-400 focus:ring-amber-100" : "border-cyan-100 bg-cyan-50/50 focus:border-cyan-500 focus:ring-cyan-100"}`}
+                    className={`h-12 w-full rounded-lg border px-12 text-sm font-medium text-slate-800 outline-none transition placeholder:text-slate-400 focus:ring-2 ${fieldErrors.username ? "border-amber-300 bg-amber-50 focus:border-amber-400 focus:ring-amber-100" : "border-slate-300 bg-white focus:border-dinkes-800 focus:ring-dinkes-100"}`}
                     value={form.username}
                     onChange={(event) => updateField("username", event.target.value)}
                     autoComplete="username"
@@ -738,12 +808,12 @@ function LoginCard() {
               <label htmlFor="password" className="block">
                 <span className="sr-only">Password</span>
                 <span className="relative block">
-                  <ShieldCheck className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-cyan-500" aria-hidden="true" />
+                  <ShieldCheck className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-dinkes-700" aria-hidden="true" />
                   <input
                     id="password"
                     ref={passwordRef}
                     name="password"
-                    className={`h-12 w-full rounded-xl border px-12 pr-14 text-sm font-medium text-slate-800 outline-none transition placeholder:text-slate-400 focus:ring-2 ${fieldErrors.password ? "border-amber-300 bg-amber-50 focus:border-amber-400 focus:ring-amber-100" : "border-cyan-100 bg-cyan-50/50 focus:border-cyan-500 focus:ring-cyan-100"}`}
+                    className={`h-12 w-full rounded-lg border px-12 pr-14 text-sm font-medium text-slate-800 outline-none transition placeholder:text-slate-400 focus:ring-2 ${fieldErrors.password ? "border-amber-300 bg-amber-50 focus:border-amber-400 focus:ring-amber-100" : "border-slate-300 bg-white focus:border-dinkes-800 focus:ring-dinkes-100"}`}
                     type={showPassword ? "text" : "password"}
                     value={form.password}
                     onChange={(event) => updateField("password", event.target.value)}
@@ -767,15 +837,16 @@ function LoginCard() {
 
             <div className="mt-3 flex items-center justify-between gap-3">
               <label className="flex min-w-0 items-center gap-2 text-xs font-semibold text-slate-500">
-                <input type="checkbox" className="h-4 w-4 rounded border-cyan-200 text-emerald-600 focus:ring-emerald-200" />
+                <input type="checkbox" checked={rememberUser} onChange={(event) => updateRememberUser(event.target.checked)} className="h-4 w-4 rounded border-slate-300 text-dinkes-800 focus:ring-dinkes-200" />
                 <span className="truncate">Simpan User ID</span>
               </label>
-              <button type="button" className="shrink-0 text-xs font-bold text-cyan-700 hover:text-emerald-700">
-                Lupa password?
+              <button type="button" onClick={() => showLoginNotice("Untuk reset password, hubungi admin Kepegawaian UKPD atau administrator SI-SDMK.")} className="shrink-0 text-[11px] font-bold text-dinkes-800 hover:text-dinkes-700 min-[380px]:text-xs">
+                <span className="hidden min-[400px]:inline">Lupa password?</span>
+                <span className="min-[400px]:hidden">Lupa?</span>
               </button>
             </div>
 
-            <button className="mt-5 inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-dinkes-600 via-cyan-600 to-emerald-500 px-4 text-sm font-extrabold text-white shadow-[0_12px_26px_rgba(14,116,144,0.28)] transition hover:brightness-95 focus-ring disabled:cursor-not-allowed disabled:opacity-60" disabled={loading}>
+            <button className="btn-primary mt-5 h-12 w-full text-sm font-extrabold" disabled={loading}>
               {loading ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
@@ -784,14 +855,14 @@ function LoginCard() {
               ) : "Masuk"}
             </button>
 
-            <div className="mt-4 grid grid-cols-2 gap-3">
+            <div className="mt-4 grid grid-cols-2 gap-2 min-[380px]:gap-3">
               {BIOMETRIC_OPTIONS.map((option) => (
                 <button
                   key={option.label}
                   type="button"
                   disabled={loading || Boolean(passkeyLoading)}
                   onClick={() => requestBiometricLogin(option)}
-                  className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-cyan-100 bg-white text-sm font-bold text-cyan-800 shadow-sm transition hover:border-emerald-200 hover:bg-emerald-50 focus-ring disabled:cursor-not-allowed disabled:opacity-60"
+                  className="inline-flex h-12 min-w-0 items-center justify-center gap-2 rounded-xl border border-cyan-100 bg-white text-sm font-bold text-cyan-800 shadow-sm transition hover:border-emerald-200 hover:bg-emerald-50 focus-ring disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {passkeyLoading === option.method ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" /> : <option.icon className="h-5 w-5" aria-hidden="true" />}
                   {option.label}
@@ -799,8 +870,8 @@ function LoginCard() {
               ))}
             </div>
 
-            {biometricNotice ? <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-semibold leading-5 text-amber-800">{biometricNotice}</p> : null}
-            {formError ? <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-800">{formError}</p> : null}
+            {biometricNotice ? <p role="status" className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-semibold leading-5 text-amber-800">{biometricNotice}</p> : null}
+            {formError ? <p role="alert" className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-800">{formError}</p> : null}
           </div>
 
           <div className="mt-5">
@@ -813,7 +884,7 @@ function LoginCard() {
                 <button
                   key={item.title}
                   type="button"
-                  onClick={() => setBiometricNotice("Silakan masuk terlebih dahulu untuk membuka layanan ini.")}
+                  onClick={() => item.title === "QnA" ? openPublicQna("") : showLoginNotice("Silakan masuk terlebih dahulu untuk membuka layanan ini.")}
                   className="min-w-0 rounded-2xl bg-white px-2 py-3 text-center shadow-sm ring-1 ring-cyan-100 transition hover:-translate-y-0.5 hover:ring-emerald-200 focus-ring"
                 >
                   <span className="mx-auto grid h-10 w-10 place-items-center rounded-xl bg-cyan-50 text-cyan-700">
@@ -834,35 +905,35 @@ function LoginCard() {
         </section>
       </form>
 
-      <form className="hidden w-full max-w-[560px] rounded-[28px] bg-white p-8 shadow-[0_30px_90px_rgba(14,116,144,0.16)] ring-1 ring-cyan-100 lg:block xl:p-10" onSubmit={submit} noValidate>
+      <form aria-labelledby="login-heading-desktop" className="hidden w-full max-w-[520px] rounded-lg border border-slate-200 bg-white p-6 lg:block xl:p-7" onSubmit={submit} noValidate>
         <div className="flex items-start justify-between gap-5">
           <div>
-            <span className="inline-flex items-center gap-2 rounded-xl bg-cyan-50 px-3 py-2 text-xs font-extrabold uppercase tracking-[0.16em] text-cyan-700 ring-1 ring-cyan-100">
+            <span className="inline-flex items-center gap-2 rounded-lg bg-dinkes-50 px-3 py-2 text-xs font-extrabold uppercase tracking-wide text-dinkes-800 ring-1 ring-dinkes-100">
               <LockKeyhole className="h-4 w-4" aria-hidden="true" />
               Portal Login
             </span>
-            <h2 id="login-heading-desktop" className="mt-5 text-3xl font-extrabold leading-tight tracking-normal text-slate-900">
-              Sistem Informasi Data Pegawai
+            <h2
+              id="login-heading-desktop"
+              className="mt-4 text-center text-3xl font-extrabold leading-tight tracking-normal text-slate-900"
+            >
+              Sistem Informasi SDM Kesehatan
             </h2>
-            <p className="mt-3 text-sm leading-6 text-slate-600">
-              Gunakan akun resmi UKPD untuk mengakses dashboard, data pegawai, usulan, DUK, dan QnA layanan kepegawaian.
-            </p>
           </div>
-          <span className="grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-2xl bg-white p-2 shadow-sm ring-1 ring-cyan-100">
+            <span className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-lg bg-white p-2 ring-1 ring-slate-200">
             <Image src={dinkesLogo} alt="Logo Dinas Kesehatan DKI Jakarta" className="h-full w-full object-contain" priority />
           </span>
         </div>
 
-        <div className="mt-8 grid gap-4">
+        <div className="mt-6 grid gap-4">
           <label htmlFor="desktop-username" className="block">
             <span className="mb-2 block text-sm font-bold text-slate-700">Username / UKPD ID</span>
             <span className="relative block">
-              <UserRound className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-cyan-500" aria-hidden="true" />
+              <UserRound className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-dinkes-700" aria-hidden="true" />
               <input
                 id="desktop-username"
                 ref={desktopUsernameRef}
                 name="username"
-                className={`h-12 w-full rounded-xl border px-12 text-sm font-medium text-slate-800 outline-none transition placeholder:text-slate-400 focus:ring-2 ${fieldErrors.username ? "border-amber-300 bg-amber-50 focus:border-amber-400 focus:ring-amber-100" : "border-cyan-100 bg-cyan-50/50 focus:border-cyan-500 focus:ring-cyan-100"}`}
+                className={`h-12 w-full rounded-lg border px-12 text-sm font-medium text-slate-800 outline-none transition placeholder:text-slate-400 focus:ring-2 ${fieldErrors.username ? "border-amber-300 bg-amber-50 focus:border-amber-400 focus:ring-amber-100" : "border-slate-300 bg-white focus:border-dinkes-800 focus:ring-dinkes-100"}`}
                 value={form.username}
                 onChange={(event) => updateField("username", event.target.value)}
                 autoComplete="username"
@@ -877,12 +948,12 @@ function LoginCard() {
           <label htmlFor="desktop-password" className="block">
             <span className="mb-2 block text-sm font-bold text-slate-700">Password</span>
             <span className="relative block">
-              <ShieldCheck className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-cyan-500" aria-hidden="true" />
+              <ShieldCheck className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-dinkes-700" aria-hidden="true" />
               <input
                 id="desktop-password"
                 ref={desktopPasswordRef}
                 name="password"
-                className={`h-12 w-full rounded-xl border px-12 pr-14 text-sm font-medium text-slate-800 outline-none transition placeholder:text-slate-400 focus:ring-2 ${fieldErrors.password ? "border-amber-300 bg-amber-50 focus:border-amber-400 focus:ring-amber-100" : "border-cyan-100 bg-cyan-50/50 focus:border-cyan-500 focus:ring-cyan-100"}`}
+                className={`h-12 w-full rounded-lg border px-12 pr-14 text-sm font-medium text-slate-800 outline-none transition placeholder:text-slate-400 focus:ring-2 ${fieldErrors.password ? "border-amber-300 bg-amber-50 focus:border-amber-400 focus:ring-amber-100" : "border-slate-300 bg-white focus:border-dinkes-800 focus:ring-dinkes-100"}`}
                 type={showPassword ? "text" : "password"}
                 value={form.password}
                 onChange={(event) => updateField("password", event.target.value)}
@@ -906,15 +977,15 @@ function LoginCard() {
 
         <div className="mt-4 flex items-center justify-between gap-4">
           <label className="flex min-w-0 items-center gap-2 text-sm font-semibold text-slate-500">
-            <input type="checkbox" className="h-4 w-4 rounded border-cyan-200 text-emerald-600 focus:ring-emerald-200" />
+            <input type="checkbox" checked={rememberUser} onChange={(event) => updateRememberUser(event.target.checked)} className="h-4 w-4 rounded border-slate-300 text-dinkes-800 focus:ring-dinkes-200" />
             <span className="truncate">Simpan User ID</span>
           </label>
-          <button type="button" className="shrink-0 text-sm font-bold text-cyan-700 hover:text-emerald-700">
+          <button type="button" onClick={() => showLoginNotice("Untuk reset password, hubungi admin Kepegawaian UKPD atau administrator SI-SDMK.")} className="shrink-0 text-sm font-bold text-dinkes-800 hover:text-dinkes-700">
             Lupa password?
           </button>
         </div>
 
-        <button className="mt-6 inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-dinkes-600 via-cyan-600 to-emerald-500 px-4 text-sm font-extrabold text-white shadow-[0_12px_26px_rgba(14,116,144,0.28)] transition hover:brightness-95 focus-ring disabled:cursor-not-allowed disabled:opacity-60" disabled={loading}>
+        <button className="btn-primary mt-5 h-12 w-full text-sm font-extrabold" disabled={loading}>
           {loading ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
@@ -923,22 +994,22 @@ function LoginCard() {
           ) : "Masuk"}
         </button>
 
-        <div className="mt-6 rounded-2xl border border-cyan-100 bg-gradient-to-br from-cyan-50 to-emerald-50 p-4">
-          <div className="flex items-start justify-between gap-4">
+        <div className="mt-4">
+          <div className="mb-3 flex items-center justify-between gap-4">
             <div>
-              <p className="text-sm font-extrabold text-slate-900">Login Biometrik</p>
-              <p className="mt-1 text-xs leading-5 text-slate-600">Finger memakai passkey perangkat. Face membuka kamera, lalu verifikasi passkey.</p>
+              <p className="text-sm text-center font-extrabold text-slate-900">Login Biometrik</p>
+              <p className="mt-1 text-center text-xs leading-5 text-slate-600"></p>
             </div>
-            <Fingerprint className="h-5 w-5 shrink-0 text-cyan-700" aria-hidden="true" />
+            <Fingerprint className="h-5 w-5 shrink-0 text-dinkes-800" aria-hidden="true" />
           </div>
-          <div className="mt-4 grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3">
             {BIOMETRIC_OPTIONS.map((option) => (
               <button
                 key={`desktop-${option.label}`}
                 type="button"
                 disabled={loading || Boolean(passkeyLoading)}
                 onClick={() => requestBiometricLogin(option)}
-                className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-cyan-100 bg-white text-sm font-bold text-cyan-800 shadow-sm transition hover:border-emerald-200 hover:bg-emerald-50 focus-ring disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white text-sm font-bold text-dinkes-800 transition hover:border-dinkes-300 hover:bg-dinkes-50 focus-ring disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {passkeyLoading === option.method ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" /> : <option.icon className="h-5 w-5" aria-hidden="true" />}
                 {option.label}
@@ -947,8 +1018,23 @@ function LoginCard() {
           </div>
         </div>
 
-        {biometricNotice ? <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold leading-6 text-amber-800">{biometricNotice}</p> : null}
-        {formError ? <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-800">{formError}</p> : null}
+        <div className="mt-4 flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-white text-dinkes-800 ring-1 ring-slate-200">
+              <FileQuestion className="h-5 w-5" aria-hidden="true" />
+            </span>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-extrabold text-slate-900">Butuh info layanan?</p>
+              <p className="truncate text-xs font-medium text-slate-500">Buka QnA publik tanpa login.</p>
+            </div>
+          </div>
+          <button type="button" onClick={() => openPublicQna("")} className="shrink-0 rounded-lg bg-white px-3 py-2 text-xs font-extrabold text-dinkes-800 ring-1 ring-slate-200 transition hover:bg-dinkes-50 focus-ring">
+            Buka
+          </button>
+        </div>
+
+        {biometricNotice ? <p role="status" className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold leading-6 text-amber-800">{biometricNotice}</p> : null}
+        {formError ? <p role="alert" className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-800">{formError}</p> : null}
       </form>
 
       {faceDialog.open ? (
@@ -972,7 +1058,7 @@ function LoginCard() {
                 </span>
                 <div className="min-w-0">
                   <h2 id="face-login-title" className="truncate text-base font-extrabold text-slate-900">Face Recognition</h2>
-                  <p className="truncate text-xs font-semibold text-slate-500">SI-DATA Dinkes DKI Jakarta</p>
+                  <p className="truncate text-xs font-semibold text-slate-500">SI-SDMK Dinkes DKI Jakarta</p>
                 </div>
               </div>
               <button
@@ -1032,6 +1118,7 @@ function LoginCard() {
 }
 
 function LoginShell() {
+  const [quickSearch, setQuickSearch] = useState("");
   const timestamp = useMemo(() => {
     return new Intl.DateTimeFormat("id-ID", {
       weekday: "short",
@@ -1044,67 +1131,93 @@ function LoginShell() {
     }).format(new Date());
   }, []);
 
+  function openPublicQna(keyword = "") {
+    setQuickSearch(keyword);
+
+    window.setTimeout(() => {
+      document.getElementById("qna-layanan")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+      });
+    }, 0);
+  }
+
   return (
     <>
       <a href="#konten-utama" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-white focus:px-4 focus:py-3 focus:text-sm focus:font-semibold focus:text-dinkes-600 focus:shadow-lg">
         Lewati ke konten utama
       </a>
 
-      <div className="min-h-screen overflow-hidden bg-[#effbff] text-slate-900">
-        <header className="hidden border-b border-cyan-100 bg-white/90 backdrop-blur sm:block">
+      <div className="min-h-screen overflow-x-hidden bg-[#f8f9fa] text-slate-900">
+        <header className="hidden border-b border-slate-200 bg-white/95 backdrop-blur sm:block">
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-3 lg:px-8">
             <div className="flex min-w-0 items-center gap-3">
-              <span className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-xl bg-white p-1 shadow-sm ring-1 ring-cyan-100">
+              <span className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-lg bg-white p-1 ring-1 ring-slate-200">
                 <Image src={dinkesLogo} alt="Logo Dinas Kesehatan DKI Jakarta" className="h-full w-full object-contain" priority />
               </span>
               <div className="min-w-0">
-                <p className="truncate text-sm font-extrabold tracking-wide text-slate-800 sm:text-base">SI-DATA</p>
+                <p className="truncate text-sm font-extrabold tracking-wide text-slate-800 sm:text-base">SI-SDMK</p>
                 <p className="truncate text-xs font-semibold text-slate-600 sm:text-sm">Dinas Kesehatan Provinsi DKI Jakarta</p>
               </div>
             </div>
-            <div className="hidden items-center gap-2 rounded-xl bg-emerald-50 px-4 py-2 text-xs font-bold text-emerald-700 ring-1 ring-emerald-100 sm:flex">
-              <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" aria-hidden="true" />
+            <div className="hidden items-center gap-2 rounded-lg bg-dinkes-50 px-4 py-2 text-xs font-bold text-dinkes-800 ring-1 ring-dinkes-100 sm:flex">
+              <span className="h-2.5 w-2.5 rounded-full bg-dinkes-800" aria-hidden="true" />
               {timestamp}
             </div>
           </div>
         </header>
 
-        <main id="konten-utama" className="mx-auto grid min-h-screen w-full max-w-7xl lg:min-h-[calc(100vh-69px)] lg:grid-cols-[1fr_0.78fr] lg:items-stretch lg:gap-8 lg:px-8 lg:py-8">
-          <section className="relative hidden min-h-[720px] overflow-hidden rounded-[2rem] bg-[linear-gradient(145deg,#0f5ea8,#1287c7_52%,#10b981)] p-10 text-white shadow-[0_30px_90px_rgba(14,116,144,0.22)] lg:flex lg:flex-col lg:justify-between" aria-labelledby="hero-heading">
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(255,255,255,0.18),transparent_26%),radial-gradient(circle_at_82%_10%,rgba(167,243,208,0.28),transparent_27%)]" aria-hidden="true" />
+        <main id="konten-utama" className="mx-auto grid min-h-screen w-full max-w-7xl lg:min-h-[calc(100vh-69px)] lg:grid-cols-[minmax(0,1fr)_minmax(420px,0.78fr)] lg:items-center lg:gap-6 lg:px-8 lg:py-6 xl:gap-8">
+          <section className="relative hidden overflow-hidden rounded-lg bg-dinkes-800 p-10 text-white lg:flex lg:h-[calc(100vh-117px)] lg:min-h-[560px] lg:max-h-[680px] lg:flex-col lg:justify-between" aria-labelledby="hero-heading">
             <div className="relative z-10 max-w-2xl">
-              <span className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-white/80 backdrop-blur">
+              <span className="inline-flex items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-xs font-bold uppercase tracking-wide text-white/80 backdrop-blur">
                 <Landmark className="h-4 w-4 text-amber-200" aria-hidden="true" />
                 Jakarta digital service
               </span>
-              <h1 id="hero-heading" className="mt-8 max-w-3xl text-5xl font-extrabold leading-tight tracking-normal text-white">
+              <h1 id="hero-heading" className="mt-7 max-w-3xl text-5xl font-extrabold leading-tight tracking-normal text-white">
                 Sistem Informasi SDM Kesehatan DKI Jakarta
               </h1>
-              <p className="mt-5 max-w-xl text-base font-medium leading-7 text-white/80">
+              <p className="mt-4 max-w-xl text-base font-medium leading-7 text-white/80">
                 Portal terpadu untuk pengelolaan data pegawai, layanan usulan, DUK, dan informasi kepegawaian Dinas Kesehatan Provinsi DKI Jakarta.
               </p>
             </div>
 
-            <div className="relative z-10 grid max-w-xl grid-cols-3 gap-3">
-              {[
-                { label: "Akun UKPD", icon: Building2 },
-                { label: "Biometrik", icon: Fingerprint },
-                { label: "Data SDMK", icon: HeartPulse }
-              ].map((item) => (
-                <div key={item.label} className="rounded-2xl border border-white/20 bg-white/10 p-4 backdrop-blur">
-                  <item.icon className="h-6 w-6 text-amber-100" aria-hidden="true" />
-                  <p className="mt-4 text-sm font-extrabold text-white">{item.label}</p>
-                </div>
-              ))}
+            <div className="relative z-10 max-w-2xl">
+              <div className="flex items-center justify-between gap-4">
+                <p className="text-sm font-extrabold text-white">Bantuan cepat sebelum login</p>
+                <span className="rounded-full bg-govgold-300 px-3 py-1 text-xs font-extrabold text-slate-900">Publik</span>
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-3">
+                {QUICK_ACTIONS.map((item) => (
+                  <button
+                    key={item.keyword}
+                    type="button"
+                    onClick={() => openPublicQna(item.keyword)}
+                    className="flex min-h-[82px] items-start gap-3 rounded-2xl border border-white/20 bg-white/10 p-4 text-left backdrop-blur transition hover:-translate-y-0.5 hover:bg-white/15 focus-ring"
+                  >
+                    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white/15 text-amber-100">
+                      <FileQuestion className="h-5 w-5" aria-hidden="true" />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block text-sm font-extrabold leading-5 text-white">{item.title}</span>
+                      <span className="mt-1 block text-xs font-medium leading-5 text-white/75">{item.description}</span>
+                    </span>
+                  </button>
+                ))}
+              </div>
             </div>
 
             <JakartaSilhouette />
           </section>
 
-          <section className="flex min-h-screen w-full items-stretch justify-center lg:min-h-[720px]">
-            <LoginCard />
+          <section className="flex min-h-screen w-full items-stretch justify-center lg:h-[calc(100vh-117px)] lg:min-h-[560px] lg:max-h-[680px]">
+            <LoginCard onOpenQna={openPublicQna} />
           </section>
         </main>
+
+        <section className="mx-auto w-full max-w-7xl px-4 pb-10 sm:px-6 lg:px-8 lg:pb-12">
+          <QnaSection quickSearch={quickSearch} onResetQuickSearch={() => setQuickSearch("")} />
+        </section>
       </div>
     </>
   );

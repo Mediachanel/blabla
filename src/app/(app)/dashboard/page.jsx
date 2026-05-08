@@ -8,10 +8,11 @@ import KpiCard from "@/components/cards/KpiCard";
 import DataTable from "@/components/tables/DataTable";
 import StatusBadge from "@/components/ui/StatusBadge";
 import ErrorState from "@/components/ui/ErrorState";
+import { escapeCsv } from "@/lib/security/csv";
 
 const DashboardChartCard = dynamic(() => import("@/components/charts/DashboardChartCard"), {
   ssr: false,
-  loading: () => <div className="h-56 animate-pulse rounded-2xl bg-white" />
+  loading: () => <div className="h-56 animate-pulse rounded-lg border border-slate-200 bg-white" />
 });
 
 const analyticsTabs = [
@@ -49,14 +50,6 @@ function formatPercent(value, total) {
     minimumFractionDigits: 1,
     maximumFractionDigits: 1
   })}%`;
-}
-
-function escapeCsv(value) {
-  const text = String(value ?? "");
-  if (text.includes(",") || text.includes("\"") || text.includes("\n")) {
-    return `"${text.replace(/"/g, "\"\"")}"`;
-  }
-  return text;
 }
 
 function downloadCsv(filename, headers, rows) {
@@ -107,6 +100,30 @@ function CountPill({ value }) {
     <span className="rounded-full bg-dinkes-50 px-2.5 py-1 text-xs font-bold tabular-nums text-dinkes-700">
       {formatNumber(value)}
     </span>
+  );
+}
+
+function employeeStatusCount(employee, key) {
+  const status = employee?.jenis_pegawai || "";
+  if (key === "total") return 1;
+  if (key === "pnsCpns") return status === "PNS" || status === "CPNS" ? 1 : 0;
+  if (key === "pppk") return status === "PPPK" ? 1 : 0;
+  if (key === "pppkParuhWaktu") return status === "PPPK Paruh Waktu" ? 1 : 0;
+  if (key === "nonPns") return status === "NON PNS" ? 1 : 0;
+  if (key === "pjlp") return status === "PJLP" ? 1 : 0;
+  return 0;
+}
+
+function EmployeePivotCountCells({ employee }) {
+  return (
+    <>
+      <td className={`${pivotNumberCell} font-medium text-slate-900`}>{employeeStatusCount(employee, "total")}</td>
+      <td className={`${pivotNumberCell} text-slate-700`}>{employeeStatusCount(employee, "pnsCpns")}</td>
+      <td className={`${pivotNumberCell} text-slate-700`}>{employeeStatusCount(employee, "pppk")}</td>
+      <td className={`${pivotNumberCell} text-slate-700`}>{employeeStatusCount(employee, "pppkParuhWaktu")}</td>
+      <td className={`${pivotNumberCell} text-slate-700`}>{employeeStatusCount(employee, "nonPns")}</td>
+      <td className={`${pivotNumberCell} text-slate-700`}>{employeeStatusCount(employee, "pjlp")}</td>
+    </>
   );
 }
 
@@ -196,15 +213,15 @@ function PivotDrillPanel({ mode, query }) {
   }
 
   return (
-    <section className="mb-4 rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
-      <h3 className="text-sm font-semibold text-slate-900">Rincian Pivot: {title}</h3>
+    <section className="mb-4 rounded-lg border border-slate-200 bg-slate-50/80 p-4">
+      <h3 className="font-display text-sm font-bold text-dinkes-900">Rincian Pivot: {title}</h3>
       {loadingTree ? <p className="mt-3 text-sm text-slate-500">Memuat struktur...</p> : null}
       {treeError ? <p className="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700" role="alert">{treeError}</p> : null}
       <div className="mt-3 space-y-2 md:hidden">
         {tree.map((group1) => {
           const isOpen1 = Boolean(open1[group1.label]);
           return (
-            <article key={group1.label} className="rounded-2xl border border-slate-200 bg-white p-3">
+            <article key={group1.label} className="rounded-lg border border-slate-200 bg-white p-3">
               <button className="flex w-full items-center justify-between gap-3 text-left" onClick={() => toggleLevel1(group1.label)} type="button">
                 <span className="flex min-w-0 items-center gap-2 text-sm font-bold text-slate-900">
                   {isOpen1 ? <ChevronDown className="h-4 w-4 shrink-0" /> : <ChevronRight className="h-4 w-4 shrink-0" />}
@@ -246,7 +263,7 @@ function PivotDrillPanel({ mode, query }) {
             </article>
           );
         })}
-        {!loadingTree && !tree.length ? <p className="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-8 text-center text-sm text-slate-500">Data drilldown tidak ditemukan.</p> : null}
+        {!loadingTree && !tree.length ? <p className="rounded-lg border border-dashed border-slate-300 bg-white px-4 py-8 text-center text-sm text-slate-500">Data drilldown tidak ditemukan.</p> : null}
       </div>
       <p className="mt-2 hidden text-xs text-slate-500 md:block">Geser horizontal untuk melihat kolom jumlah per jenis pegawai.</p>
       <div className="table-scroll mt-3 hidden max-w-[1100px] rounded-xl border border-slate-200 bg-white md:block">
@@ -318,18 +335,13 @@ function PivotDrillPanel({ mode, query }) {
                                 <tr key={employee.id_pegawai} className="border-b border-slate-100 hover:bg-dinkes-50/40">
                                   <td className={`${pivotLabelCell} bg-white py-1 text-sm text-slate-700`}>
                                     <div className="ml-12 flex min-w-0 items-center justify-between gap-3">
-                                      <span className="truncate">{employee.nama} <span className="text-xs text-slate-500">({employee.jenis_pegawai || "-"})</span></span>
+                                      <span className="truncate">{employee.nama}</span>
                                       <Link className="shrink-0 text-xs font-semibold text-dinkes-700 hover:text-dinkes-900" href={`/pegawai/${employee.id_pegawai}`}>
                                         Lihat Profil
                                       </Link>
                                     </div>
                                   </td>
-                                  <td className="px-3 py-1 text-right text-xs text-slate-400">-</td>
-                                  <td className="px-3 py-1 text-right text-xs text-slate-400">-</td>
-                                  <td className="px-3 py-1 text-right text-xs text-slate-400">-</td>
-                                  <td className="px-3 py-1 text-right text-xs text-slate-400">-</td>
-                                  <td className="px-3 py-1 text-right text-xs text-slate-400">-</td>
-                                  <td className="px-3 py-1 text-right text-xs text-slate-400">-</td>
+                                  <EmployeePivotCountCells employee={employee} />
                                 </tr>
                               ))}
                               {loadingNode === nodeKey ? (
@@ -454,13 +466,13 @@ function UkpdDrillPanel({ query }) {
   }
 
   return (
-    <section className="mb-4 rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
+    <section className="mb-4 rounded-lg border border-slate-200 bg-slate-50/80 p-4">
       <h3 className="text-sm font-semibold text-slate-900">Rincian Pivot: UKPD -&gt; Rumpun -&gt; Jabatan -&gt; Pegawai</h3>
       {loadingTree ? <p className="mt-3 text-sm text-slate-500">Memuat struktur...</p> : null}
       {treeError ? <p className="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700" role="alert">{treeError}</p> : null}
       <div className="mt-3 space-y-2 md:hidden">
         {groupedTree.map(([wilayah, items]) => (
-          <section key={wilayah} className="rounded-2xl border border-slate-200 bg-white p-3">
+          <section key={wilayah} className="rounded-lg border border-slate-200 bg-white p-3">
             <h4 className="mb-2 text-xs font-bold uppercase tracking-wide text-dinkes-700">Wilayah {wilayah}</h4>
             <div className="space-y-2">
               {items.map((ukpd) => {
@@ -646,12 +658,7 @@ function UkpdDrillPanel({ query }) {
                                           </Link>
                                         </div>
                                       </td>
-                                      <td className="px-3 py-1 text-right text-xs text-slate-400">-</td>
-                                      <td className="px-3 py-1 text-right text-xs text-slate-400">-</td>
-                                      <td className="px-3 py-1 text-right text-xs text-slate-400">-</td>
-                                      <td className="px-3 py-1 text-right text-xs text-slate-400">-</td>
-                                      <td className="px-3 py-1 text-right text-xs text-slate-400">-</td>
-                                      <td className="px-3 py-1 text-right text-xs text-slate-400">-</td>
+                                      <EmployeePivotCountCells employee={employee} />
                                     </tr>
                                   ))}
                                   {loadingNode === key3 ? (
@@ -836,7 +843,7 @@ function DashboardAnalyticsPanel({ analytics }) {
         {analyticsTabs.map((tab) => (
           <button
             key={tab.id}
-            className={`inline-flex shrink-0 items-center rounded-t-xl border border-b-0 px-4 py-2 text-sm font-semibold transition focus-ring ${activeTab === tab.id ? "border-dinkes-700 bg-dinkes-700 text-white" : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"}`}
+            className={`inline-flex shrink-0 items-center rounded-lg border px-4 py-2 text-sm font-semibold transition focus-ring ${activeTab === tab.id ? "border-dinkes-800 bg-dinkes-800 text-white" : "border-slate-200 bg-white text-slate-700 hover:border-dinkes-300 hover:bg-dinkes-50 hover:text-dinkes-800"}`}
             onClick={() => {
               setActiveTab(tab.id);
               setQuery("");
@@ -847,9 +854,9 @@ function DashboardAnalyticsPanel({ analytics }) {
         ))}
       </nav>
 
-      <div className="rounded-2xl rounded-tl-none border border-slate-200 bg-white p-4 shadow-soft">
+      <div className="rounded-lg border border-slate-200 bg-white p-4">
         <header className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <h2 className="text-sm font-bold text-slate-900">{titleByTab[activeTab]}</h2>
+          <h2 className="font-display text-base font-bold text-dinkes-900">{titleByTab[activeTab]}</h2>
           <div className="flex flex-col gap-3 sm:flex-row">
           <button
             className="btn-secondary"
@@ -896,9 +903,9 @@ function DashboardMiniStats({ cards = [] }) {
   return (
     <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
       {cards.map((card) => (
-        <div key={card.label} className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{card.label}</p>
-          <strong className="mt-1 block text-xl font-bold tabular-nums text-slate-950">{formatNumber(card.value)}</strong>
+        <div key={card.label} className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+          <p className="section-label">{card.label}</p>
+          <strong className="mt-1 block font-display text-xl font-bold tabular-nums text-slate-950">{formatNumber(card.value)}</strong>
           {card.helper ? <p className="mt-1 text-xs text-slate-500">{card.helper}</p> : null}
         </div>
       ))}
@@ -927,15 +934,15 @@ function DashboardMenuCharts({
   if (!activeView) return null;
 
   return (
-    <section className="mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-soft">
-      <nav className="flex gap-1 overflow-x-auto bg-emerald-600 px-3 py-2" aria-label="Menu dashboard">
+    <section className="surface mt-4 overflow-hidden">
+      <nav className="flex gap-1 overflow-x-auto bg-dinkes-800 px-3 py-2" aria-label="Menu dashboard">
         {menuItems.map((item) => {
           const Icon = dashboardMenuIcons[item.id] || BarChart3;
           const selected = item.id === activeId;
           return (
             <button
               key={item.id}
-              className={`inline-flex shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-white transition focus-ring ${selected ? "bg-white/20 shadow-sm" : "hover:bg-white/10"}`}
+              className={`inline-flex shrink-0 items-center gap-2 rounded-lg border px-3 py-2 text-sm font-semibold text-white transition focus-ring ${selected ? "border-govgold-300 bg-dinkes-600" : "border-transparent hover:bg-white/10"}`}
               onClick={() => onMenuChange(item.id)}
               type="button"
             >
@@ -949,12 +956,12 @@ function DashboardMenuCharts({
       <div className="p-4 sm:p-5">
         <header className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
           <div className="flex flex-col gap-1">
-            <h2 className="text-lg font-bold text-slate-950">{activeView.title}</h2>
+            <h2 className="font-display text-lg font-bold text-dinkes-900">{activeView.title}</h2>
             {activeView.subtitle ? <p className="text-sm text-slate-500">{activeView.subtitle}</p> : null}
           </div>
           {statusOptions.length > 1 ? (
             <label className="flex w-full flex-col gap-1 text-sm font-semibold text-slate-700 sm:w-72">
-              <span>Status Pegawai</span>
+              <span className="section-label">Status Pegawai</span>
               <select
                 className="input py-2"
                 value={activeStatus}
@@ -1045,7 +1052,7 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {[1, 2, 3, 4].map((item) => <div key={item} className="h-32 animate-pulse rounded-2xl bg-white" />)}
+        {[1, 2, 3, 4].map((item) => <div key={item} className="h-32 animate-pulse rounded-lg border border-slate-200 bg-white" />)}
       </section>
     );
   }
@@ -1124,11 +1131,17 @@ export default function DashboardPage() {
 
   return (
     <>
-      <header className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <h1 className="text-xl font-bold tracking-tight text-slate-950 sm:text-2xl">Selamat datang</h1>
+      <header className="mb-5 flex flex-col gap-2 border-b border-slate-200 pb-4 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <p className="section-label text-dinkes-800">Dashboard Utama</p>
+          <h1 className="app-heading mt-1 text-2xl sm:text-3xl">Sistem Informasi SDM Kesehatan</h1>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+            Ringkasan pegawai, komposisi status, dan analitik detail Dinas Kesehatan Provinsi DKI Jakarta.
+          </p>
+        </div>
       </header>
 
-      <section className="grid grid-cols-3 gap-3 xl:grid-cols-6">
+      <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
         <KpiCard title="Total Pegawai" value={data.summary.total} percentage="100%" helper="Jumlah Pegawai Seluruh UKPD" icon={UsersRound} />
         <KpiCard title="PNS/CPNS" value={data.summary.pnsCpns} percentage={formatPercent(data.summary.pnsCpns, totalPegawai)} helper="ASN aktif" icon={ShieldCheck} tone="green" />
         <KpiCard title="PPPK" value={data.summary.pppk} percentage={formatPercent(data.summary.pppk, totalPegawai)} helper="Penuh waktu" icon={UserRoundCheck} tone="gold" />
@@ -1148,7 +1161,7 @@ export default function DashboardPage() {
         onMenuChange={setDashboardMenu}
       />
       {dashboardStatusError ? (
-        <p className="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700" role="alert">
+        <p className="mt-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700" role="alert">
           {dashboardStatusError}
         </p>
       ) : null}
@@ -1156,16 +1169,16 @@ export default function DashboardPage() {
       {analytics ? (
         <DashboardAnalyticsPanel analytics={analytics} />
       ) : (
-        <section className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-soft">
+        <section className="surface mt-4 p-4">
           <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <h2 className="text-lg font-semibold text-slate-950">Analitik Detail</h2>
+            <h2 className="font-display text-lg font-bold text-dinkes-900">Analitik Detail</h2>
             <button className="btn-secondary" type="button" onClick={loadAnalytics} disabled={analyticsLoading}>
               <BarChart3 className="h-4 w-4" />
               {analyticsLoading ? "Memuat..." : "Muat Analitik Detail"}
             </button>
           </header>
           {analyticsError ? (
-            <p className="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700" role="alert">
+            <p className="mt-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700" role="alert">
               {analyticsError}
             </p>
           ) : null}
@@ -1175,21 +1188,21 @@ export default function DashboardPage() {
       <section className="mt-6 grid gap-5 xl:grid-cols-[1fr_360px]">
         <article>
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-slate-950">Pegawai Terbaru</h2>
+            <h2 className="font-display text-lg font-bold text-dinkes-900">Pegawai Terbaru</h2>
             <Link className="text-sm font-semibold text-dinkes-700 hover:text-dinkes-900" href="/pegawai">Lihat semua</Link>
           </div>
           <DataTable columns={columns} data={data.latestEmployees} rowKey="id_pegawai" />
         </article>
         <aside className="surface p-5">
-          <h2 className="text-lg font-semibold text-slate-950">Ringkasan Usulan</h2>
+          <h2 className="font-display text-lg font-bold text-dinkes-900">Ringkasan Usulan</h2>
           <div className="mt-4 space-y-3">
-            <div className="rounded-xl border border-slate-200 p-4">
-              <p className="text-sm text-slate-500">Usulan Mutasi</p>
-              <p className="mt-2 text-2xl font-bold text-slate-950">{data.usulanSummary.mutasi}</p>
+            <div className="rounded-lg border border-slate-200 bg-slate-50/60 p-4">
+              <p className="section-label">Usulan Mutasi</p>
+              <p className="mt-2 font-display text-2xl font-bold text-slate-950">{data.usulanSummary.mutasi}</p>
             </div>
-            <div className="rounded-xl border border-slate-200 p-4">
-              <p className="text-sm text-slate-500">Usulan Putus JF</p>
-              <p className="mt-2 text-2xl font-bold text-slate-950">{data.usulanSummary.putusJf}</p>
+            <div className="rounded-lg border border-slate-200 bg-slate-50/60 p-4">
+              <p className="section-label">Usulan Putus JF</p>
+              <p className="mt-2 font-display text-2xl font-bold text-slate-950">{data.usulanSummary.putusJf}</p>
             </div>
           </div>
         </aside>

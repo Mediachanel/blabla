@@ -7,7 +7,7 @@ export default function ErrorState({
   onRetry
 }) {
   return (
-    <section className="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-center text-rose-800" role="alert">
+    <section className="rounded-lg border border-rose-200 bg-rose-50 p-6 text-center text-rose-800" role="alert">
       <AlertCircle className="mx-auto h-10 w-10 text-rose-600" aria-hidden="true" />
       <h2 className="mt-4 text-base font-semibold">{title}</h2>
       <p className="mx-auto mt-1 max-w-2xl text-sm leading-6 text-rose-700">{description}</p>

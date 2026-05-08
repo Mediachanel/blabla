@@ -77,10 +77,10 @@ export default function AppShell({ children }) {
 
   if (loading) {
     return (
-      <main className="grid min-h-screen place-items-center bg-slate-50">
-        <section className="w-full max-w-md rounded-2xl bg-white p-6 shadow-soft">
-          <div className="h-5 w-40 animate-pulse rounded bg-slate-200" />
-          <div className="mt-4 space-y-3">
+      <main className="grid min-h-screen place-items-center bg-[#f8f9fa] px-4">
+        <section className="w-full max-w-md rounded-lg border border-slate-200 bg-white p-6">
+          <div className="h-5 w-44 animate-pulse rounded bg-slate-200" />
+          <div className="mt-5 space-y-3">
             <div className="h-3 animate-pulse rounded bg-slate-100" />
             <div className="h-3 w-2/3 animate-pulse rounded bg-slate-100" />
           </div>
@@ -90,12 +90,12 @@ export default function AppShell({ children }) {
   }
 
   return (
-    <div className="min-h-screen bg-[#F6F9FC] print:bg-white">
+    <div className="min-h-screen bg-[#f8f9fa] print:bg-white">
       <Sidebar user={user} collapsed={collapsed} onToggle={() => setCollapsed((value) => !value)} />
       <MobileSidebar user={user} open={mobileOpen} onClose={() => setMobileOpen(false)} />
-      <div className={`transition-[padding] duration-200 print:pl-0 md:pl-16 ${collapsed ? "lg:pl-16" : "lg:pl-64"}`}>
+      <div className={`transition-[padding] duration-200 print:pl-0 md:pl-16 ${collapsed ? "lg:pl-16" : "lg:pl-[260px]"}`}>
         <Topbar user={user} onOpenMenu={() => setMobileOpen(true)} collapsed={collapsed} onToggleSidebar={() => setCollapsed((value) => !value)} />
-        <main className="mx-auto w-full max-w-[1600px] px-4 pb-28 pt-4 print:p-0 sm:px-6 md:pb-8 lg:px-8">{children}</main>
+        <main className="mx-auto w-full max-w-[1440px] px-3 pb-28 pt-3 print:p-0 sm:px-5 sm:pt-5 md:pb-8 lg:px-6">{children}</main>
       </div>
       <MobileBottomNav user={user} />
     </div>

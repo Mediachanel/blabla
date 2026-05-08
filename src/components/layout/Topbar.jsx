@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Bell, LogOut, Loader2, Menu, PanelLeftClose, PanelLeftOpen, Search, UserRound, X } from "lucide-react";
+import { Bell, LogOut, Loader2, Menu, PanelLeftClose, PanelLeftOpen, Search, Settings, UserRound, X } from "lucide-react";
 
 function primaryPosition(item) {
   return item.nama_jabatan_menpan || item.nama_jabatan_orb || item.jabatan || "-";
@@ -154,17 +154,17 @@ export default function Topbar({ user, onOpenMenu, collapsed, onToggleSidebar })
   }
 
   return (
-    <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/90 backdrop-blur print:hidden">
-      <div className="flex h-16 items-center gap-2 px-3 sm:px-6 md:justify-between">
-        <button className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 focus-ring md:hidden" onClick={onOpenMenu} aria-label="Buka menu">
+    <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur print:hidden">
+      <div className="flex h-16 items-center gap-2 px-3 sm:px-5 md:justify-between">
+        <button className="grid h-10 w-10 shrink-0 place-items-center rounded-lg border border-slate-200 bg-white text-dinkes-800 hover:bg-slate-100 focus-ring md:hidden" onClick={onOpenMenu} aria-label="Buka menu">
             <Menu className="h-5 w-5" />
         </button>
         <div className="flex min-w-0 flex-1 items-center gap-4">
-          <button className="hidden rounded-xl bg-slate-100 p-2.5 text-slate-600 hover:bg-slate-200 focus-ring lg:inline-flex" onClick={onToggleSidebar} aria-label={collapsed ? "Buka sidebar" : "Tutup sidebar"}>
+          <button className="hidden rounded-lg border border-slate-200 bg-white p-2.5 text-dinkes-800 hover:bg-slate-100 focus-ring lg:inline-flex" onClick={onToggleSidebar} aria-label={collapsed ? "Buka sidebar" : "Tutup sidebar"}>
             {collapsed ? <PanelLeftOpen className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
           </button>
           <nav className="hidden min-w-0 items-center gap-2 text-sm font-medium md:flex" aria-label="Breadcrumb">
-            <Link className="text-dinkes-600 hover:text-dinkes-700" href="/dashboard">Beranda</Link>
+            <Link className="text-dinkes-800 hover:text-dinkes-700" href="/dashboard">Beranda</Link>
             <span className="text-slate-300">/</span>
             <span className="truncate text-slate-600">{breadcrumbFromPath(pathname)}</span>
           </nav>
@@ -173,8 +173,8 @@ export default function Topbar({ user, onOpenMenu, collapsed, onToggleSidebar })
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
             <input
               id="topbar-search-input"
-              className="input h-10 rounded-xl border-slate-200 bg-slate-50 py-2 pl-9 pr-10"
-              placeholder="Cari pegawai atau UKPD"
+              className="input h-10 rounded-full border-slate-300 bg-slate-50 py-2 pl-9 pr-10"
+              placeholder="Cari data pegawai atau UKPD..."
               value={query}
               onChange={(event) => {
                 setQuery(event.target.value);
@@ -192,12 +192,12 @@ export default function Topbar({ user, onOpenMenu, collapsed, onToggleSidebar })
             {loading ? (
               <Loader2 className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-slate-400" aria-hidden="true" />
             ) : query ? (
-              <button type="button" className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 focus-ring" onClick={clearSearch} aria-label="Bersihkan pencarian">
+              <button type="button" className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 focus-ring" onClick={clearSearch} aria-label="Bersihkan pencarian">
                 <X className="h-4 w-4" />
               </button>
             ) : null}
             {open && trimmedQuery.length >= 2 ? (
-              <div id={resultListId} className="absolute left-0 top-full mt-2 w-full min-w-[28rem] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl" role="listbox">
+              <div id={resultListId} className="absolute left-0 top-full mt-2 w-full min-w-[28rem] overflow-hidden rounded-lg border border-slate-200 bg-white shadow-soft" role="listbox">
                 {errorMessage ? (
                   <div className="px-4 py-3 text-sm text-rose-700">{errorMessage}</div>
                 ) : results.length ? (
@@ -209,7 +209,7 @@ export default function Topbar({ user, onOpenMenu, collapsed, onToggleSidebar })
                           key={item.id_pegawai}
                           id={`${resultListId}-${item.id_pegawai}`}
                           href={`/pegawai/${item.id_pegawai}`}
-                          className={`block px-4 py-3 text-sm transition ${active ? "bg-dinkes-50 text-dinkes-800" : "text-slate-700 hover:bg-slate-50"}`}
+                          className={`block px-4 py-3 text-sm transition ${active ? "bg-dinkes-50 text-dinkes-900" : "text-slate-700 hover:bg-slate-50"}`}
                           role="option"
                           aria-selected={active}
                           onMouseEnter={() => setActiveIndex(index)}
@@ -237,7 +237,7 @@ export default function Topbar({ user, onOpenMenu, collapsed, onToggleSidebar })
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
           <input
             id="mobile-topbar-search-input"
-            className="input h-10 rounded-xl border-slate-200 bg-slate-50 py-2 pl-9 pr-8 text-sm"
+            className="input h-10 rounded-full border-slate-300 bg-slate-50 py-2 pl-9 pr-8 text-sm"
             placeholder="Cari pegawai..."
             value={query}
             onChange={(event) => {
@@ -253,12 +253,12 @@ export default function Topbar({ user, onOpenMenu, collapsed, onToggleSidebar })
             aria-expanded={open}
           />
           {query ? (
-            <button type="button" className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 focus-ring" onClick={clearSearch} aria-label="Bersihkan pencarian">
+            <button type="button" className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 focus-ring" onClick={clearSearch} aria-label="Bersihkan pencarian">
               <X className="h-4 w-4" />
             </button>
           ) : null}
           {open && trimmedQuery.length >= 2 ? (
-            <div id={`${resultListId}-mobile`} className="absolute inset-x-0 top-full mt-2 max-h-80 overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-2xl" role="listbox">
+            <div id={`${resultListId}-mobile`} className="absolute inset-x-0 top-full mt-2 max-h-80 overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-soft" role="listbox">
               {errorMessage ? (
                 <div className="px-4 py-3 text-sm text-rose-700">{errorMessage}</div>
               ) : results.length ? (
@@ -268,7 +268,7 @@ export default function Topbar({ user, onOpenMenu, collapsed, onToggleSidebar })
                     <Link
                       key={item.id_pegawai}
                       href={`/pegawai/${item.id_pegawai}`}
-                      className={`block px-4 py-3 text-sm transition ${active ? "bg-dinkes-50 text-dinkes-800" : "text-slate-700 hover:bg-slate-50"}`}
+                      className={`block px-4 py-3 text-sm transition ${active ? "bg-dinkes-50 text-dinkes-900" : "text-slate-700 hover:bg-slate-50"}`}
                       role="option"
                       aria-selected={active}
                       onClick={closeSearch}
@@ -289,16 +289,24 @@ export default function Topbar({ user, onOpenMenu, collapsed, onToggleSidebar })
           ) : null}
         </div>
         <div className="flex shrink-0 items-center gap-2 md:gap-4">
-          <span className="hidden text-sm font-medium text-slate-400 md:inline">{formatToday()}</span>
+          <span className="hidden text-sm font-medium text-slate-500 md:inline">{formatToday()}</span>
           <span className="hidden h-8 w-px bg-[#e5e7eb] md:block" aria-hidden="true" />
-          <button className="relative hidden rounded-full p-2 text-dinkes-600 hover:bg-dinkes-50 focus-ring sm:inline-flex md:inline-flex" type="button" aria-label="Notifikasi">
+          <button className="relative hidden rounded-full p-2 text-slate-700 hover:bg-slate-100 focus-ring sm:inline-flex md:inline-flex" type="button" aria-label="Notifikasi">
             <Bell className="h-5 w-5" />
-            <span className="absolute right-0 top-0 rounded-full bg-[#f13296] px-1.5 py-0.5 text-[10px] font-bold leading-none text-white">0</span>
+            <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-rose-600" />
           </button>
+          <Link className="hidden rounded-full p-2 text-slate-700 hover:bg-slate-100 focus-ring sm:inline-flex" href="/profil" aria-label="Pengaturan">
+            <Settings className="h-5 w-5" />
+          </Link>
+          <span className="hidden h-8 w-px bg-[#e5e7eb] md:block" aria-hidden="true" />
+          <div className="hidden min-w-0 text-right lg:block">
+            <p className="truncate text-sm font-bold leading-tight text-slate-900">{user?.username || "Admin Dinas"}</p>
+            <p className="truncate text-xs font-medium uppercase text-slate-500">{user?.role || "Dinas Kesehatan"}</p>
+          </div>
           <div className="relative" ref={accountRef}>
             <button
               type="button"
-              className="grid h-10 w-10 place-items-center rounded-full bg-slate-100 text-sm font-medium text-slate-500 shadow-sm ring-1 ring-slate-200 focus-ring"
+              className="grid h-10 w-10 place-items-center rounded-full bg-dinkes-800 text-sm font-bold text-white ring-2 ring-white focus-ring"
               onClick={() => setAccountOpen((value) => !value)}
               aria-label="Buka pengaturan pengguna"
               aria-expanded={accountOpen}
@@ -306,8 +314,8 @@ export default function Topbar({ user, onOpenMenu, collapsed, onToggleSidebar })
               {getInitials(user)}
             </button>
             {accountOpen ? (
-              <section className="absolute right-0 top-full mt-3 w-72 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-[0_18px_45px_rgba(15,23,42,0.16)]">
-                <header className="bg-dinkes-500 px-5 py-4 text-white">
+              <section className="absolute right-0 top-full mt-3 w-72 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-soft">
+                <header className="bg-dinkes-800 px-5 py-4 text-white">
                   <p className="text-base font-semibold">Pengaturan</p>
                   <p className="mt-1 truncate text-xs font-medium text-white/80">{user?.nama_ukpd || user?.username || "Pengguna"}</p>
                 </header>

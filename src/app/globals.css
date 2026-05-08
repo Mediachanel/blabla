@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Public+Sans:wght@600;700;800&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -6,6 +6,16 @@
 
 :root {
   color-scheme: light;
+  --color-background: #f8f9fa;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f3f4f5;
+  --color-border: #cbd5e1;
+  --color-border-soft: #e2e8f0;
+  --color-text: #191c1d;
+  --color-text-muted: #434750;
+  --color-primary: #00346d;
+  --color-primary-container: #1a4b8c;
+  --color-gold: #d4af37;
 }
 
 * {
@@ -18,10 +28,11 @@ html {
 
 body {
   min-height: 100vh;
-  background: #F6F9FC;
-  color: #1f2937;
-  font-family: "Poppins", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--color-background);
+  color: var(--color-text);
+  font-family: "Inter", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   font-size: 14px;
+  letter-spacing: 0;
   overflow-x: hidden;
 }
 
@@ -32,17 +43,24 @@ textarea {
   font: inherit;
 }
 
+h1,
+h2,
+h3 {
+  font-family: "Public Sans", "Inter", "Segoe UI", system-ui, sans-serif;
+  letter-spacing: 0;
+}
+
 @layer components {
   .focus-ring {
-    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dinkes-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white;
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dinkes-200 focus-visible:ring-offset-2 focus-visible:ring-offset-white;
   }
 
   .surface {
-    @apply rounded-2xl border border-slate-200 bg-white shadow-etpp;
+    @apply rounded-lg border border-slate-200 bg-white shadow-none;
   }
 
   .input {
-    @apply w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-dinkes-500 focus:ring-2 focus:ring-dinkes-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400;
+    @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-dinkes-800 focus:ring-2 focus:ring-dinkes-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400;
   }
 
   .label {
@@ -50,19 +68,19 @@ textarea {
   }
 
   .btn-primary {
-    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-dinkes-600 px-4 py-2.5 text-sm font-semibold text-white shadow-button transition hover:bg-dinkes-700 focus-ring disabled:cursor-not-allowed disabled:opacity-60;
+    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-dinkes-800 px-4 py-2.5 text-sm font-semibold text-white shadow-button transition hover:bg-dinkes-700 focus-ring disabled:cursor-not-allowed disabled:opacity-60;
   }
 
   .btn-secondary {
-    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:border-dinkes-300 hover:bg-dinkes-50 hover:text-dinkes-700 focus-ring disabled:cursor-not-allowed disabled:opacity-60;
+    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-dinkes-600 hover:bg-dinkes-50 hover:text-dinkes-800 focus-ring disabled:cursor-not-allowed disabled:opacity-60;
   }
 
   .table-th {
-    @apply h-12 whitespace-nowrap border-b border-r border-slate-200 bg-slate-50 px-3 py-2.5 text-left text-xs font-bold uppercase tracking-wide text-slate-600 sm:px-4;
+    @apply h-11 whitespace-nowrap border-b border-r border-slate-200 bg-slate-100 px-3 py-2 text-left text-xs font-bold uppercase tracking-wide text-slate-700 sm:px-4;
   }
 
   .table-td {
-    @apply h-12 whitespace-nowrap border-b border-r border-slate-100 px-3 py-2.5 align-middle text-sm text-slate-800 sm:px-4;
+    @apply h-11 whitespace-nowrap border-b border-r border-slate-100 px-3 py-2 align-middle text-sm text-slate-800 sm:px-4;
   }
 
   .table-scroll {
@@ -82,6 +100,14 @@ textarea {
   .table-scroll::-webkit-scrollbar-thumb {
     background: #cbd5e1;
     border-radius: 999px;
+  }
+
+  .app-heading {
+    @apply font-display font-bold tracking-normal text-dinkes-900;
+  }
+
+  .section-label {
+    @apply text-xs font-bold uppercase tracking-wide text-slate-500;
   }
 }
 

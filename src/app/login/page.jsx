@@ -7,6 +7,7 @@ import {
   Bell,
   Building2,
   CalendarClock,
+  Camera,
   ChevronDown,
   ClipboardList,
   Eye,
@@ -22,6 +23,7 @@ import {
   ScanFace,
   Search,
   ShieldCheck,
+  X,
   UserRound,
   UsersRound
 } from "lucide-react";
@@ -43,9 +45,11 @@ const MOBILE_SERVICE_ACTIONS = [
 ];
 
 const BIOMETRIC_OPTIONS = [
-  { label: "Finger", method: "sidik jari", icon: Fingerprint },
-  { label: "Face", method: "pengenalan wajah", icon: ScanFace }
+  { label: "Finger", kind: "fingerprint", method: "sidik jari", icon: Fingerprint },
+  { label: "Face", kind: "face", method: "pengenalan wajah", icon: ScanFace }
 ];
+
+const FACE_SCAN_TIMEOUT_MS = 10_000;
 
 function escapeRegex(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -317,12 +321,18 @@ function LoginCard() {
   const passwordRef = useRef(null);
   const desktopUsernameRef = useRef(null);
   const desktopPasswordRef = useRef(null);
+  const faceVideoRef = useRef(null);
+  const faceStreamRef = useRef(null);
+  const faceDetectorTimerRef = useRef(null);
+  const faceLoginTimerRef = useRef(null);
+  const faceLoginStartedRef = useRef(false);
   const [form, setForm] = useState({ username: "", password: "" });
   const [fieldErrors, setFieldErrors] = useState({ username: "", password: "" });
   const [formError, setFormError] = useState("");
   const [biometricNotice, setBiometricNotice] = useState("");
   const [loading, setLoading] = useState(false);
   const [passkeyLoading, setPasskeyLoading] = useState("");
+  const [faceDialog, setFaceDialog] = useState({ open: false, status: "idle", message: "" });
   const [showPassword, setShowPassword] = useState(false);
 
   function focusLoginField(field) {
@@ -407,7 +417,128 @@ function LoginCard() {
     setBiometricNotice("");
   }
 
-  async function requestBiometricLogin(method) {
+  function stopFaceCamera() {
+    if (faceDetectorTimerRef.current) {
+      window.clearInterval(faceDetectorTimerRef.current);
+      faceDetectorTimerRef.current = null;
+    }
+    if (faceLoginTimerRef.current) {
+      window.clearTimeout(faceLoginTimerRef.current);
+      faceLoginTimerRef.current = null;
+    }
+    if (faceStreamRef.current) {
+      faceStreamRef.current.getTracks().forEach((track) => track.stop());
+      faceStreamRef.current = null;
+    }
+    if (faceVideoRef.current) {
+      faceVideoRef.current.srcObject = null;
+    }
+  }
+
+  function closeFaceDialog() {
+    stopFaceCamera();
+    faceLoginStartedRef.current = false;
+    setFaceDialog({ open: false, status: "idle", message: "" });
+  }
+
+  function continueFacePasskey() {
+    stopFaceCamera();
+    setFaceDialog({ open: false, status: "idle", message: "" });
+    requestPasskeyLogin("pengenalan wajah");
+  }
+
+  function beginFaceDetection() {
+    faceLoginStartedRef.current = false;
+
+    if (typeof window === "undefined" || !("FaceDetector" in window)) {
+      setFaceDialog({
+        open: true,
+        status: "fallback",
+        message: "Kamera sudah aktif, tetapi browser ini belum mendukung deteksi wajah otomatis. Lanjutkan dengan passkey perangkat."
+      });
+      return;
+    }
+
+    const detector = new window.FaceDetector({ fastMode: true, maxDetectedFaces: 1 });
+    const startedAt = Date.now();
+
+    faceDetectorTimerRef.current = window.setInterval(async () => {
+      const video = faceVideoRef.current;
+      if (!video || video.readyState < 2 || faceLoginStartedRef.current) return;
+
+      try {
+        const faces = await detector.detect(video);
+        if (faces.length > 0) {
+          faceLoginStartedRef.current = true;
+          setFaceDialog({
+            open: true,
+            status: "detected",
+            message: "Wajah terdeteksi. Melanjutkan verifikasi passkey perangkat..."
+          });
+          faceLoginTimerRef.current = window.setTimeout(() => {
+            faceLoginTimerRef.current = null;
+            continueFacePasskey();
+          }, 650);
+          return;
+        }
+
+        if (Date.now() - startedAt > FACE_SCAN_TIMEOUT_MS) {
+          if (faceDetectorTimerRef.current) {
+            window.clearInterval(faceDetectorTimerRef.current);
+            faceDetectorTimerRef.current = null;
+          }
+          setFaceDialog({
+            open: true,
+            status: "fallback",
+            message: "Wajah belum terbaca jelas. Pastikan wajah menghadap kamera, atau lanjutkan dengan passkey perangkat."
+          });
+        }
+      } catch {
+        if (faceDetectorTimerRef.current) {
+          window.clearInterval(faceDetectorTimerRef.current);
+          faceDetectorTimerRef.current = null;
+        }
+        setFaceDialog({
+          open: true,
+          status: "fallback",
+          message: "Deteksi wajah otomatis tidak tersedia di browser ini. Lanjutkan dengan passkey perangkat."
+        });
+      }
+    }, 600);
+  }
+
+  function requestFaceLogin() {
+    if (loading || passkeyLoading || faceDialog.open) return;
+
+    setFieldErrors({ username: "", password: "" });
+    setFormError("");
+
+    if (!isWebAuthnAvailable()) {
+      setBiometricNotice("Perangkat atau browser ini belum mendukung passkey biometrik. Gunakan Chrome/Edge/Safari terbaru di HTTPS atau localhost.");
+      return;
+    }
+
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setBiometricNotice("Browser ini belum mengizinkan akses kamera untuk Face Recognition.");
+      return;
+    }
+
+    const username = form.username.trim();
+    if (!username) {
+      setBiometricNotice("Isi Username / UKPD ID dulu, lalu pilih Face.");
+      focusLoginField("username");
+      return;
+    }
+
+    setBiometricNotice("");
+    setFaceDialog({
+      open: true,
+      status: "starting",
+      message: "Membuka kamera depan untuk membaca wajah..."
+    });
+  }
+
+  async function requestPasskeyLogin(method) {
     if (loading || passkeyLoading) return;
 
     setFieldErrors({ username: "", password: "" });
@@ -463,6 +594,72 @@ function LoginCard() {
       setPasskeyLoading("");
     }
   }
+
+  function requestBiometricLogin(option) {
+    if (option.kind === "face") {
+      requestFaceLogin();
+      return;
+    }
+    requestPasskeyLogin(option.method);
+  }
+
+  useEffect(() => {
+    if (!faceDialog.open || faceDialog.status !== "starting") return undefined;
+
+    let cancelled = false;
+
+    async function startCamera() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: "user",
+            width: { ideal: 720 },
+            height: { ideal: 720 }
+          },
+          audio: false
+        });
+
+        if (cancelled) {
+          stream.getTracks().forEach((track) => track.stop());
+          return;
+        }
+
+        faceStreamRef.current = stream;
+        if (faceVideoRef.current) {
+          faceVideoRef.current.srcObject = stream;
+          await faceVideoRef.current.play().catch(() => {});
+        }
+
+        setFaceDialog({
+          open: true,
+          status: "scanning",
+          message: "Arahkan wajah ke kamera. Sistem sedang mencari wajah..."
+        });
+        beginFaceDetection();
+      } catch (error) {
+        const denied = error?.name === "NotAllowedError" || error?.name === "PermissionDeniedError";
+        setFaceDialog({
+          open: true,
+          status: "error",
+          message: denied
+            ? "Akses kamera ditolak. Izinkan kamera dari browser, atau lanjutkan dengan passkey perangkat."
+            : "Kamera belum dapat dibuka. Lanjutkan dengan passkey perangkat atau gunakan username dan password."
+        });
+      }
+    }
+
+    startCamera();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [faceDialog.open, faceDialog.status]);
+
+  useEffect(() => {
+    return () => {
+      stopFaceCamera();
+    };
+  }, []);
 
   return (
     <aside aria-labelledby="login-heading" className="relative flex min-h-screen w-full justify-center overflow-hidden bg-[#effbff] px-0 text-slate-900 sm:min-h-[720px] sm:items-center sm:px-6 sm:py-8 lg:min-h-full lg:items-center lg:bg-transparent lg:px-0 lg:py-0">
@@ -593,7 +790,7 @@ function LoginCard() {
                   key={option.label}
                   type="button"
                   disabled={loading || Boolean(passkeyLoading)}
-                  onClick={() => requestBiometricLogin(option.method)}
+                  onClick={() => requestBiometricLogin(option)}
                   className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-cyan-100 bg-white text-sm font-bold text-cyan-800 shadow-sm transition hover:border-emerald-200 hover:bg-emerald-50 focus-ring disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {passkeyLoading === option.method ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" /> : <option.icon className="h-5 w-5" aria-hidden="true" />}
@@ -730,7 +927,7 @@ function LoginCard() {
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-sm font-extrabold text-slate-900">Login Biometrik</p>
-              <p className="mt-1 text-xs leading-5 text-slate-600">Isi Username / UKPD ID, lalu gunakan passkey yang sudah didaftarkan di Profil Akun.</p>
+              <p className="mt-1 text-xs leading-5 text-slate-600">Finger memakai passkey perangkat. Face membuka kamera, lalu verifikasi passkey.</p>
             </div>
             <Fingerprint className="h-5 w-5 shrink-0 text-cyan-700" aria-hidden="true" />
           </div>
@@ -740,7 +937,7 @@ function LoginCard() {
                 key={`desktop-${option.label}`}
                 type="button"
                 disabled={loading || Boolean(passkeyLoading)}
-                onClick={() => requestBiometricLogin(option.method)}
+                onClick={() => requestBiometricLogin(option)}
                 className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-cyan-100 bg-white text-sm font-bold text-cyan-800 shadow-sm transition hover:border-emerald-200 hover:bg-emerald-50 focus-ring disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {passkeyLoading === option.method ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" /> : <option.icon className="h-5 w-5" aria-hidden="true" />}
@@ -753,6 +950,83 @@ function LoginCard() {
         {biometricNotice ? <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold leading-6 text-amber-800">{biometricNotice}</p> : null}
         {formError ? <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-800">{formError}</p> : null}
       </form>
+
+      {faceDialog.open ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6">
+          <button
+            type="button"
+            className="absolute inset-0 bg-slate-950/45 backdrop-blur-sm"
+            aria-label="Tutup Face Recognition"
+            onClick={closeFaceDialog}
+          />
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="face-login-title"
+            className="relative w-full max-w-[420px] overflow-hidden rounded-[28px] bg-white shadow-[0_28px_90px_rgba(15,23,42,0.35)] ring-1 ring-white/70"
+          >
+            <div className="flex items-center justify-between gap-4 border-b border-cyan-100 px-5 py-4">
+              <div className="flex min-w-0 items-center gap-3">
+                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-cyan-50 text-cyan-700">
+                  <ScanFace className="h-6 w-6" aria-hidden="true" />
+                </span>
+                <div className="min-w-0">
+                  <h2 id="face-login-title" className="truncate text-base font-extrabold text-slate-900">Face Recognition</h2>
+                  <p className="truncate text-xs font-semibold text-slate-500">SI-DATA Dinkes DKI Jakarta</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={closeFaceDialog}
+                className="grid h-10 w-10 shrink-0 place-items-center rounded-xl text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 focus-ring"
+                aria-label="Tutup"
+              >
+                <X className="h-5 w-5" aria-hidden="true" />
+              </button>
+            </div>
+
+            <div className="p-5">
+              <div className="relative aspect-[4/5] overflow-hidden rounded-[24px] bg-slate-950">
+                <video ref={faceVideoRef} className="h-full w-full object-cover" autoPlay muted playsInline />
+                <div className="pointer-events-none absolute inset-6 rounded-[28px] border-2 border-white/80 shadow-[0_0_0_999px_rgba(15,23,42,0.18)]" />
+                <div className="absolute left-4 top-4 inline-flex items-center gap-2 rounded-full bg-white/90 px-3 py-1.5 text-xs font-extrabold text-cyan-800 shadow-sm">
+                  {faceDialog.status === "starting" ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <Camera className="h-4 w-4" aria-hidden="true" />}
+                  {faceDialog.status === "detected" ? "Terdeteksi" : "Kamera aktif"}
+                </div>
+                {faceDialog.status === "starting" ? (
+                  <div className="absolute inset-0 grid place-items-center bg-slate-950/35 text-white">
+                    <Loader2 className="h-9 w-9 animate-spin" aria-hidden="true" />
+                  </div>
+                ) : null}
+              </div>
+
+              <p className={`mt-4 rounded-2xl px-4 py-3 text-sm font-semibold leading-6 ${faceDialog.status === "error" || faceDialog.status === "fallback" ? "border border-amber-200 bg-amber-50 text-amber-800" : "border border-cyan-100 bg-cyan-50 text-cyan-900"}`}>
+                {faceDialog.message}
+              </p>
+
+              <div className="mt-4 flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={closeFaceDialog}
+                  className="inline-flex h-11 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-extrabold text-slate-700 transition hover:bg-slate-50 focus-ring"
+                >
+                  Batal
+                </button>
+                {faceDialog.status === "fallback" || faceDialog.status === "error" ? (
+                  <button
+                    type="button"
+                    onClick={continueFacePasskey}
+                    className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-dinkes-600 via-cyan-600 to-emerald-500 px-4 text-sm font-extrabold text-white shadow-[0_12px_26px_rgba(14,116,144,0.25)] transition hover:brightness-95 focus-ring"
+                  >
+                    <ShieldCheck className="h-4 w-4" aria-hidden="true" />
+                    Lanjutkan Passkey
+                  </button>
+                ) : null}
+              </div>
+            </div>
+          </section>
+        </div>
+      ) : null}
     </aside>
   );
 }

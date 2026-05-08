@@ -1185,15 +1185,15 @@ export default function DashboardPage() {
         </section>
       )}
 
-      <section className="mt-6 grid gap-5 xl:grid-cols-[1fr_360px]">
-        <article>
+      <section className="mt-6 grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <article className="min-w-0">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="font-display text-lg font-bold text-dinkes-900">Pegawai Terbaru</h2>
             <Link className="text-sm font-semibold text-dinkes-700 hover:text-dinkes-900" href="/pegawai">Lihat semua</Link>
           </div>
           <DataTable columns={columns} data={data.latestEmployees} rowKey="id_pegawai" />
         </article>
-        <aside className="surface p-5">
+        <aside className="surface min-w-0 p-5">
           <h2 className="font-display text-lg font-bold text-dinkes-900">Ringkasan Usulan</h2>
           <div className="mt-4 space-y-3">
             <div className="rounded-lg border border-slate-200 bg-slate-50/60 p-4">

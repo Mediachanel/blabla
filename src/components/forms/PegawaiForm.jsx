@@ -1145,7 +1145,7 @@ export default function PegawaiForm({ initialData, mode = "create" }) {
   useEffect(() => {
     const baseValues = buildInitialForm(initialData);
     try {
-      const savedDraft = localStorage.getItem(draftKey);
+      const savedDraft = sessionStorage.getItem(draftKey);
       if (savedDraft) {
         const parsed = JSON.parse(savedDraft);
         if (parsed?.data) {
@@ -1215,7 +1215,7 @@ export default function PegawaiForm({ initialData, mode = "create" }) {
       window.clearTimeout(saveTimerRef.current);
       saveTimerRef.current = window.setTimeout(() => {
         const savedAt = new Date().toISOString();
-        localStorage.setItem(draftKey, JSON.stringify({ savedAt, data: value }));
+        sessionStorage.setItem(draftKey, JSON.stringify({ savedAt, data: value }));
         setDraftSavedAt(savedAt);
       }, 500);
     });
@@ -1285,7 +1285,7 @@ export default function PegawaiForm({ initialData, mode = "create" }) {
 
   function saveDraftNow() {
     const savedAt = new Date().toISOString();
-    localStorage.setItem(draftKey, JSON.stringify({ savedAt, data: getValues() }));
+    sessionStorage.setItem(draftKey, JSON.stringify({ savedAt, data: getValues() }));
     setDraftSavedAt(savedAt);
     setBanner({
       type: "success",
@@ -1435,7 +1435,7 @@ export default function PegawaiForm({ initialData, mode = "create" }) {
       }
 
       setPendingSubmitData(null);
-      localStorage.removeItem(draftKey);
+      sessionStorage.removeItem(draftKey);
       router.push(`/pegawai/${result.data.id_pegawai}`);
       router.refresh();
     } catch {

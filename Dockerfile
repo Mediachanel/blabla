@@ -24,6 +24,7 @@ ENV NODE_ENV=production
 ENV PORT=3000
 ENV PATH="/opt/venv/bin:${PATH}"
 ENV DRH_PYTHON_BIN=python3
+ENV NEXT_TELEMETRY_DISABLED=1
 
 COPY --from=builder --chown=node:node /app ./
 COPY --from=python-deps /opt/venv /opt/venv
@@ -34,4 +35,4 @@ RUN mkdir -p storage && chown -R node:node storage
 USER node
 
 EXPOSE 3000
-CMD ["npm", "run", "start"]
+CMD ["node", "node_modules/next/dist/bin/next", "start"]

@@ -38,6 +38,7 @@ export async function GET(request) {
       }
     });
   } catch (error) {
-    return fail(error.message || "Cetak usulan putus JF gagal dibuat.", 500);
+    console.error("Cetak usulan putus JF error:", error);
+    return fail("Cetak usulan putus JF gagal dibuat.", 500);
   }
 }

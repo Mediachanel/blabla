@@ -42,7 +42,7 @@ const PEGAWAI_COLUMNS = [
   "jenis_kelamin_raw"
 ];
 
-const PEGAWAI_MUTABLE_COLUMNS = PEGAWAI_COLUMNS.filter((column) => column !== "id_pegawai");
+const PEGAWAI_MUTABLE_COLUMNS = PEGAWAI_COLUMNS.filter((column) => !["id_pegawai", "created_at"].includes(column));
 
 const PEGAWAI_DATE_COLUMNS = new Set([
   "tanggal_lahir",
@@ -1039,9 +1039,9 @@ export async function createPegawaiData(data) {
       nama: data.nama
     };
     const item = {
+      ...data,
       id_pegawai: Number(maxRow.next_id),
-      created_at: new Date().toISOString().slice(0, 10),
-      ...data
+      created_at: new Date().toISOString().slice(0, 10)
     };
     const columns = PEGAWAI_COLUMNS.filter((column) => Object.prototype.hasOwnProperty.call(item, column));
     const placeholders = columns.map(() => "?").join(", ");

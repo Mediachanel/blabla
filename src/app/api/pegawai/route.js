@@ -187,9 +187,11 @@ export async function GET(request) {
   const rumpun = searchParams.get("rumpun") || "";
   const page = numberParam(searchParams.get("page"), 1, 1, 100000);
   const pageSize = numberParam(searchParams.get("pageSize"), 10, 10, 100);
-  const exportAll = searchParams.get("export") === "1";
+  if (searchParams.get("export") === "1") {
+    return fail("Gunakan endpoint export resmi agar akses data tetap terkontrol.", 400);
+  }
 
-  return ok(await getPegawaiPage({ user, q, nrk, status, wilayah, ukpd, jabatan, rumpun, page, pageSize, exportAll }));
+  return ok(await getPegawaiPage({ user, q, nrk, status, wilayah, ukpd, jabatan, rumpun, page, pageSize }));
 }
 
 export async function POST(request) {

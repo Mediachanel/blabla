@@ -125,7 +125,8 @@ export async function GET(_request, { params }) {
       riwayat_keberhasilan: riwayatKeberhasilan
     });
   } catch (routeError) {
-    return fail(routeError.message || "Terjadi kesalahan saat memuat detail pegawai.", 500);
+    console.error("Detail pegawai API error:", routeError);
+    return fail("Terjadi kesalahan saat memuat detail pegawai.", 500);
   }
 }
 
@@ -151,7 +152,8 @@ export async function PUT(request, { params }) {
     const saved = await updatePegawaiData(id, data);
     return ok(saved, "Pegawai berhasil diperbarui");
   } catch (routeError) {
-    return fail(routeError.message || "Terjadi kesalahan saat memperbarui pegawai.", 500);
+    console.error("Update pegawai API error:", routeError);
+    return fail("Terjadi kesalahan saat memperbarui pegawai.", 500);
   }
 }
 
@@ -165,6 +167,7 @@ export async function DELETE(request, { params }) {
     if (!current) return fail("Data pegawai tidak ditemukan atau tidak dapat diakses.", 404);
     return ok(await deletePegawaiData(id), "Pegawai berhasil dihapus");
   } catch (routeError) {
-    return fail(routeError.message || "Terjadi kesalahan saat menghapus pegawai.", 500);
+    console.error("Hapus pegawai API error:", routeError);
+    return fail("Terjadi kesalahan saat menghapus pegawai.", 500);
   }
 }

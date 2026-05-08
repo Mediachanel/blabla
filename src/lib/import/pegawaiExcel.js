@@ -649,8 +649,30 @@ function parseRowsToObjects(rows) {
   }).filter(({ record }) => Object.values(record).some((value) => normalizeCellValue(value)));
 }
 
+function assertXlsxSignature(buffer) {
+  if (Buffer.from(buffer).subarray(0, 2).toString("utf8") !== "PK") {
+    throw new Error("File XLSX tidak valid atau rusak.");
+  }
+}
+
+function assertWorkbookHasNoMacros(zip) {
+  const blockedEntry = Object.keys(zip.files).find((entryName) => {
+    const lowerName = entryName.toLowerCase();
+    return lowerName === "xl/vbaproject.bin"
+      || lowerName.endsWith("/vbaproject.bin")
+      || lowerName.startsWith("xl/macrosheets/")
+      || lowerName.startsWith("xl/dialogsheets/");
+  });
+
+  if (blockedEntry) {
+    throw new Error("File Excel mengandung macro/VBA dan diblokir demi keamanan.");
+  }
+}
+
 async function readWorkbookRows(buffer) {
+  assertXlsxSignature(buffer);
   const zip = await JSZip.loadAsync(buffer);
+  assertWorkbookHasNoMacros(zip);
   const workbookXmlFile = await zip.file("xl/workbook.xml")?.async("string");
   const relsXml = await zip.file("xl/_rels/workbook.xml.rels")?.async("string");
   const sharedStringsFile = zip.file("xl/sharedStrings.xml");

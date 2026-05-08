@@ -7,6 +7,10 @@ function numberPort(value) {
   return Number.isFinite(port) ? port : 5432;
 }
 
+function isProduction() {
+  return process.env.NODE_ENV === "production";
+}
+
 function splitList(value) {
   return String(value || "")
     .split(",")
@@ -30,7 +34,7 @@ export function getPostgresDatabaseCandidates() {
     process.env.POSTGRES_DATABASE,
     process.env.PGDATABASE
   ];
-  const fallbackDatabases = ["si_data", "sisdmk2"];
+  const fallbackDatabases = isProduction() ? [] : ["si_data", "sisdmk2"];
   const seen = new Set();
 
   return [...configuredDatabases, ...fallbackDatabases]
@@ -50,7 +54,7 @@ export function getPostgresCandidates() {
     process.env.POSTGRES_HOST,
     process.env.PGHOST
   ];
-  const fallbackHosts = [
+  const fallbackHosts = isProduction() ? [] : [
     "postgres",
     "db",
     "host.docker.internal",
@@ -256,6 +260,12 @@ function createPostgresCompatPool(pool) {
 }
 
 export function createPool(config = {}) {
+  if (isProduction() && !process.env.POSTGRES_HOST && !process.env.PGHOST && !process.env.POSTGRES_HOSTS) {
+    throw new Error("POSTGRES_HOST atau POSTGRES_HOSTS wajib diset di production.");
+  }
+  if (isProduction() && !process.env.POSTGRES_PASSWORD && !process.env.PGPASSWORD) {
+    throw new Error("POSTGRES_PASSWORD wajib diset di production.");
+  }
   const pool = new Pool({
     host: config.host || process.env.POSTGRES_HOST || process.env.PGHOST,
     port: numberPort(config.port || process.env.POSTGRES_PORT || process.env.PGPORT),

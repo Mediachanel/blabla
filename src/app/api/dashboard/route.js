@@ -799,6 +799,6 @@ export async function GET(request) {
     return ok(payload);
   } catch (error) {
     console.error("Dashboard API error:", error);
-    return fail(`Dashboard gagal dimuat: ${error.message || "Terjadi kesalahan server."}`, 500);
+    return fail("Dashboard gagal dimuat. Silakan coba lagi atau hubungi administrator.", 500);
   }
 }

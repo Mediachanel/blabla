@@ -10,6 +10,8 @@ import { fail, ok } from "@/lib/helpers/response";
 import { getConnectedPool } from "@/lib/db/postgres";
 import { ensureDrhSchema } from "@/lib/db/ensureDrhSchema";
 import { importDrhToDatabase } from "@/lib/import/drhImport";
+import { auditSecurityEvent } from "@/lib/security/auditLog";
+import { enforceRateLimit } from "@/lib/security/rateLimit";
 
 export const runtime = "nodejs";
 
@@ -18,6 +20,7 @@ const DRH_PDF_MAX_BYTES = 10 * 1024 * 1024;
 const DRH_PDF_MAX_FILES = 25;
 const DRH_PDF_MAX_TOTAL_BYTES = 120 * 1024 * 1024;
 const DRH_PREVIEW_MAX_ROWS_PER_SECTION = 1000;
+const PDF_MIME_TYPES = new Set(["", "application/octet-stream", "application/pdf"]);
 
 function getPythonCandidates() {
   const configured = process.env.DRH_PYTHON_BIN?.trim();
@@ -133,6 +136,9 @@ function validatePdfFile(file) {
   if (!String(file.name || "").toLowerCase().endsWith(".pdf")) {
     return "Format file harus PDF.";
   }
+  if (!PDF_MIME_TYPES.has(String(file.type || "").toLowerCase())) {
+    return "MIME type file PDF tidak valid.";
+  }
   if (file.size > DRH_PDF_MAX_BYTES) {
     return `Ukuran PDF DRH maksimal ${DRH_PDF_MAX_BYTES / (1024 * 1024)} MB per file.`;
   }
@@ -240,6 +246,16 @@ function addCounts(total = {}, counts = {}) {
 export async function POST(request) {
   const { user, error } = await requireAuth([ROLES.SUPER_ADMIN, ROLES.ADMIN_UKPD], request);
   if (error) return error;
+  const rateLimitError = enforceRateLimit(request, {
+    namespace: "import-drh",
+    limit: 8,
+    windowMs: 15 * 60 * 1000,
+    key: user.username
+  });
+  if (rateLimitError) {
+    auditSecurityEvent(request, "import_drh_rate_limited", { username: user.username, role: user.role });
+    return rateLimitError;
+  }
 
   const formData = await request.formData();
   const files = getUploadFiles(formData);
@@ -322,6 +338,12 @@ export async function POST(request) {
     }
 
     if (files.length > 1) {
+      auditSecurityEvent(request, "import_drh_success", {
+        username: user.username,
+        role: user.role,
+        files: files.length,
+        failedCount
+      });
       return ok(
         {
           batch: true,
@@ -336,6 +358,7 @@ export async function POST(request) {
     }
 
     const imported = results[0];
+    auditSecurityEvent(request, "import_drh_success", { username: user.username, role: user.role, files: files.length });
     return ok(
       {
         ...imported,
@@ -343,7 +366,9 @@ export async function POST(request) {
       "Import PDF DRH berhasil diproses"
     );
   } catch (importError) {
-    return fail(importError.message || "Import PDF DRH gagal diproses.", importError.status || 500);
+    const status = importError.status || 500;
+    auditSecurityEvent(request, "import_drh_failed", { username: user.username, role: user.role, status });
+    return fail(status >= 500 ? "Import PDF DRH gagal diproses." : (importError.message || "Import PDF DRH gagal diproses."), status);
   } finally {
     connection.release();
   }
@@ -352,6 +377,16 @@ export async function POST(request) {
 export async function PUT(request) {
   const { user, error } = await requireAuth([ROLES.SUPER_ADMIN, ROLES.ADMIN_UKPD], request);
   if (error) return error;
+  const rateLimitError = enforceRateLimit(request, {
+    namespace: "import-drh-save",
+    limit: 20,
+    windowMs: 15 * 60 * 1000,
+    key: user.username
+  });
+  if (rateLimitError) {
+    auditSecurityEvent(request, "import_drh_save_rate_limited", { username: user.username, role: user.role });
+    return rateLimitError;
+  }
 
   let body;
   try {
@@ -376,6 +411,7 @@ export async function PUT(request) {
       allowedUkpdName: user.role === ROLES.ADMIN_UKPD ? user.nama_ukpd : "",
     });
     await connection.commit();
+    auditSecurityEvent(request, "import_drh_save_success", { username: user.username, role: user.role });
 
     return ok(
       {
@@ -388,7 +424,9 @@ export async function PUT(request) {
     );
   } catch (importError) {
     await connection.rollback().catch(() => {});
-    return fail(importError.message || "Hasil edit DRH gagal disimpan.", importError.status || 500);
+    const status = importError.status || 500;
+    auditSecurityEvent(request, "import_drh_save_failed", { username: user.username, role: user.role, status });
+    return fail(status >= 500 ? "Hasil edit DRH gagal disimpan." : (importError.message || "Hasil edit DRH gagal disimpan."), status);
   } finally {
     connection.release();
   }

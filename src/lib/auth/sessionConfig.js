@@ -8,6 +8,8 @@ const WEAK_JWT_SECRETS = new Set([
 ]);
 
 const encoder = new TextEncoder();
+const SESSION_ISSUER = "sisdmk-si-data";
+const SESSION_AUDIENCE = "sisdmk-web";
 
 function isProduction() {
   return process.env.NODE_ENV === "production";
@@ -37,11 +39,19 @@ export function getJwtSecret() {
   return encoder.encode(secret);
 }
 
+export function getSessionJwtClaims() {
+  return {
+    issuer: process.env.JWT_ISSUER || SESSION_ISSUER,
+    audience: process.env.JWT_AUDIENCE || SESSION_AUDIENCE
+  };
+}
+
 export function getSessionCookieOptions(overrides = {}) {
   return {
     httpOnly: true,
     sameSite: "strict",
     secure: (isProduction() && !allowInsecureLocalHttp()) || process.env.COOKIE_SECURE === "true",
+    priority: "high",
     path: "/",
     ...overrides
   };

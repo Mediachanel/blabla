@@ -12,6 +12,7 @@ import { validateSameOrigin } from "@/lib/auth/requestGuards";
 import { sessionCookieName, signSession } from "@/lib/auth/session";
 import { getSessionCookieOptions } from "@/lib/auth/sessionConfig";
 import { fail, ok } from "@/lib/helpers/response";
+import { auditSecurityEvent } from "@/lib/security/auditLog";
 
 export const runtime = "nodejs";
 
@@ -73,6 +74,7 @@ export async function POST(request) {
     clearLoginRateLimit(request, challengePayload.username || user.username);
 
     const token = await signSession(user);
+    auditSecurityEvent(request, "passkey_login_success", { username: user.username, role: user.role });
     const response = ok({ id: user.id, username: user.username, role: user.role, wilayah: user.wilayah, nama_ukpd: user.nama_ukpd }, "Login passkey berhasil.");
     response.cookies.set(sessionCookieName(), token, getSessionCookieOptions({
       maxAge: 60 * 60 * 8
@@ -80,7 +82,9 @@ export async function POST(request) {
     response.cookies.set(passkeyChallengeCookieName(), "", getSessionCookieOptions({ maxAge: 0 }));
     return response;
   } catch (error) {
+    console.error("Passkey login verification error:", error);
     recordFailedLogin(request, challengePayload.username || credentialId);
-    return fail(error.message || "Passkey belum dapat diverifikasi.", 401);
+    auditSecurityEvent(request, "passkey_login_failed", { username: challengePayload.username || "", reason: "verification_failed" });
+    return fail("Passkey belum dapat diverifikasi.", 401);
   }
 }

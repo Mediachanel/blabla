@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight, Download, Eye, Search, SlidersHorizontal } f
 import PageHeader from "@/components/layout/PageHeader";
 import ErrorState from "@/components/ui/ErrorState";
 import { normalizePangkatGolonganOption } from "@/lib/pegawaiReferenceOptions";
+import { escapeCsv } from "@/lib/security/csv";
 
 const PANGKAT_RANK = [
   ["IV/e", "iv/e", "pembina utama"],
@@ -100,12 +101,6 @@ function formatDate(value) {
 
 function formatNumber(value) {
   return new Intl.NumberFormat("id-ID").format(Number(value) || 0);
-}
-
-function escapeCsv(value) {
-  const text = String(value ?? "");
-  if (text.includes(",") || text.includes("\"") || text.includes("\n")) return `"${text.replace(/"/g, "\"\"")}"`;
-  return text;
 }
 
 function valueOrDash(value) {

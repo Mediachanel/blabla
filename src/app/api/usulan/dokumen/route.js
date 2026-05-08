@@ -12,10 +12,13 @@ import {
   parseChecklist,
   parseJsonObject
 } from "@/lib/usulan/checklist";
+import { auditSecurityEvent } from "@/lib/security/auditLog";
+import { enforceRateLimit } from "@/lib/security/rateLimit";
 
 export const runtime = "nodejs";
 
 const STORAGE_ROOT = path.join(process.cwd(), "storage", "usulan-documents");
+const PDF_MIME_TYPES = new Set(["", "application/octet-stream", "application/pdf"]);
 
 const USULAN_CONFIG = {
   mutasi: {
@@ -168,6 +171,16 @@ export async function GET(request) {
 export async function POST(request) {
   const { user, error } = await requireAuth([ROLES.SUPER_ADMIN, ROLES.ADMIN_WILAYAH, ROLES.ADMIN_UKPD], request);
   if (error) return error;
+  const rateLimitError = enforceRateLimit(request, {
+    namespace: "usulan-document-upload",
+    limit: 40,
+    windowMs: 15 * 60 * 1000,
+    key: user.username
+  });
+  if (rateLimitError) {
+    auditSecurityEvent(request, "usulan_document_upload_rate_limited", { username: user.username, role: user.role });
+    return rateLimitError;
+  }
 
   const formData = await request.formData();
   const type = String(formData.get("type") || "");
@@ -186,6 +199,9 @@ export async function POST(request) {
 
   if (!String(file.name || "").toLowerCase().endsWith(".pdf")) {
     return fail("Dokumen pendukung wajib berformat PDF.", 422);
+  }
+  if (!PDF_MIME_TYPES.has(String(file.type || "").toLowerCase())) {
+    return fail("MIME type dokumen PDF tidak valid.", 422);
   }
 
   if (file.size <= 0) {
@@ -246,5 +262,13 @@ export async function POST(request) {
   await removePreviousDocument(previousDocument);
 
   const item = await loadItem(pool, type, id);
+  auditSecurityEvent(request, "usulan_document_upload_success", {
+    username: user.username,
+    role: user.role,
+    type,
+    id,
+    key,
+    size: buffer.length
+  });
   return ok(item, "Dokumen checklist berhasil diunggah.");
 }

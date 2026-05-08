@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { ROLES } from "@/lib/constants/roles";
 import { requireAuth } from "@/lib/auth/requireAuth";
+import { validateUkpdWriteScope } from "@/lib/auth/ownership";
 import { fail, ok } from "@/lib/helpers/response";
 import { getConnectedPool } from "@/lib/db/postgres";
 import { ensureUsulanSchema } from "@/lib/db/ensureUsulanSchema";
@@ -130,12 +131,12 @@ export async function POST(request) {
 
   const parsed = createSchema.safeParse(await request.json());
   if (!parsed.success) return fail("Validasi usulan putus JF gagal.", 422, parsed.error.flatten());
-  if (user.role === ROLES.ADMIN_UKPD && parsed.data.nama_ukpd !== user.nama_ukpd) {
-    return fail("Admin UKPD hanya dapat mengusulkan putus JF dari UKPD-nya.", 403);
-  }
 
   const pool = await getConnectedPool();
   await ensureUsulanSchema(pool);
+  const ownership = await validateUkpdWriteScope(pool, user, parsed.data.nama_ukpd);
+  if (!ownership.allowed) return fail(ownership.message, 403);
+
   const data = {
     ...parsed.data,
     status: "Diusulkan",
@@ -164,8 +165,9 @@ export async function PUT(request) {
   const current = await ensureAccessibleItem(pool, user, parsed.data.id);
   if (!current) return fail("Usulan putus JF tidak ditemukan atau tidak dapat diakses.", 404);
 
-  if (user.role === ROLES.ADMIN_UKPD && parsed.data.nama_ukpd && parsed.data.nama_ukpd !== user.nama_ukpd) {
-    return fail("Admin UKPD hanya dapat menyimpan data UKPD asalnya.", 403);
+  if (parsed.data.nama_ukpd) {
+    const ownership = await validateUkpdWriteScope(pool, user, parsed.data.nama_ukpd);
+    if (!ownership.allowed) return fail(ownership.message, 403);
   }
 
   const patch = { ...parsed.data };

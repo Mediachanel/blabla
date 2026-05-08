@@ -7,6 +7,17 @@ services:
       POSTGRES_DB: ${POSTGRES_DATABASE:-si_data}
       POSTGRES_USER: ${POSTGRES_USER:-sisdmk2_user}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256"
+    command:
+      - "postgres"
+      - "-c"
+      - "password_encryption=scram-sha-256"
+      - "-c"
+      - "log_connections=on"
+      - "-c"
+      - "log_disconnections=on"
+      - "-c"
+      - "log_statement=ddl"
     ports:
       - "127.0.0.1:${POSTGRES_PUBLIC_PORT:-5432}:5432"
     volumes:
@@ -26,24 +37,34 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     environment:
       NODE_ENV: production
       PORT: 3000
       POSTGRES_HOST: db
-      POSTGRES_HOSTS: db,postgres,host.docker.internal,172.17.0.1
+      POSTGRES_HOSTS: db
       POSTGRES_PORT: 5432
       POSTGRES_USER: ${POSTGRES_USER:-sisdmk2_user}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
       POSTGRES_DATABASE: ${POSTGRES_DATABASE:-si_data}
       POSTGRES_DATABASES: ${POSTGRES_DATABASES:-si_data}
       JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
-      APP_ORIGIN: ${APP_ORIGIN:-}
+      APP_ORIGIN: ${APP_ORIGIN:?Set APP_ORIGIN in .env, for example https://sisdmk.example.go.id}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-}
+      TRUST_PROXY_HEADERS: ${TRUST_PROXY_HEADERS:-false}
+      COOKIE_SECURE: ${COOKIE_SECURE:-true}
     ports:
-      - "${APP_PORT:-8080}:3000"
+      - "${APP_BIND_HOST:-127.0.0.1}:${APP_PORT:-8080}:3000"
     volumes:
       - sisdmk2_uploads:/app/storage
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    init: true
+    pids_limit: 256
 
 volumes:
   sisdmk2_postgres_data:

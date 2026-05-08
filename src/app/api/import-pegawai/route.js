@@ -8,10 +8,24 @@ import {
   normalizePegawaiImportRecord,
   parsePegawaiImportFile
 } from "@/lib/import/pegawaiExcel";
+import { auditSecurityEvent } from "@/lib/security/auditLog";
+import { enforceRateLimit } from "@/lib/security/rateLimit";
 
 export const runtime = "nodejs";
 
 const PEGAWAI_EXCEL_MAX_BYTES = 8 * 1024 * 1024;
+const XLSX_MIME_TYPES = new Set([
+  "",
+  "application/octet-stream",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+]);
+const CSV_MIME_TYPES = new Set([
+  "",
+  "application/octet-stream",
+  "application/vnd.ms-excel",
+  "text/csv",
+  "text/plain"
+]);
 
 function cleanKey(value) {
   return String(value || "").trim().toLowerCase();
@@ -25,6 +39,13 @@ function removeBlankUpdateFields(data) {
       return value !== "" && value !== null && value !== undefined;
     })
   );
+}
+
+function hasAllowedMime(file, extension) {
+  const mimeType = String(file.type || "").toLowerCase();
+  if (extension === ".xlsx") return XLSX_MIME_TYPES.has(mimeType);
+  if (extension === ".csv") return CSV_MIME_TYPES.has(mimeType);
+  return false;
 }
 
 async function findExistingPegawai(pool, data) {
@@ -61,6 +82,16 @@ function duplicateKeysForRow(data) {
 export async function POST(request) {
   const { user, error } = await requireAuth([ROLES.SUPER_ADMIN, ROLES.ADMIN_UKPD], request);
   if (error) return error;
+  const rateLimitError = enforceRateLimit(request, {
+    namespace: "import-pegawai",
+    limit: 10,
+    windowMs: 15 * 60 * 1000,
+    key: user.username
+  });
+  if (rateLimitError) {
+    auditSecurityEvent(request, "import_pegawai_rate_limited", { username: user.username, role: user.role });
+    return rateLimitError;
+  }
 
   const formData = await request.formData();
   const file = formData.get("file");
@@ -69,9 +100,11 @@ export async function POST(request) {
   }
 
   const fileName = String(file.name || "").toLowerCase();
-  if (!fileName.endsWith(".xlsx") && !fileName.endsWith(".csv")) {
+  const extension = fileName.endsWith(".xlsx") ? ".xlsx" : fileName.endsWith(".csv") ? ".csv" : "";
+  if (!extension) {
     return fail("Format file harus .xlsx atau .csv.", 422);
   }
+  if (!hasAllowedMime(file, extension)) return fail("MIME type file import tidak valid.", 422);
   if (file.size <= 0) return fail("File Excel kosong atau tidak dapat dibaca.", 422);
   if (file.size > PEGAWAI_EXCEL_MAX_BYTES) {
     return fail(`Ukuran file maksimal ${PEGAWAI_EXCEL_MAX_BYTES / (1024 * 1024)} MB.`, 413);
@@ -137,6 +170,12 @@ export async function POST(request) {
   }
 
   if (validationErrors.length) {
+    auditSecurityEvent(request, "import_pegawai_validation_failed", {
+      username: user.username,
+      role: user.role,
+      totalRows: parsedRows.length,
+      totalErrors: validationErrors.length
+    });
     return fail("Import Excel pegawai dibatalkan. Perbaiki baris yang bermasalah lalu upload ulang.", 422, {
       rows: validationErrors,
       totalErrors: validationErrors.length,
@@ -189,6 +228,14 @@ export async function POST(request) {
   }
 
   if (writeErrors.length) {
+    auditSecurityEvent(request, "import_pegawai_write_failed", {
+      username: user.username,
+      role: user.role,
+      totalRows: parsedRows.length,
+      totalErrors: writeErrors.length,
+      created,
+      updated
+    });
     return fail("Sebagian data gagal disimpan.", writeErrorStatus, {
       rows: writeErrors,
       totalErrors: writeErrors.length,
@@ -198,6 +245,13 @@ export async function POST(request) {
     });
   }
 
+  auditSecurityEvent(request, "import_pegawai_success", {
+    username: user.username,
+    role: user.role,
+    totalRows: parsedRows.length,
+    created,
+    updated
+  });
   return ok({
     totalRows: parsedRows.length,
     created,

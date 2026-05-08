@@ -732,7 +732,7 @@ function LoginCard({ onOpenQna }) {
   }, []);
 
   return (
-    <aside aria-label="Form masuk SI-SDMK" className="relative flex min-h-screen w-full min-w-0 justify-center overflow-x-hidden bg-[#f8f9fa] px-0 text-slate-900 sm:min-h-[720px] sm:items-center sm:px-6 sm:py-8 lg:min-h-full lg:items-center lg:overflow-visible lg:bg-transparent lg:px-0 lg:py-0">
+    <aside aria-label="Form masuk SI-SDMK" className="relative flex min-h-screen w-full min-w-0 justify-center overflow-x-hidden bg-[#f8f9fa] px-0 text-slate-900 sm:min-h-[720px] sm:items-center sm:px-6 sm:py-8 lg:h-full lg:min-h-0 lg:items-stretch lg:overflow-visible lg:bg-transparent lg:px-0 lg:py-0">
       <form aria-labelledby="login-heading" className="relative flex min-h-screen w-full max-w-[430px] flex-col overflow-hidden border-slate-200 bg-white sm:min-h-[720px] sm:rounded-lg sm:border lg:hidden" onSubmit={submit} noValidate>
         <section className="relative overflow-hidden bg-dinkes-800 px-5 pb-16 pt-5 text-white">
           <div className="relative z-10 flex items-center justify-between gap-4">
@@ -905,23 +905,21 @@ function LoginCard({ onOpenQna }) {
         </section>
       </form>
 
-      <form aria-labelledby="login-heading-desktop" className="hidden w-full max-w-[520px] rounded-lg border border-slate-200 bg-white p-6 lg:block xl:p-7" onSubmit={submit} noValidate>
-        <div className="flex items-start justify-between gap-5">
-          <div>
-            <span className="inline-flex items-center gap-2 rounded-lg bg-dinkes-50 px-3 py-2 text-xs font-extrabold uppercase tracking-wide text-dinkes-800 ring-1 ring-dinkes-100">
-              <LockKeyhole className="h-4 w-4" aria-hidden="true" />
-              Portal Login
-            </span>
-            <h2
-              id="login-heading-desktop"
-              className="mt-4 text-center text-3xl font-extrabold leading-tight tracking-normal text-slate-900"
-            >
-              Sistem Informasi SDM Kesehatan
-            </h2>
-          </div>
-            <span className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-lg bg-white p-2 ring-1 ring-slate-200">
+      <form aria-labelledby="login-heading-desktop" className="hidden w-full max-w-[520px] rounded-lg border border-slate-200 bg-white p-6 lg:block lg:min-h-full lg:pt-10 xl:p-7 xl:pt-10" onSubmit={submit} noValidate>
+        <div className="relative">
+          <span className="inline-flex items-center gap-2 rounded-lg bg-dinkes-50 px-3 py-2 text-xs font-extrabold uppercase tracking-wide text-dinkes-800 ring-1 ring-dinkes-100">
+            <LockKeyhole className="h-4 w-4" aria-hidden="true" />
+            Portal Login
+          </span>
+          <span className="absolute right-0 top-0 grid h-12 w-12 place-items-center overflow-hidden rounded-lg bg-white p-2 ring-1 ring-slate-200">
             <Image src={dinkesLogo} alt="Logo Dinas Kesehatan DKI Jakarta" className="h-full w-full object-contain" priority />
           </span>
+          <h2
+            id="login-heading-desktop"
+            className="mx-auto mt-4 max-w-sm text-center text-3xl font-extrabold leading-tight tracking-normal text-slate-900"
+          >
+            Sistem Informasi SDM Kesehatan
+          </h2>
         </div>
 
         <div className="mt-6 grid gap-4">

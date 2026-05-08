@@ -5,6 +5,7 @@ import { checkLoginRateLimit, clearLoginRateLimit, recordFailedLogin } from "@/l
 import { validateSameOrigin } from "@/lib/auth/requestGuards";
 import { getSessionCookieOptions } from "@/lib/auth/sessionConfig";
 import { fail, ok } from "@/lib/helpers/response";
+import { auditSecurityEvent } from "@/lib/security/auditLog";
 
 const schema = z.object({
   username: z.string().trim().min(1),
@@ -28,6 +29,7 @@ export async function POST(request) {
   const { username, password } = parsed.data;
   const limit = checkLoginRateLimit(request, username);
   if (!limit.allowed) {
+    auditSecurityEvent(request, "login_rate_limited", { username });
     return fail(`Terlalu banyak percobaan login. Coba lagi dalam ${Math.ceil(limit.retryAfter / 60)} menit.`, 429);
   }
 
@@ -40,17 +42,20 @@ export async function POST(request) {
   }
   if (!user) {
     recordFailedLogin(request, username);
+    auditSecurityEvent(request, "login_failed", { username, reason: "user_not_found" });
     return fail("Kredensial tidak valid.", 401);
   }
 
   const valid = await verifyPassword(password, user.passwordHash);
   if (!valid) {
     recordFailedLogin(request, username);
+    auditSecurityEvent(request, "login_failed", { username, reason: "invalid_password" });
     return fail("Kredensial tidak valid.", 401);
   }
 
   const token = await signSession(user);
   clearLoginRateLimit(request, username);
+  auditSecurityEvent(request, "login_success", { username: user.username, role: user.role });
   const response = ok({ id: user.id, username: user.username, role: user.role, wilayah: user.wilayah, nama_ukpd: user.nama_ukpd }, "Login berhasil");
   response.cookies.set(sessionCookieName(), token, getSessionCookieOptions({
     maxAge: 60 * 60 * 8

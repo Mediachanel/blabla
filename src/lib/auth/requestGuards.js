@@ -9,19 +9,31 @@ function splitList(value) {
     .filter(Boolean);
 }
 
+function isProduction() {
+  return process.env.NODE_ENV === "production";
+}
+
+function trustProxyHeaders() {
+  return process.env.TRUST_PROXY_HEADERS === "true" || !isProduction();
+}
+
 function getRequestOrigins(request) {
   const url = new URL(request.url);
-  const forwardedProto = request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim();
-  const forwardedHost = request.headers.get("x-forwarded-host")?.split(",")[0]?.trim();
-  const host = forwardedHost || request.headers.get("host") || url.host;
-  const protocol = forwardedProto || url.protocol.replace(":", "");
-
-  return new Set([
+  const origins = new Set([
     `${url.protocol}//${url.host}`,
-    `${protocol}://${host}`,
     ...splitList(process.env.APP_ORIGIN),
     ...splitList(process.env.ALLOWED_ORIGINS)
   ].filter(Boolean));
+
+  if (trustProxyHeaders()) {
+    const forwardedProto = request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim();
+    const forwardedHost = request.headers.get("x-forwarded-host")?.split(",")[0]?.trim();
+    const host = forwardedHost || request.headers.get("host") || url.host;
+    const protocol = forwardedProto || url.protocol.replace(":", "");
+    origins.add(`${protocol}://${host}`);
+  }
+
+  return origins;
 }
 
 function getSuppliedOrigin(request) {

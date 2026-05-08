@@ -1,12 +1,24 @@
 import { requireAuth } from "@/lib/auth/requireAuth";
 import { getPegawaiExportData } from "@/lib/export/pegawaiExport";
 import { buildPegawaiExportWorkbook } from "@/lib/import/pegawaiExcel";
+import { auditSecurityEvent } from "@/lib/security/auditLog";
+import { enforceRateLimit } from "@/lib/security/rateLimit";
 
 export const runtime = "nodejs";
 
 export async function GET(request) {
   const { user, error } = await requireAuth([], request);
   if (error) return error;
+  const rateLimitError = enforceRateLimit(request, {
+    namespace: "pegawai-export",
+    limit: 20,
+    windowMs: 15 * 60 * 1000,
+    key: user.username
+  });
+  if (rateLimitError) {
+    auditSecurityEvent(request, "pegawai_export_rate_limited", { username: user.username, role: user.role });
+    return rateLimitError;
+  }
 
   const { searchParams } = new URL(request.url);
   const rows = await getPegawaiExportData({
@@ -20,6 +32,7 @@ export async function GET(request) {
   });
   const buffer = await buildPegawaiExportWorkbook({ rows });
   const date = new Date().toISOString().slice(0, 10);
+  auditSecurityEvent(request, "pegawai_export_success", { username: user.username, role: user.role, rows: rows.length });
 
   return new Response(buffer, {
     headers: {

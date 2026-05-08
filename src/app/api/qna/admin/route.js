@@ -28,7 +28,8 @@ export async function GET() {
     const data = await getQnaOverview();
     return ok(data);
   } catch (err) {
-    return fail(`Data QnA belum siap digunakan. ${err.message}`, 503);
+    console.error("QnA admin error:", err);
+    return fail("Data QnA belum siap digunakan.", 503);
   }
 }
 

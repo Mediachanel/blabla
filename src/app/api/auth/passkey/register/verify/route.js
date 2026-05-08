@@ -67,6 +67,7 @@ export async function POST(request) {
     response.cookies.set(passkeyChallengeCookieName(), "", getSessionCookieOptions({ maxAge: 0 }));
     return response;
   } catch (error) {
-    return fail(error.message || "Passkey belum dapat diverifikasi.", 400);
+    console.error("Passkey registration verification error:", error);
+    return fail("Passkey belum dapat diverifikasi.", 400);
   }
 }

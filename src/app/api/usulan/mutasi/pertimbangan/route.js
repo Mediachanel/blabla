@@ -38,6 +38,7 @@ export async function GET(request) {
       }
     });
   } catch (error) {
-    return fail(error.message || "Cetak form pertimbangan mutasi gagal dibuat.", 500);
+    console.error("Cetak form pertimbangan mutasi error:", error);
+    return fail("Cetak form pertimbangan mutasi gagal dibuat.", 500);
   }
 }

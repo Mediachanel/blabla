@@ -31,16 +31,34 @@ function normalizeHost(host) {
   return String(host || "").split(",")[0].trim();
 }
 
+function isProduction() {
+  return process.env.NODE_ENV === "production";
+}
+
+function trustProxyHeaders() {
+  return process.env.TRUST_PROXY_HEADERS === "true" || !isProduction();
+}
+
+function firstConfiguredOrigin() {
+  return String(process.env.APP_ORIGIN || process.env.ALLOWED_ORIGINS || "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean)[0] || "";
+}
+
 export function getWebAuthnRequestContext(request) {
   const url = new URL(request.url);
-  const forwardedProto = normalizeHost(request.headers.get("x-forwarded-proto"));
-  const forwardedHost = normalizeHost(request.headers.get("x-forwarded-host"));
-  const host = forwardedHost || request.headers.get("host") || url.host;
+  const configuredOrigin = firstConfiguredOrigin();
+  const forwardedProto = trustProxyHeaders() ? normalizeHost(request.headers.get("x-forwarded-proto")) : "";
+  const forwardedHost = trustProxyHeaders() ? normalizeHost(request.headers.get("x-forwarded-host")) : "";
+  const requestHost = request.headers.get("host") || url.host;
+  const host = forwardedHost || requestHost;
   const protocol = forwardedProto || url.protocol.replace(":", "");
-  const hostname = host.split(":")[0].toLowerCase();
+  const origin = configuredOrigin || `${protocol}://${host}`;
+  const hostname = new URL(origin).hostname.toLowerCase();
 
   return {
-    origin: `${protocol}://${host}`,
+    origin,
     rpId: process.env.WEBAUTHN_RP_ID || hostname,
     rpName: RP_NAME
   };

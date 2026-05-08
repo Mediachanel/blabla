@@ -6,27 +6,36 @@ services:
     image: sisdmk2-app:latest
     container_name: sisdmk2-app
     restart: unless-stopped
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     environment:
       NODE_ENV: production
       PORT: 3000
       JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
-      APP_ORIGIN: ${APP_ORIGIN:-}
+      APP_ORIGIN: ${APP_ORIGIN:?Set APP_ORIGIN in .env, for example https://sisdmk.example.go.id}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-}
+      TRUST_PROXY_HEADERS: ${TRUST_PROXY_HEADERS:-false}
       ALLOW_INSECURE_LOCAL_HTTP: ${ALLOW_INSECURE_LOCAL_HTTP:-false}
-      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      COOKIE_SECURE: ${COOKIE_SECURE:-true}
       POSTGRES_HOST: ${POSTGRES_HOST:-pasir-postgres}
-      POSTGRES_HOSTS: ${POSTGRES_HOSTS:-pasir-postgres,host.docker.internal,172.17.0.1,postgres,db,127.0.0.1}
+      POSTGRES_HOSTS: ${POSTGRES_HOSTS:-pasir-postgres}
       POSTGRES_PORT: ${POSTGRES_PORT:-5432}
       POSTGRES_DATABASE: ${POSTGRES_DATABASE:-si_data}
       POSTGRES_DATABASES: ${POSTGRES_DATABASES:-si_data}
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_USER: ${POSTGRES_USER:-sisdmk2_user}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
       POSTGRES_CONNECT_TIMEOUT_MS: ${POSTGRES_CONNECT_TIMEOUT_MS:-1500}
     ports:
-      - "${APP_PORT:-8080}:3000"
+      - "${APP_BIND_HOST:-127.0.0.1}:${APP_PORT:-8080}:3000"
     volumes:
       - ./storage:/app/storage
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    init: true
+    pids_limit: 256
     networks:
       - sisdmk2-network
 

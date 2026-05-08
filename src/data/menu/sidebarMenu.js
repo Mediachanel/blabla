@@ -6,7 +6,6 @@ import {
   Home,
   LogOut,
   Search,
-  Settings,
   UploadCloud,
   UserCircle,
   UsersRound,
@@ -41,7 +40,7 @@ export const desktopMenu = [
   { label: "Data Pegawai", href: "/pegawai", icon: UsersRound, roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN_WILAYAH, ROLES.ADMIN_UKPD] },
   { label: "Pencarian", href: "/pegawai", icon: Search, roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN_WILAYAH, ROLES.ADMIN_UKPD] },
   {
-    label: "Validasi Data",
+    label: "Import Data",
     icon: ShieldCheck,
     roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN_UKPD],
     children: [
@@ -50,7 +49,7 @@ export const desktopMenu = [
     ]
   },
   {
-    label: "Mutasi",
+    label: "Usulan",
     icon: BriefcaseBusiness,
     roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN_WILAYAH, ROLES.ADMIN_UKPD],
     children: [
@@ -58,10 +57,8 @@ export const desktopMenu = [
       { label: "Usulan Putus JF", href: "/usulan/putus-jf", icon: ClipboardList, roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN_WILAYAH, ROLES.ADMIN_UKPD] }
     ]
   },
-  { label: "Jabatan & Rumpun", href: "/dashboard", icon: ClipboardList, roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN_WILAYAH, ROLES.ADMIN_UKPD] },
-  { label: "Laporan", href: "/duk", icon: FileSpreadsheet, roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN_WILAYAH, ROLES.ADMIN_UKPD] },
+  { label: "Daftar Urut Kepangkatan", href: "/duk", icon: FileSpreadsheet, roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN_WILAYAH, ROLES.ADMIN_UKPD] },
   { label: "QnA Admin", href: "/qna-admin", icon: Bot, roles: [ROLES.SUPER_ADMIN] },
-  { label: "Pengaturan", href: "/profil", icon: Settings, roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN_WILAYAH, ROLES.ADMIN_UKPD] },
   { label: "Profil Akun", href: "/profil", icon: UserCircle, roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN_WILAYAH, ROLES.ADMIN_UKPD] },
   { label: "Logout", href: "/api/auth/logout", icon: LogOut, roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN_WILAYAH, ROLES.ADMIN_UKPD], action: "logout" }
 ];

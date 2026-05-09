@@ -16,7 +16,7 @@ export default function PageHeader({ title, description, breadcrumbs = [], actio
           </ol>
         </nav>
         <h1 className="app-heading text-2xl sm:text-3xl">{title}</h1>
-        {description ? <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">{description}</p> : null}
+        {description ? <p className="mt-2 hidden max-w-3xl text-sm leading-6 text-slate-600 sm:block">{description}</p> : null}
       </div>
       {action ? <div className="w-full lg:w-auto">{action}</div> : null}
     </header>

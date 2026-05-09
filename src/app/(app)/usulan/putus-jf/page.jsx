@@ -187,26 +187,26 @@ function SummaryCard({ title, value, accent = "slate" }) {
     amber: "border-amber-200 bg-amber-50/70"
   };
   return (
-    <div className={`rounded-2xl border p-4 shadow-sm ${accents[accent] || accents.slate}`}>
-      <p className="text-sm font-semibold text-slate-600">{title}</p>
-      <p className="mt-2 text-2xl font-bold text-slate-950">{value}</p>
+    <div className={`rounded-xl border p-3 shadow-sm sm:rounded-2xl sm:p-4 ${accents[accent] || accents.slate}`}>
+      <p className="text-xs font-semibold text-slate-600 sm:text-sm">{title}</p>
+      <p className="mt-1 text-xl font-bold text-slate-950 sm:mt-2 sm:text-2xl">{value}</p>
     </div>
   );
 }
 
 function FlowStrip({ activeStep }) {
   return (
-    <section className="surface p-5">
-      <div className="grid gap-4 xl:grid-cols-5">
+    <section className="surface p-3 sm:p-5">
+      <div className="flex gap-2 overflow-x-auto pb-1 xl:grid xl:grid-cols-5 xl:gap-4 xl:overflow-visible xl:pb-0">
         {FLOW_STEPS.map((step) => {
           const active = step.key === activeStep;
           const passed = step.key < activeStep;
           return (
-            <div key={step.key} className={`rounded-2xl border p-4 ${active ? "border-dinkes-200 bg-dinkes-50/60" : "border-slate-200 bg-white"}`}>
-              <div className={`mb-3 flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold ${passed ? "bg-emerald-600 text-white" : active ? "bg-dinkes-700 text-white" : "bg-slate-100 text-slate-500"}`}>
+            <div key={step.key} className={`min-w-36 rounded-xl border p-3 xl:min-w-0 xl:rounded-2xl xl:p-4 ${active ? "border-dinkes-200 bg-dinkes-50/60" : "border-slate-200 bg-white"}`}>
+              <div className={`mb-2 flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold xl:mb-3 xl:h-9 xl:w-9 xl:text-sm ${passed ? "bg-emerald-600 text-white" : active ? "bg-dinkes-700 text-white" : "bg-slate-100 text-slate-500"}`}>
                 {step.key}
               </div>
-              <p className="text-sm font-bold text-slate-900">{step.title}</p>
+              <p className="text-xs font-bold leading-4 text-slate-900 xl:text-sm">{step.title}</p>
             </div>
           );
         })}
@@ -868,7 +868,7 @@ export default function UsulanPutusJfPage() {
         breadcrumbs={[{ label: "Usulan" }, { label: "Putus JF" }]}
       />
 
-      <div className="mb-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="mb-3 grid grid-cols-2 gap-2 sm:mb-5 sm:gap-4 xl:grid-cols-4">
         <SummaryCard title="Total Usulan" value={summaries.total} />
         <SummaryCard title="Usulan Baru" value={summaries.usulanBaru} accent="amber" />
         <SummaryCard title="Sedang Diverifikasi" value={summaries.verifikasi} accent="blue" />

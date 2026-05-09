@@ -138,7 +138,7 @@ export default function PegawaiPage() {
         description="Kelola data pegawai dengan filter berbasis role. Admin wilayah dan UKPD tetap dibatasi oleh API."
         breadcrumbs={[{ label: "Data Pegawai" }]}
         action={
-          <div className="grid gap-2 sm:flex sm:flex-wrap sm:justify-end">
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-end">
             <button className="btn-secondary" type="button" onClick={exportPegawai} disabled={exportLoading}>
               <Download className="h-4 w-4" />
               {exportLoading ? "Mengekspor..." : "Export Excel"}

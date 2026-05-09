@@ -906,7 +906,6 @@ function DashboardMiniStats({ cards = [] }) {
         <div key={card.label} className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
           <p className="section-label">{card.label}</p>
           <strong className="mt-1 block font-display text-xl font-bold tabular-nums text-slate-950">{formatNumber(card.value)}</strong>
-          {card.helper ? <p className="mt-1 text-xs text-slate-500">{card.helper}</p> : null}
         </div>
       ))}
     </div>
@@ -957,7 +956,6 @@ function DashboardMenuCharts({
         <header className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
           <div className="flex flex-col gap-1">
             <h2 className="font-display text-lg font-bold text-dinkes-900">{activeView.title}</h2>
-            {activeView.subtitle ? <p className="text-sm text-slate-500">{activeView.subtitle}</p> : null}
           </div>
           {statusOptions.length > 1 ? (
             <label className="flex w-full flex-col gap-1 text-sm font-semibold text-slate-700 sm:w-72">
@@ -1135,19 +1133,16 @@ export default function DashboardPage() {
         <div>
           <p className="section-label text-dinkes-800">Dashboard Utama</p>
           <h1 className="app-heading mt-1 text-2xl sm:text-3xl">Sistem Informasi SDM Kesehatan</h1>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-            Ringkasan pegawai, komposisi status, dan analitik detail Dinas Kesehatan Provinsi DKI Jakarta.
-          </p>
         </div>
       </header>
 
-      <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
-        <KpiCard title="Total Pegawai" value={data.summary.total} percentage="100%" helper="Jumlah Pegawai Seluruh UKPD" icon={UsersRound} />
-        <KpiCard title="PNS/CPNS" value={data.summary.pnsCpns} percentage={formatPercent(data.summary.pnsCpns, totalPegawai)} helper="ASN aktif" icon={ShieldCheck} tone="green" />
-        <KpiCard title="PPPK" value={data.summary.pppk} percentage={formatPercent(data.summary.pppk, totalPegawai)} helper="Penuh waktu" icon={UserRoundCheck} tone="gold" />
-        <KpiCard title="PPPK Paruh Waktu" value={data.summary.pppkParuhWaktu} percentage={formatPercent(data.summary.pppkParuhWaktu, totalPegawai)} helper="Paruh waktu" icon={UserRoundCheck} tone="gold" />
-        <KpiCard title="NON PNS" value={data.summary.nonPns} percentage={formatPercent(data.summary.nonPns, totalPegawai)} helper="Pegawai Profesional" icon={BriefcaseMedical} tone="slate" />
-        <KpiCard title="PJLP" value={data.summary.pjlp} percentage={formatPercent(data.summary.pjlp, totalPegawai)} helper="PJLP" icon={UsersRound} />
+      <section className="grid grid-cols-3 gap-2 sm:grid-cols-3 sm:gap-3 xl:grid-cols-6">
+        <KpiCard title="Total Pegawai" value={data.summary.total} percentage="100%" icon={UsersRound} />
+        <KpiCard title="PNS/CPNS" value={data.summary.pnsCpns} percentage={formatPercent(data.summary.pnsCpns, totalPegawai)} icon={ShieldCheck} tone="green" />
+        <KpiCard title="PPPK" value={data.summary.pppk} percentage={formatPercent(data.summary.pppk, totalPegawai)} icon={UserRoundCheck} tone="gold" />
+        <KpiCard title="PPPK Paruh Waktu" value={data.summary.pppkParuhWaktu} percentage={formatPercent(data.summary.pppkParuhWaktu, totalPegawai)} icon={UserRoundCheck} tone="gold" />
+        <KpiCard title="NON PNS" value={data.summary.nonPns} percentage={formatPercent(data.summary.nonPns, totalPegawai)} icon={BriefcaseMedical} tone="slate" />
+        <KpiCard title="PJLP" value={data.summary.pjlp} percentage={formatPercent(data.summary.pjlp, totalPegawai)} icon={UsersRound} />
       </section>
 
       <DashboardMenuCharts

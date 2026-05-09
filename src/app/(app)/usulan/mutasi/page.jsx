@@ -188,27 +188,27 @@ function SummaryCard({ title, value, tone = "slate" }) {
     amber: "border-amber-200 bg-amber-50/70"
   };
   return (
-    <div className={`rounded-2xl border p-4 shadow-sm ${tones[tone] || tones.slate}`}>
-      <p className="text-sm font-semibold text-slate-600">{title}</p>
-      <p className="mt-2 text-2xl font-bold text-slate-950">{value}</p>
+    <div className={`rounded-xl border p-3 shadow-sm sm:rounded-2xl sm:p-4 ${tones[tone] || tones.slate}`}>
+      <p className="text-xs font-semibold text-slate-600 sm:text-sm">{title}</p>
+      <p className="mt-1 text-xl font-bold text-slate-950 sm:mt-2 sm:text-2xl">{value}</p>
     </div>
   );
 }
 
 function FlowStrip({ activeStep }) {
   return (
-    <section className="surface p-5">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-stretch">
+    <section className="surface p-3 sm:p-5">
+      <div className="flex gap-2 overflow-x-auto pb-1 lg:items-stretch lg:overflow-visible lg:pb-0">
         {FLOW_STEPS.map((step, index) => {
           const active = step.key === activeStep;
           const passed = step.key < activeStep;
           return (
-            <div key={step.key} className="flex min-w-0 flex-1 items-start gap-3">
-              <div className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold ${passed ? "bg-emerald-600 text-white" : active ? "bg-dinkes-700 text-white" : "bg-slate-100 text-slate-500"}`}>
+            <div key={step.key} className={`flex min-w-36 flex-1 items-center gap-2 rounded-xl border px-3 py-2 lg:min-w-0 lg:items-start lg:gap-3 lg:border-0 lg:px-0 lg:py-0 ${active ? "border-dinkes-200 bg-dinkes-50/70 lg:bg-transparent" : "border-slate-200 bg-white lg:bg-transparent"}`}>
+              <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold lg:mt-0.5 lg:h-9 lg:w-9 lg:text-sm ${passed ? "bg-emerald-600 text-white" : active ? "bg-dinkes-700 text-white" : "bg-slate-100 text-slate-500"}`}>
                 {step.key}
               </div>
               <div className="min-w-0">
-                <p className={`text-sm font-bold ${active ? "text-dinkes-800" : "text-slate-700"}`}>{step.title}</p>
+                <p className={`text-xs font-bold leading-4 lg:text-sm ${active ? "text-dinkes-800" : "text-slate-700"}`}>{step.title}</p>
               </div>
               {index < FLOW_STEPS.length - 1 ? <ArrowRight className="mt-2 hidden h-4 w-4 shrink-0 text-slate-300 lg:block" /> : null}
             </div>
@@ -925,7 +925,7 @@ export default function UsulanMutasiPage() {
         action={selected ? <Link className="btn-secondary" href="/usulan/putus-jf">Lihat Putus JF</Link> : null}
       />
 
-      <div className="mb-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="mb-3 grid grid-cols-2 gap-2 sm:mb-5 sm:gap-4 xl:grid-cols-4">
         <SummaryCard title="Total Usulan" value={summaries.total} />
         <SummaryCard title="Usulan Baru" value={summaries.usulanBaru} tone="amber" />
         <SummaryCard title="Sedang Diverifikasi" value={summaries.verifikasi} tone="blue" />

@@ -18,6 +18,7 @@ import { ROLES } from "@/lib/constants/roles";
 export const sidebarMenu = [
   { label: "Dashboard", href: "/dashboard", icon: Home, roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN_WILAYAH, ROLES.ADMIN_UKPD] },
   { label: "Data Pegawai", href: "/pegawai", icon: UsersRound, roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN_WILAYAH, ROLES.ADMIN_UKPD] },
+  { label: "Data Pejabat", href: "/pejabat", icon: BriefcaseBusiness, roles: [ROLES.SUPER_ADMIN] },
   {
     label: "Usulan",
     icon: ClipboardList,
@@ -38,6 +39,7 @@ export const sidebarMenu = [
 export const desktopMenu = [
   { label: "Dashboard", href: "/dashboard", icon: Home, roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN_WILAYAH, ROLES.ADMIN_UKPD] },
   { label: "Data Pegawai", href: "/pegawai", icon: UsersRound, roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN_WILAYAH, ROLES.ADMIN_UKPD] },
+  { label: "Data Pejabat", href: "/pejabat", icon: BriefcaseBusiness, roles: [ROLES.SUPER_ADMIN] },
   { label: "Pencarian", href: "/pegawai", icon: Search, roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN_WILAYAH, ROLES.ADMIN_UKPD] },
   {
     label: "Import Data",

@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "check:postgres": "node scripts/check-postgres-connection.mjs",
-    "import:usulan": "node scripts/import-usulan-sql.mjs"
+    "import:usulan": "node scripts/import-usulan-sql.mjs",
+    "import:plt-plh": "node scripts/import-monitoring-plt-plh.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

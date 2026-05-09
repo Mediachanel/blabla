@@ -1,10 +1,9 @@
 import EmptyState from "@/components/ui/EmptyState";
 
-export default function DataTable({ columns, data, rowKey = "id", actions, startNumber = 1, showNumber = false }) {
+export default function DataTable({ columns, data, rowKey = "id", actions, actionWidth = 260, fitToWidth = false, compact = false, startNumber = 1, showNumber = false }) {
   if (!data?.length) return <EmptyState />;
 
   const numberWidth = 64;
-  const actionWidth = 260;
   const columnWidths = columns.map((column, index) => column.width || (index === 0 ? 220 : 170));
   const firstColumnLeft = showNumber ? numberWidth : 0;
   const tableMinWidth = columnWidths.reduce((total, width) => total + width, 0)
@@ -41,8 +40,11 @@ export default function DataTable({ columns, data, rowKey = "id", actions, start
         ))}
       </div>
       <div className="surface hidden w-full min-w-0 overflow-hidden md:block">
-        <div className="table-scroll w-full min-w-0">
-          <table className="w-full min-w-[var(--table-min-width)] table-fixed border-collapse" style={{ "--table-min-width": `${tableMinWidth}px` }}>
+        <div className={`${fitToWidth ? "w-full min-w-0 overflow-hidden" : "table-scroll w-full min-w-0"}`}>
+          <table
+            className={`w-full table-fixed border-collapse ${fitToWidth ? "" : "min-w-[var(--table-min-width)]"}`}
+            style={fitToWidth ? undefined : { "--table-min-width": `${tableMinWidth}px` }}
+          >
             <colgroup>
               {showNumber ? <col style={{ width: numberWidth }} /> : null}
               {columnWidths.map((width, index) => <col key={columns[index].key} style={{ width }} />)}
@@ -50,36 +52,36 @@ export default function DataTable({ columns, data, rowKey = "id", actions, start
             </colgroup>
             <thead>
               <tr>
-                {showNumber ? <th className="table-th sticky left-0 z-20 bg-[#f3f4f6] text-center" scope="col">No</th> : null}
+                  {showNumber ? <th className={`table-th sticky left-0 z-20 bg-[#f3f4f6] text-center ${compact ? "px-2" : ""}`} scope="col">No</th> : null}
                 {columns.map((column, index) => (
                   <th
                     key={column.key}
-                    className={`table-th ${column.align === "right" ? "text-right" : column.align === "center" ? "text-center" : ""} ${index === 0 ? "sticky z-20 bg-[#f3f4f6]" : ""}`}
+                    className={`table-th ${compact ? "px-2" : ""} ${column.align === "right" ? "text-right" : column.align === "center" ? "text-center" : ""} ${index === 0 ? "sticky z-20 bg-[#f3f4f6]" : ""}`}
                     style={index === 0 ? { left: firstColumnLeft } : undefined}
                     scope="col"
                   >
                     <span className="block truncate" title={typeof column.header === "string" ? column.header : undefined}>{column.header}</span>
                   </th>
                 ))}
-                {actions ? <th className="table-th sticky right-0 z-20 bg-[#f3f4f6] text-center" scope="col">Aksi</th> : null}
+                {actions ? <th className={`table-th sticky right-0 z-20 bg-[#f3f4f6] text-center ${compact ? "px-2" : ""}`} scope="col">Aksi</th> : null}
               </tr>
             </thead>
             <tbody className="bg-white">
               {data.map((item, index) => (
                 <tr key={item[rowKey]} className="group odd:bg-white even:bg-slate-50/45 hover:bg-dinkes-50/70">
-                  {showNumber ? <td className="table-td sticky left-0 z-10 bg-inherit text-center group-hover:bg-dinkes-50/70">{startNumber + index}</td> : null}
+                  {showNumber ? <td className={`table-td sticky left-0 z-10 bg-inherit text-center group-hover:bg-dinkes-50/70 ${compact ? "px-2" : ""}`}>{startNumber + index}</td> : null}
                   {columns.map((column, columnIndex) => (
                     <td
                       key={column.key}
-                      className={`table-td ${column.align === "right" ? "text-right" : column.align === "center" ? "text-center" : ""} ${columnIndex === 0 ? "sticky z-10 bg-inherit font-medium text-slate-900 group-hover:bg-dinkes-50/70" : ""}`}
+                      className={`table-td ${compact ? "px-2" : ""} ${column.align === "right" ? "text-right" : column.align === "center" ? "text-center" : ""} ${columnIndex === 0 ? "sticky z-10 bg-inherit font-medium text-slate-900 group-hover:bg-dinkes-50/70" : ""}`}
                       style={columnIndex === 0 ? { left: firstColumnLeft } : undefined}
                     >
-                      <div className={column.wrap ? "whitespace-normal break-words leading-5" : "min-w-0 truncate"}>
+                      <div className={column.wrap ? "whitespace-normal break-words leading-5" : "min-w-0 truncate"} title={!column.wrap && typeof item[column.key] === "string" ? item[column.key] : undefined}>
                         {column.render ? column.render(item, index) : item[column.key]}
                       </div>
                     </td>
                   ))}
-                  {actions ? <td className="table-td sticky right-0 z-10 bg-inherit text-center group-hover:bg-dinkes-50/70">{actions(item)}</td> : null}
+                  {actions ? <td className={`table-td sticky right-0 z-10 bg-inherit text-center group-hover:bg-dinkes-50/70 ${compact ? "px-2" : ""}`}>{actions(item)}</td> : null}
                 </tr>
               ))}
             </tbody>

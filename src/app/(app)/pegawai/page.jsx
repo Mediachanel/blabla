@@ -20,14 +20,16 @@ export default function PegawaiPage() {
   const [rows, setRows] = useState([]);
   const [totalRows, setTotalRows] = useState(0);
   const [ukpdOptions, setUkpdOptions] = useState([]);
+  const [jenisUkpdOptions, setJenisUkpdOptions] = useState([]);
   const [jabatanOptions, setJabatanOptions] = useState([]);
   const [rumpunOptions, setRumpunOptions] = useState([]);
-  const [filterAccess, setFilterAccess] = useState({ canFilterWilayah: true, canFilterUkpd: true });
+  const [filterAccess, setFilterAccess] = useState({ canFilterWilayah: true, canFilterUkpd: true, canFilterJenisUkpd: true });
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
   const [status, setStatus] = useState("");
   const [wilayah, setWilayah] = useState("");
+  const [jenisUkpd, setJenisUkpd] = useState("");
   const [ukpd, setUkpd] = useState("");
   const [jabatan, setJabatan] = useState("");
   const [rumpun, setRumpun] = useState("");
@@ -39,7 +41,7 @@ export default function PegawaiPage() {
 
   useEffect(() => {
     const controller = new AbortController();
-    const params = new URLSearchParams({ status, wilayah, ukpd, jabatan, rumpun, page: String(page), pageSize: String(pageSize) });
+    const params = new URLSearchParams({ status, wilayah, jenisUkpd, ukpd, jabatan, rumpun, page: String(page), pageSize: String(pageSize) });
     setLoading(true);
     setErrorMessage("");
     fetch(`/api/pegawai?${params}`, { signal: controller.signal })
@@ -51,11 +53,13 @@ export default function PegawaiPage() {
         setTotalRows(data.total || 0);
         const filters = data.filters || {};
         setUkpdOptions(filters.ukpdOptions || []);
+        setJenisUkpdOptions(filters.jenisUkpdOptions || []);
         setJabatanOptions(filters.jabatanOptions || []);
         setRumpunOptions(filters.rumpunOptions || []);
         setFilterAccess({
           canFilterWilayah: filters.canFilterWilayah !== false,
-          canFilterUkpd: filters.canFilterUkpd !== false
+          canFilterUkpd: filters.canFilterUkpd !== false,
+          canFilterJenisUkpd: filters.canFilterJenisUkpd !== false
         });
       })
       .catch((error) => {
@@ -69,10 +73,10 @@ export default function PegawaiPage() {
         if (!controller.signal.aborted) setLoading(false);
       });
     return () => controller.abort();
-  }, [status, wilayah, ukpd, jabatan, rumpun, page, pageSize, refreshKey]);
+  }, [status, wilayah, jenisUkpd, ukpd, jabatan, rumpun, page, pageSize, refreshKey]);
 
   const maxPage = Math.max(1, Math.ceil(totalRows / pageSize));
-  const hasActiveFilters = Boolean(status || wilayah || ukpd || jabatan || rumpun);
+  const hasActiveFilters = Boolean(status || wilayah || jenisUkpd || ukpd || jabatan || rumpun);
 
   async function removePegawai() {
     setDeleteLoading(true);
@@ -99,7 +103,7 @@ export default function PegawaiPage() {
     setExportLoading(true);
     setErrorMessage("");
     try {
-      const params = new URLSearchParams({ status, wilayah, ukpd, jabatan, rumpun });
+      const params = new URLSearchParams({ status, wilayah, jenisUkpd, ukpd, jabatan, rumpun });
       const response = await fetch(`/api/pegawai/export?${params}`);
       if (!response.ok) {
         const payload = await response.json().catch(() => null);
@@ -134,7 +138,7 @@ export default function PegawaiPage() {
     <>
       <PageHeader
         title="Data Pegawai"
-        description="Kelola data pegawai dengan filter berbasis role. Admin wilayah dan UKPD tetap dibatasi oleh API."
+        description=""
         breadcrumbs={[{ label: "Data Pegawai" }]}
         action={
           <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-end">
@@ -150,9 +154,10 @@ export default function PegawaiPage() {
         filters={[
           { name: "status", label: "Semua status", value: status, onChange: (value) => { setStatus(value); setPage(1); }, options: JENIS_PEGAWAI_OPTIONS },
           ...(filterAccess.canFilterWilayah ? [{ name: "wilayah", label: "Semua wilayah", value: wilayah, onChange: (value) => { setWilayah(value); setPage(1); }, options: WILAYAH }] : []),
+          ...(filterAccess.canFilterJenisUkpd ? [{ name: "jenisUkpd", label: "Semua jenis UKPD", value: jenisUkpd, onChange: (value) => { setJenisUkpd(value); setPage(1); }, options: jenisUkpdOptions }] : []),
           ...(filterAccess.canFilterUkpd ? [{ name: "ukpd", label: "Semua UKPD", value: ukpd, onChange: (value) => { setUkpd(value); setPage(1); }, options: ukpdOptions }] : []),
           { name: "jabatan", label: "Semua jabatan", value: jabatan, onChange: (value) => { setJabatan(value); setPage(1); }, options: jabatanOptions },
-          { name: "rumpun", label: "Semua rumpun", value: rumpun, onChange: (value) => { setRumpun(value); setPage(1); }, options: rumpunOptions }
+          { name: "rumpun", label: "Semua rumpun jabatan", value: rumpun, onChange: (value) => { setRumpun(value); setPage(1); }, options: rumpunOptions }
         ]}
         actions={hasActiveFilters ? (
           <button
@@ -161,6 +166,7 @@ export default function PegawaiPage() {
             onClick={() => {
               setStatus("");
               setWilayah("");
+              setJenisUkpd("");
               setUkpd("");
               setJabatan("");
               setRumpun("");

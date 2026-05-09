@@ -433,6 +433,16 @@ const jabatanColumns = [
   { key: "tanggal_sk", header: "Tgl SK", render: (item) => formatDate(item.tanggal_sk) }
 ];
 
+const pltPlhColumns = [
+  { key: "jenis_penugasan", header: "Jenis" },
+  { key: "ukpd_tujuan", header: "UKPD PLT/PLH" },
+  { key: "jabatan_tujuan", header: "Jabatan PLT/PLH", render: (item) => valueOrDash(item.jabatan_tujuan) },
+  { key: "jabatan_saat_ini", header: "Jabatan Saat Ini", render: (item) => valueOrDash(item.jabatan_saat_ini) },
+  { key: "pangkat_golongan", header: "Pangkat/Gol.", render: (item) => formatPangkatGolongan(item.pangkat_golongan) },
+  { key: "mulai_penugasan", header: "Mulai", render: (item) => formatDate(item.mulai_penugasan) },
+  { key: "selesai_penugasan", header: "Selesai", render: (item) => formatDate(item.selesai_penugasan) }
+];
+
 const gajiColumns = [
   { key: "tmt_gaji", header: "TMT", render: (item) => formatDate(item.tmt_gaji) },
   { key: "pangkat_golongan", header: "Pangkat/Gol.", render: (item) => formatPangkatGolongan(item.pangkat_golongan) },
@@ -507,7 +517,9 @@ function getHistoryYear(row) {
     row.tmt_gaji,
     row.tanggal_sk,
     row.tanggal_ijazah,
-    row.tanggal_mulai
+    row.tanggal_mulai,
+    row.mulai_penugasan,
+    row.selesai_penugasan
   ];
   const match = values.map(fieldText).join(" ").match(/\b(19|20)\d{2}\b/);
   return match?.[0] || "";
@@ -719,6 +731,16 @@ const jabatanPrintColumns = [
   { key: "tanggal_sk", header: "TGL.SK", width: "9.5%", align: "center", render: (row) => formatDrhDate(row.tanggal_sk) }
 ];
 
+const pltPlhPrintColumns = [
+  { key: "no", header: "NO", width: "4.5%", align: "center", render: printRowNumber },
+  { key: "jenis_penugasan", header: "JENIS", width: "8%", align: "center" },
+  { key: "ukpd_tujuan", header: "UKPD PLT/PLH", width: "23%" },
+  { key: "jabatan_tujuan", header: "JABATAN PLT/PLH" },
+  { key: "pangkat_golongan", header: "PANGKAT/GOL", width: "13%", render: (row) => formatPangkatGolongan(row.pangkat_golongan) },
+  { key: "mulai_penugasan", header: "MULAI", width: "10%", align: "center", render: (row) => formatDrhDate(row.mulai_penugasan) },
+  { key: "selesai_penugasan", header: "SELESAI", width: "10%", align: "center", render: (row) => formatDrhDate(row.selesai_penugasan) }
+];
+
 const gajiPrintColumns = [
   { key: "no", header: "NO", width: "4.5%", align: "center", render: printRowNumber },
   { key: "tmt_gaji", header: "TMT", width: "14%", align: "center", render: (row) => formatDrhDate(row.tmt_gaji) },
@@ -832,6 +854,9 @@ function PrintProfileDocument({ pegawai, computed }) {
         <PrintSection title="RIWAYAT JABATAN FUNGSIONAL">
           <PrintTable columns={jabatanPrintColumns} rows={functionalRows} />
         </PrintSection>
+        <PrintSection title="RIWAYAT PLT/PLH">
+          <PrintTable columns={pltPlhPrintColumns} rows={pegawai.riwayat_plt_plh} />
+        </PrintSection>
       </PrintPage>
 
       <PrintPage breakBefore>
@@ -920,6 +945,7 @@ function historyConfig(pegawai, computed, query, year) {
       data: filterHistoryRows(computed.riwayatPendidikanNonFormal, query, year)
     },
     { title: "Riwayat Jabatan", description: "Perubahan jabatan dan unit kerja.", columns: jabatanColumns, data: filterHistoryRows(pegawai.riwayat_jabatan, query, year) },
+    { title: "Riwayat PLT/PLH", description: "Penugasan PLT dan PLH yang tercatat.", columns: pltPlhColumns, data: filterHistoryRows(pegawai.riwayat_plt_plh, query, year) },
     { title: "Riwayat Pangkat", description: "Pangkat dan golongan.", columns: pangkatColumns, data: filterHistoryRows(pegawai.riwayat_pangkat, query, year) },
     { title: "Riwayat Gaji Pokok", description: "Perubahan gaji pokok.", columns: gajiColumns, data: filterHistoryRows(pegawai.riwayat_gaji_pokok, query, year) },
     { title: "Riwayat SKP", description: "Nilai SKP tahunan.", columns: skpColumns, data: filterHistoryRows(pegawai.riwayat_skp, query, year) },
@@ -991,6 +1017,7 @@ export default function DetailPegawaiPage() {
     const historyRows = [
       ...riwayatPendidikan,
       ...(pegawai.riwayat_jabatan || []),
+      ...(pegawai.riwayat_plt_plh || []),
       ...(pegawai.riwayat_gaji_pokok || []),
       ...(pegawai.riwayat_pangkat || []),
       ...(pegawai.riwayat_penghargaan || []),

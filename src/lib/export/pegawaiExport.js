@@ -160,7 +160,7 @@ async function attachKeluarga(pool, rows, ids) {
   }
 }
 
-function buildPegawaiExportWhere({ user, q, status, wilayah, ukpd, jabatan, rumpun }) {
+function buildPegawaiExportWhere({ user, q, status, wilayah, jenisUkpd, ukpd, jabatan, rumpun }) {
   const where = [];
   const params = [];
   const canFilterWilayah = user.role === ROLES.SUPER_ADMIN;
@@ -185,6 +185,7 @@ function buildPegawaiExportWhere({ user, q, status, wilayah, ukpd, jabatan, rump
   }
   if (status) addWhere(where, params, "p.`jenis_pegawai` = ?", [status]);
   if (canFilterWilayah && wilayah) addWhere(where, params, "COALESCE(NULLIF(p.`wilayah`, ''), u.`wilayah`) = ?", [wilayah]);
+  if (jenisUkpd) addWhere(where, params, "COALESCE(NULLIF(p.`jenis_ukpd`, ''), u.`jenis_ukpd`) = ?", [jenisUkpd]);
   if (canFilterUkpd && ukpd) addWhere(where, params, "p.`nama_ukpd` = ?", [ukpd]);
   if (jabatan) addWhere(where, params, "COALESCE(NULLIF(p.`nama_jabatan_menpan`, ''), p.`nama_jabatan_orb`) = ?", [jabatan]);
   if (rumpun) addWhere(where, params, "p.`status_rumpun` = ?", [rumpun]);
@@ -195,9 +196,9 @@ function buildPegawaiExportWhere({ user, q, status, wilayah, ukpd, jabatan, rump
   };
 }
 
-export async function getPegawaiExportData({ user, q = "", status = "", wilayah = "", ukpd = "", jabatan = "", rumpun = "" }) {
+export async function getPegawaiExportData({ user, q = "", status = "", wilayah = "", jenisUkpd = "", ukpd = "", jabatan = "", rumpun = "" }) {
   const pool = await getConnectedPool();
-  const { whereSql, params } = buildPegawaiExportWhere({ user, q, status, wilayah, ukpd, jabatan, rumpun });
+  const { whereSql, params } = buildPegawaiExportWhere({ user, q, status, wilayah, jenisUkpd, ukpd, jabatan, rumpun });
   const [pegawaiRows] = await pool.query(
     `SELECT p.*,
        COALESCE(NULLIF(p.\`wilayah\`, ''), u.\`wilayah\`, '-') AS \`wilayah\`,

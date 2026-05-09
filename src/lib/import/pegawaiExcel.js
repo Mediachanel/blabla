@@ -487,7 +487,7 @@ function exportCellValue(row, column, index) {
   return row?.[column.key] ?? "";
 }
 
-function buildWorkbookBuffer(sheets, definedNames = []) {
+export function buildWorkbookBuffer(sheets, definedNames = []) {
   const zip = new JSZip();
   zip.file("[Content_Types].xml", contentTypesXml(sheets));
   zip.folder("_rels").file(".rels", rootRelsXml());

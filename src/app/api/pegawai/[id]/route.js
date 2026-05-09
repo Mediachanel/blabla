@@ -4,6 +4,7 @@ import { requireAuth } from "@/lib/auth/requireAuth";
 import { fail, ok } from "@/lib/helpers/response";
 import { getConnectedPool, isClosedConnectionError, resetPostgresPools } from "@/lib/db/postgres";
 import { ensureDrhSchema } from "@/lib/db/ensureDrhSchema";
+import { ensurePejabatPltPlhSchema } from "@/lib/db/ensurePejabatPltPlhSchema";
 import {
   deletePegawaiData,
   getPegawaiAlamat,
@@ -45,6 +46,11 @@ function cleanNip(value) {
   return String(value || "").trim().replace(/^`+/, "");
 }
 
+function normalizeDateValue(value) {
+  if (value instanceof Date && !Number.isNaN(value.getTime())) return value.toISOString().slice(0, 10);
+  return value ? String(value).slice(0, 10) : null;
+}
+
 async function ensureSchemaWithFreshConnection() {
   for (let attempt = 0; attempt < 2; attempt += 1) {
     const pool = await getConnectedPool();
@@ -65,6 +71,34 @@ async function ensureSchemaWithFreshConnection() {
   }
 }
 
+async function getPegawaiRiwayatPltPlh(id) {
+  const pool = await getConnectedPool();
+  await ensurePejabatPltPlhSchema(pool);
+  const [rows] = await pool.query(
+    `SELECT
+       \`id\`,
+       \`jenis_penugasan\`,
+       \`id_pegawai\`,
+       \`nama_pejabat\`,
+       \`jabatan_saat_ini\`,
+       \`ukpd_asal\`,
+       \`pangkat_golongan\`,
+       \`ukpd_tujuan\`,
+       \`jabatan_tujuan\`,
+       \`mulai_penugasan\`,
+       \`selesai_penugasan\`
+     FROM \`pejabat_plt_plh\`
+     WHERE \`id_pegawai\` = ?
+     ORDER BY \`mulai_penugasan\` DESC, \`selesai_penugasan\` DESC, \`id\` DESC`,
+    [id]
+  );
+  return rows.map((row) => ({
+    ...row,
+    mulai_penugasan: normalizeDateValue(row.mulai_penugasan),
+    selesai_penugasan: normalizeDateValue(row.selesai_penugasan)
+  }));
+}
+
 export async function GET(_request, { params }) {
   try {
     const { user, error } = await requireAuth();
@@ -75,13 +109,14 @@ export async function GET(_request, { params }) {
     const item = await findAllowedById(id, user, ukpdList);
     if (!item) return fail("Data pegawai tidak ditemukan atau tidak dapat diakses.", 404);
 
-    const [alamat, pasangan, anak, keluarga, riwayatPendidikan, riwayatJabatan, riwayatGajiPokok, riwayatPangkat, riwayatPenghargaan, riwayatSkp, riwayatHukumanDisiplin, riwayatPrestasiPendidikan, riwayatNarasumber, riwayatKegiatanStrategis, riwayatKeberhasilan] = await Promise.all([
+    const [alamat, pasangan, anak, keluarga, riwayatPendidikan, riwayatJabatan, riwayatPltPlh, riwayatGajiPokok, riwayatPangkat, riwayatPenghargaan, riwayatSkp, riwayatHukumanDisiplin, riwayatPrestasiPendidikan, riwayatNarasumber, riwayatKegiatanStrategis, riwayatKeberhasilan] = await Promise.all([
       getPegawaiAlamat(id),
       getPegawaiPasangan(id),
       getPegawaiAnak(id),
       getPegawaiKeluarga(id),
       getPegawaiRiwayatPendidikan(id),
       getPegawaiRiwayatJabatan(id),
+      getPegawaiRiwayatPltPlh(id),
       getPegawaiRiwayatGajiPokok(id),
       getPegawaiRiwayatPangkat(id),
       getPegawaiRiwayatPenghargaan(id),
@@ -114,6 +149,7 @@ export async function GET(_request, { params }) {
       keluarga,
       riwayat_pendidikan: riwayatPendidikan,
       riwayat_jabatan: riwayatJabatan,
+      riwayat_plt_plh: riwayatPltPlh,
       riwayat_gaji_pokok: riwayatGajiPokok,
       riwayat_pangkat: riwayatPangkat,
       riwayat_penghargaan: riwayatPenghargaan,

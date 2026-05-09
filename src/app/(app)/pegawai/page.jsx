@@ -26,7 +26,6 @@ export default function PegawaiPage() {
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
-  const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const [wilayah, setWilayah] = useState("");
   const [ukpd, setUkpd] = useState("");
@@ -40,7 +39,7 @@ export default function PegawaiPage() {
 
   useEffect(() => {
     const controller = new AbortController();
-    const params = new URLSearchParams({ q: search, status, wilayah, ukpd, jabatan, rumpun, page: String(page), pageSize: String(pageSize) });
+    const params = new URLSearchParams({ status, wilayah, ukpd, jabatan, rumpun, page: String(page), pageSize: String(pageSize) });
     setLoading(true);
     setErrorMessage("");
     fetch(`/api/pegawai?${params}`, { signal: controller.signal })
@@ -70,10 +69,10 @@ export default function PegawaiPage() {
         if (!controller.signal.aborted) setLoading(false);
       });
     return () => controller.abort();
-  }, [search, status, wilayah, ukpd, jabatan, rumpun, page, pageSize, refreshKey]);
+  }, [status, wilayah, ukpd, jabatan, rumpun, page, pageSize, refreshKey]);
 
   const maxPage = Math.max(1, Math.ceil(totalRows / pageSize));
-  const hasActiveFilters = Boolean(search || status || wilayah || ukpd || jabatan || rumpun);
+  const hasActiveFilters = Boolean(status || wilayah || ukpd || jabatan || rumpun);
 
   async function removePegawai() {
     setDeleteLoading(true);
@@ -100,7 +99,7 @@ export default function PegawaiPage() {
     setExportLoading(true);
     setErrorMessage("");
     try {
-      const params = new URLSearchParams({ q: search, status, wilayah, ukpd, jabatan, rumpun });
+      const params = new URLSearchParams({ status, wilayah, ukpd, jabatan, rumpun });
       const response = await fetch(`/api/pegawai/export?${params}`);
       if (!response.ok) {
         const payload = await response.json().catch(() => null);
@@ -127,7 +126,7 @@ export default function PegawaiPage() {
     { key: "nama", header: "Nama", width: 240 },
     { key: "nip", header: "NIP", width: 180, render: displayNip },
     { key: "nama_jabatan_menpan", header: "Jabatan Standar Kepgub 11", width: 280, wrap: true, render: (item) => item.nama_jabatan_menpan || item.nama_jabatan_orb || "-" },
-    { key: "jenis_pegawai", header: "Status", width: 150, render: (item) => <StatusBadge status={item.jenis_pegawai} /> },
+    { key: "jenis_pegawai", header: "Status", width: 180, render: (item) => <StatusBadge status={item.jenis_pegawai} /> },
     { key: "nama_ukpd", header: "Nama UKPD", width: 260, wrap: true }
   ];
 
@@ -148,8 +147,6 @@ export default function PegawaiPage() {
         }
       />
       <SearchFilterBar
-        search={search}
-        onSearch={(value) => { setSearch(value); setPage(1); }}
         filters={[
           { name: "status", label: "Semua status", value: status, onChange: (value) => { setStatus(value); setPage(1); }, options: JENIS_PEGAWAI_OPTIONS },
           ...(filterAccess.canFilterWilayah ? [{ name: "wilayah", label: "Semua wilayah", value: wilayah, onChange: (value) => { setWilayah(value); setPage(1); }, options: WILAYAH }] : []),
@@ -162,7 +159,6 @@ export default function PegawaiPage() {
             className="btn-secondary"
             type="button"
             onClick={() => {
-              setSearch("");
               setStatus("");
               setWilayah("");
               setUkpd("");

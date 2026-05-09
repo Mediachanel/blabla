@@ -522,7 +522,6 @@ export default function UsulanPutusJfPage() {
   const [activeId, setActiveId] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
   const detailSectionRef = useRef(null);
-  const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [stageFilter, setStageFilter] = useState("");
   const [loading, setLoading] = useState(true);
@@ -617,22 +616,10 @@ export default function UsulanPutusJfPage() {
   }), [decoratedRows]);
 
   const filteredRows = useMemo(() => decoratedRows.filter((item) => {
-    const haystack = [
-      item.nrk,
-      item.nip,
-      item.nama_pegawai,
-      item.nama_ukpd,
-      item.jabatan,
-      item.jabatan_baru,
-      item.alasan_pemutusan,
-      item.nomor_surat,
-      item.hal
-    ].join(" ").toLowerCase();
-    const matchesSearch = haystack.includes(search.toLowerCase());
     const matchesStatus = !statusFilter || normalizeText(item.status) === statusFilter;
     const matchesStage = !stageFilter || `${item._flow.step}. ${FLOW_STEPS[item._flow.step - 1]?.title}` === stageFilter;
-    return matchesSearch && matchesStatus && matchesStage;
-  }), [decoratedRows, search, statusFilter, stageFilter]);
+    return matchesStatus && matchesStage;
+  }), [decoratedRows, statusFilter, stageFilter]);
 
   const selected = filteredRows.find((item) => item.id === selectedId) || decoratedRows.find((item) => item.id === selectedId) || null;
   const activeItem = decoratedRows.find((item) => item.id === activeId) || rows.find((item) => item.id === activeId) || null;
@@ -886,8 +873,6 @@ export default function UsulanPutusJfPage() {
       <section className="mt-5">
         <div className="space-y-5">
           <SearchFilterBar
-            search={search}
-            onSearch={setSearch}
             filters={[
               { name: "status", label: "Semua status", value: statusFilter, onChange: setStatusFilter, options: statusOptions },
               { name: "tahap", label: "Semua tahap", value: stageFilter, onChange: setStageFilter, options: stageOptions }

@@ -1,4 +1,4 @@
-const CACHE_NAME = "sikepeg-pwa-v2";
+const CACHE_NAME = "si-sdmk-pwa-v3";
 
 const PRECACHE_URLS = [
   "/",

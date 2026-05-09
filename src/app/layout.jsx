@@ -1,13 +1,14 @@
 import "./globals.css";
 
 export const metadata = {
-  title: "Sistem Informasi SDM Kesehatan DKI Jakarta",
+  title: "SI-SDMK",
+  applicationName: "SI-SDMK",
   description: "Aplikasi internal pengelolaan data pegawai Dinas Kesehatan Provinsi DKI Jakarta",
   manifest: "/manifest.webmanifest",
   icons: {
-    icon: "/dinkes.png",
-    shortcut: "/dinkes.png",
-    apple: "/dinkes.png"
+    icon: "/icons/icon-192.png",
+    shortcut: "/icons/icon-192.png",
+    apple: "/icons/icon-192.png"
   }
 };
 

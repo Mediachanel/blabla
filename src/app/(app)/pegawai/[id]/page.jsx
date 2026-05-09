@@ -9,12 +9,10 @@ import {
   Download,
   Edit,
   FileText,
-  Mail,
   MapPin,
   Phone,
   Printer,
   Search,
-  UserRound
 } from "lucide-react";
 import StatusBadge from "@/components/ui/StatusBadge";
 import ErrorState from "@/components/ui/ErrorState";
@@ -166,11 +164,11 @@ function InfoGrid({ items, columns = "lg:grid-cols-2" }) {
   if (!visibleItems.length) return null;
 
   return (
-    <dl className={`grid gap-3 sm:grid-cols-2 ${columns}`}>
+    <dl className={`grid gap-2 sm:grid-cols-2 ${columns}`}>
       {visibleItems.map((item) => (
-        <div key={item.label} className="rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3">
-          <dt className="text-[11px] font-bold uppercase tracking-wide text-slate-500">{item.label}</dt>
-          <dd className="mt-1 break-words text-sm font-semibold leading-6 text-slate-950">
+        <div key={item.label} className="rounded-lg border border-slate-200 bg-slate-50/70 px-3 py-2">
+          <dt className="text-[10px] font-bold uppercase tracking-wide text-slate-500">{item.label}</dt>
+          <dd className="mt-1 break-words text-xs font-semibold leading-5 text-slate-950 xl:text-sm">
             {item.type ? <LinkValue type={item.type} value={item.value} /> : item.value}
           </dd>
         </div>
@@ -182,10 +180,10 @@ function InfoGrid({ items, columns = "lg:grid-cols-2" }) {
 function SectionCard({ id, title, description, children }) {
   if (!children) return null;
   return (
-    <section id={id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-etpp sm:p-5">
-      <div className="mb-4">
-        <h2 className="text-base font-bold text-slate-950 sm:text-lg">{title}</h2>
-        {description ? <p className="mt-1 text-sm leading-6 text-slate-600">{description}</p> : null}
+    <section id={id} className="rounded-lg border border-slate-200 bg-white p-3 shadow-etpp sm:p-4">
+      <div className="mb-3">
+        <h2 className="text-base font-bold text-slate-950">{title}</h2>
+        {description ? <p className="mt-1 hidden text-sm leading-6 text-slate-600 lg:block">{description}</p> : null}
       </div>
       {children}
     </section>
@@ -202,8 +200,8 @@ function EmptyTabState({ label = "Belum ada data" }) {
 
 function TabsNavigation({ activeTab, onChange }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-2 shadow-etpp">
-      <div className="flex gap-2 overflow-x-auto">
+    <div className="rounded-lg border border-slate-200 bg-white p-1.5 shadow-etpp">
+      <div className="flex gap-1 overflow-x-auto">
         {tabs.map((tab) => {
           const active = activeTab === tab.id;
           return (
@@ -212,7 +210,7 @@ function TabsNavigation({ activeTab, onChange }) {
               type="button"
               onClick={() => onChange(tab.id)}
               className={[
-                "whitespace-nowrap rounded-xl px-4 py-2 text-sm font-bold transition",
+                "whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-bold transition",
                 active ? "bg-dinkes-700 text-white shadow-sm" : "text-slate-600 hover:bg-dinkes-50 hover:text-dinkes-800"
               ].join(" ")}
             >
@@ -222,25 +220,6 @@ function TabsNavigation({ activeTab, onChange }) {
         })}
       </div>
     </div>
-  );
-}
-
-function QuickNav({ items }) {
-  const visibleItems = items.filter(Boolean);
-  if (!visibleItems.length) return null;
-  return (
-    <aside className="hidden xl:block">
-      <nav className="sticky top-24 rounded-lg border border-slate-200 bg-white p-4 shadow-sm" aria-label="Navigasi cepat">
-        <p className="text-xs font-extrabold uppercase tracking-wide text-slate-500">Navigasi Cepat</p>
-        <div className="mt-3 space-y-1">
-          {visibleItems.map((item) => (
-            <a key={item.href} href={item.href} className="block rounded-md px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-dinkes-50 hover:text-dinkes-800">
-              {item.label}
-            </a>
-          ))}
-        </div>
-      </nav>
-    </aside>
   );
 }
 
@@ -255,11 +234,11 @@ function ProfileSummary({ pegawai, computed, onPrint }) {
   ];
 
   return (
-    <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-etpp">
-      <div className="border-b border-slate-100 bg-gradient-to-br from-dinkes-50 via-white to-slate-50 p-4 sm:p-5">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div className="flex min-w-0 gap-4">
-            <div className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-dinkes-700 text-xl font-extrabold uppercase text-white shadow-sm sm:h-20 sm:w-20 sm:text-2xl">
+    <section className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-etpp">
+      <div className="border-b border-slate-100 bg-gradient-to-br from-dinkes-50 via-white to-slate-50 p-3 sm:p-4">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+          <div className="flex min-w-0 gap-3">
+            <div className="grid h-14 w-14 shrink-0 place-items-center rounded-xl bg-dinkes-700 text-lg font-extrabold uppercase text-white shadow-sm sm:h-16 sm:w-16 sm:text-xl">
             {initials(pegawai.nama)}
             </div>
             <div className="min-w-0">
@@ -267,8 +246,8 @@ function ProfileSummary({ pegawai, computed, onPrint }) {
                 <StatusBadge status={isActive ? "Aktif" : "Tidak Aktif"} />
                 <StatusBadge status={pegawai.jenis_pegawai} />
               </div>
-              <h1 className="mt-2 break-words text-xl font-extrabold tracking-normal text-slate-950 sm:text-2xl lg:text-3xl">{name}</h1>
-              <p className="mt-1 line-clamp-2 text-sm font-semibold leading-6 text-slate-600 sm:text-base">{computed.jabatan}</p>
+              <h1 className="mt-1 break-words text-xl font-extrabold tracking-normal text-slate-950 lg:text-2xl">{name}</h1>
+              <p className="mt-0.5 line-clamp-1 text-sm font-semibold leading-5 text-slate-600">{computed.jabatan}</p>
               <p className="mt-1 text-xs font-medium text-slate-500">{valueOrDash(pegawai.nip)} | {valueOrDash(pegawai.nrk)}</p>
             </div>
           </div>
@@ -289,15 +268,15 @@ function ProfileSummary({ pegawai, computed, onPrint }) {
         </div>
       </div>
 
-      <div className="grid gap-3 p-4 sm:grid-cols-2 sm:p-5 xl:grid-cols-4">
+      <div className="grid gap-2 p-3 sm:grid-cols-2 sm:p-4 xl:grid-cols-4">
         {filterFilledItems(summaryItems).map((item) => (
-          <div key={item.label} className="flex min-w-0 items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3">
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white text-dinkes-700 ring-1 ring-slate-200">
+          <div key={item.label} className="flex min-w-0 items-start gap-2 rounded-lg border border-slate-200 bg-slate-50/70 px-3 py-2">
+            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-white text-dinkes-700 ring-1 ring-slate-200">
               <item.icon className="h-4 w-4" aria-hidden="true" />
             </span>
             <div className="min-w-0">
-              <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500">{item.label}</p>
-              <p className="mt-1 line-clamp-2 text-sm font-extrabold leading-5 text-slate-950">{item.value}</p>
+              <p className="text-[10px] font-bold uppercase tracking-wide text-slate-500">{item.label}</p>
+              <p className="mt-1 line-clamp-2 text-xs font-extrabold leading-5 text-slate-950 xl:text-sm">{item.value}</p>
             </div>
           </div>
         ))}
@@ -1078,99 +1057,34 @@ export default function DetailPegawaiPage() {
 
   if (!pegawai || !computed) return <EmptyTabState />;
 
-  const overviewIdentity = (
-    <InfoGrid
-      columns="lg:grid-cols-3"
-      items={[
-        { label: "NRK", value: pegawai.nrk },
-        { label: "NIP", value: pegawai.nip },
-        { label: "Jenis Kelamin", value: pegawai.jenis_kelamin },
-        { label: "Tempat / Tanggal Lahir", value: computed.tempatTanggalLahir },
-        { label: "Umur", value: computed.umur },
-        { label: "Agama", value: pegawai.agama }
-      ]}
-    />
-  );
-
-  const quickNavItems = {
-    overview: [
-      { label: "Ringkasan", href: "#summary" },
-      overviewIdentity && { label: "Identitas", href: "#identity" },
-      { label: "Kontak Utama", href: "#contact-snapshot" }
-    ],
-    employment: [
-      { label: "Status", href: "#employment-status" },
-      { label: "Jabatan", href: "#employment-position" },
-      { label: "Pendidikan", href: "#employment-education" }
-    ],
-    contact: [
-      { label: "Kontak", href: "#contact-main" },
-      { label: "Alamat", href: "#address-main" }
-    ],
-    family: [{ label: "Keluarga", href: "#family-main" }],
-    history: [
-      { label: "Filter Riwayat", href: "#history-filter" },
-      { label: "Daftar Riwayat", href: "#history-list" }
-    ]
-  }[activeTab];
-
   return (
     <>
-      <div className="space-y-5 print:hidden">
+      <div className="space-y-3 print:hidden">
         <ProfileSummary pegawai={pegawai} computed={computed} onPrint={printProfile} />
         <TabsNavigation activeTab={activeTab} onChange={changeTab} />
 
-        <div className="grid gap-5 xl:grid-cols-[1fr_220px]">
-        <main className="space-y-4">
+        <div>
+        <main className="space-y-3">
           {activeTab === "overview" ? (
-            <>
-              <SectionCard id="summary" title="Ringkasan Pegawai" description="Data paling sering dipakai untuk identifikasi cepat.">
-                <div className="grid gap-4 lg:grid-cols-3">
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
-                    <BriefcaseBusiness className="h-5 w-5 text-dinkes-700" />
-                    <p className="mt-3 text-xs font-bold uppercase tracking-wide text-slate-500">Jabatan</p>
-                    <p className="mt-1 text-sm font-extrabold text-slate-950">{computed.jabatan}</p>
-                  </div>
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
-                    <MapPin className="h-5 w-5 text-dinkes-700" />
-                    <p className="mt-3 text-xs font-bold uppercase tracking-wide text-slate-500">UKPD</p>
-                    <p className="mt-1 text-sm font-extrabold text-slate-950">{valueOrDash(pegawai.nama_ukpd)}</p>
-                  </div>
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
-                    <FileText className="h-5 w-5 text-dinkes-700" />
-                    <p className="mt-3 text-xs font-bold uppercase tracking-wide text-slate-500">Total Riwayat</p>
-                    <p className="mt-1 text-sm font-extrabold text-slate-950">{formatNumber(computed.totalRiwayat)}</p>
-                  </div>
-                </div>
-              </SectionCard>
-
-              <SectionCard id="identity" title="Identitas" description="Informasi personal utama.">
-                {overviewIdentity}
-              </SectionCard>
-
-              <SectionCard id="contact-snapshot" title="Kontak Utama" description="Kanal komunikasi yang bisa langsung digunakan.">
-                <div className="grid gap-3 md:grid-cols-3">
-                  {hasValue(pegawai.email) ? (
-                    <a className="rounded-lg border border-slate-200 bg-white p-4 text-sm font-semibold text-dinkes-700 hover:bg-dinkes-50" href={`mailto:${pegawai.email}`}>
-                      <Mail className="mb-2 h-5 w-5" />
-                      {pegawai.email}
-                    </a>
-                  ) : null}
-                  {hasValue(pegawai.no_hp_pegawai) ? (
-                    <a className="rounded-lg border border-slate-200 bg-white p-4 text-sm font-semibold text-dinkes-700 hover:bg-dinkes-50" href={`tel:${String(pegawai.no_hp_pegawai).replace(/[^\d+]/g, "")}`}>
-                      <Phone className="mb-2 h-5 w-5" />
-                      {pegawai.no_hp_pegawai}
-                    </a>
-                  ) : null}
-                  {hasValue(pegawai.wilayah) ? (
-                    <div className="rounded-lg border border-slate-200 bg-white p-4 text-sm font-semibold text-slate-700">
-                      <MapPin className="mb-2 h-5 w-5 text-dinkes-700" />
-                      {pegawai.wilayah}
-                    </div>
-                  ) : null}
-                </div>
-              </SectionCard>
-            </>
+            <SectionCard id="summary" title="Profil Pegawai" description="Data inti pegawai dalam satu tampilan.">
+              <InfoGrid
+                columns="lg:grid-cols-4 2xl:grid-cols-6"
+                items={[
+                  { label: "Jabatan", value: computed.jabatan },
+                  { label: "UKPD", value: pegawai.nama_ukpd },
+                  { label: "Total Riwayat", value: formatNumber(computed.totalRiwayat) },
+                  { label: "NRK", value: pegawai.nrk },
+                  { label: "NIP", value: pegawai.nip },
+                  { label: "Jenis Kelamin", value: pegawai.jenis_kelamin },
+                  { label: "Tempat / Tanggal Lahir", value: computed.tempatTanggalLahir },
+                  { label: "Umur", value: computed.umur },
+                  { label: "Agama", value: pegawai.agama },
+                  { label: "Email", value: pegawai.email, type: "email" },
+                  { label: "No. HP", value: pegawai.no_hp_pegawai, type: "phone" },
+                  { label: "Wilayah", value: pegawai.wilayah }
+                ]}
+              />
+            </SectionCard>
           ) : null}
 
           {activeTab === "employment" ? (
@@ -1280,7 +1194,6 @@ export default function DetailPegawaiPage() {
             </section>
           ) : null}
         </main>
-        <QuickNav items={quickNavItems} />
       </div>
       </div>
       <PrintProfileDocument pegawai={pegawai} computed={computed} />

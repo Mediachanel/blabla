@@ -1,5 +1,6 @@
 import { getPegawaiWilayah } from "@/lib/auth/access";
 import { requireAuth } from "@/lib/auth/requireAuth";
+import { ROLES } from "@/lib/constants/roles";
 import { getScopedDashboardData } from "@/lib/dashboardData";
 import { fail, ok } from "@/lib/helpers/response";
 import { JENIS_PEGAWAI_OPTIONS, normalizeJenisPegawai } from "@/lib/helpers/pegawaiStatus";
@@ -561,6 +562,7 @@ function buildPensionProjection(items) {
 function buildDashboardMenus(items, summary, options = {}) {
   const pensionProjection = buildPensionProjection(items);
   const ukpdList = options.ukpdList || [];
+  const includeOrganizationCharts = Boolean(options.includeOrganizationCharts);
   const dashboardCharts = [
     {
       id: "status-pegawai",
@@ -589,7 +591,7 @@ function buildDashboardMenus(items, summary, options = {}) {
     });
   }
 
-  return {
+  const menus = {
     dashboard: {
       label: "Dashboard",
       title: "Data Pegawai Aktif",
@@ -600,44 +602,6 @@ function buildDashboardMenus(items, summary, options = {}) {
         { label: "PNS/CPNS", value: summary.pnsCpns, helper: "Pegawai ASN" },
         { label: "PPPK", value: summary.pppk + summary.pppkParuhWaktu, helper: "Penuh dan paruh waktu" },
         { label: "Non ASN", value: summary.nonPns + summary.pjlp, helper: "NON PNS dan PJLP" }
-      ]
-    },
-    wilayah: {
-      label: "Berdasarkan Wilayah",
-      title: "Data Pegawai Berdasarkan Wilayah",
-      subtitle: "Sebaran pegawai aktif menurut wilayah administrasi atau wilayah UKPD.",
-      charts: [
-        {
-          id: "wilayah-total",
-          title: "Total Pegawai per Wilayah",
-          heightClass: "h-80",
-          ...buildRankedValueChart(items, (item) => getWilayahLabel(item, ukpdList), {
-            preferredOrder: WILAYAH_ORDER
-          })
-        },
-        {
-          id: "wilayah-gender",
-          title: "Wilayah per Jenis Kelamin",
-          heightClass: "h-80",
-          ...buildGenderGroupedChart(items, (item) => getWilayahLabel(item, ukpdList), WILAYAH_ORDER)
-        }
-      ]
-    },
-    ukpd: {
-      label: "Berdasarkan UKPD",
-      title: "Data Pegawai Berdasarkan UKPD",
-      subtitle: "Menampilkan UKPD dengan jumlah pegawai terbanyak sesuai filter status pegawai.",
-      charts: [
-        {
-          id: "ukpd-total",
-          title: "Top 15 UKPD Berdasarkan Jumlah Pegawai",
-          horizontal: true,
-          fullWidth: true,
-          heightClass: "h-[520px]",
-          ...buildRankedValueChart(items, (item) => normalizeText(item.nama_ukpd) || "Tidak Diketahui", {
-            limit: 15
-          })
-        }
       ]
     },
     pangkat: {
@@ -752,6 +716,50 @@ function buildDashboardMenus(items, summary, options = {}) {
           title: "Proyeksi Pensiun 5 Tahun per Jenis Kelamin",
           heightClass: "h-80",
           ...pensionProjection.byGender
+        }
+      ]
+    }
+  };
+
+  if (!includeOrganizationCharts) return menus;
+
+  return {
+    ...menus,
+    wilayah: {
+      label: "Berdasarkan Wilayah",
+      title: "Data Pegawai Berdasarkan Wilayah",
+      subtitle: "Sebaran pegawai aktif menurut wilayah administrasi atau wilayah UKPD.",
+      charts: [
+        {
+          id: "wilayah-total",
+          title: "Total Pegawai per Wilayah",
+          heightClass: "h-80",
+          ...buildRankedValueChart(items, (item) => getWilayahLabel(item, ukpdList), {
+            preferredOrder: WILAYAH_ORDER
+          })
+        },
+        {
+          id: "wilayah-gender",
+          title: "Wilayah per Jenis Kelamin",
+          heightClass: "h-80",
+          ...buildGenderGroupedChart(items, (item) => getWilayahLabel(item, ukpdList), WILAYAH_ORDER)
+        }
+      ]
+    },
+    ukpd: {
+      label: "Berdasarkan UKPD",
+      title: "Data Pegawai Berdasarkan UKPD",
+      subtitle: "Menampilkan UKPD dengan jumlah pegawai terbanyak sesuai filter status pegawai.",
+      charts: [
+        {
+          id: "ukpd-total",
+          title: "Top 15 UKPD Berdasarkan Jumlah Pegawai",
+          horizontal: true,
+          fullWidth: true,
+          heightClass: "h-[520px]",
+          ...buildRankedValueChart(items, (item) => normalizeText(item.nama_ukpd) || "Tidak Diketahui", {
+            limit: 15
+          })
         }
       ]
     }
@@ -927,6 +935,7 @@ export async function GET(request) {
     const chartSummary = buildSummary(chartItems);
     const dashboardMenus = buildDashboardMenus(chartItems, chartSummary, {
       ukpdList,
+      includeOrganizationCharts: user.role === ROLES.SUPER_ADMIN,
       includeUkpdStatusChart: false
     });
     const dashboardMenusByStatus = {

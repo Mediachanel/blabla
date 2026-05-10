@@ -805,10 +805,38 @@ function buildDashboardMenuStatusOptions(items) {
   ];
 }
 
+function buildDashboardMenuWilayahOptions(items, ukpdList = []) {
+  const counts = new Map();
+
+  for (const item of items) {
+    const wilayah = getWilayahLabel(item, ukpdList);
+    counts.set(wilayah, (counts.get(wilayah) || 0) + 1);
+  }
+
+  const labels = sortLabels([...counts.keys()], WILAYAH_ORDER);
+
+  return [
+    { value: "all", label: "Semua Wilayah", total: items.length },
+    ...labels.map((label) => ({
+      value: label,
+      label,
+      total: counts.get(label) || 0
+    }))
+  ];
+}
+
 function normalizeDashboardStatusFilter(value) {
   const text = String(value || "total").trim();
   if (!text || text === "total") return "total";
   return JENIS_PEGAWAI_OPTIONS.includes(text) ? text : "total";
+}
+
+function normalizeDashboardWilayahFilter(value, options = [], user) {
+  if (user?.role !== ROLES.SUPER_ADMIN) return "all";
+
+  const text = String(value || "all").trim();
+  if (!text || text === "all") return "all";
+  return options.some((option) => option.value === text) ? text : "all";
 }
 
 function buildDashboardAnalytics(data, ukpdList) {
@@ -928,9 +956,20 @@ export async function GET(request) {
     const summary = buildSummary(data);
     const activeData = data.filter((item) => String(item.kondisi || "").toUpperCase() === "AKTIF");
     const baseChartItems = activeData.length ? activeData : data;
-    const chartItems = statusFilter === "total"
+    const dashboardMenuWilayahOptions = user.role === ROLES.SUPER_ADMIN
+      ? buildDashboardMenuWilayahOptions(baseChartItems, ukpdList)
+      : [];
+    const wilayahFilter = normalizeDashboardWilayahFilter(
+      request?.nextUrl?.searchParams?.get("wilayah"),
+      dashboardMenuWilayahOptions,
+      user
+    );
+    const wilayahChartItems = wilayahFilter === "all"
       ? baseChartItems
-      : baseChartItems.filter((item) => normalizeJenisPegawai(item.jenis_pegawai) === statusFilter);
+      : baseChartItems.filter((item) => getWilayahLabel(item, ukpdList) === wilayahFilter);
+    const chartItems = statusFilter === "total"
+      ? wilayahChartItems
+      : wilayahChartItems.filter((item) => normalizeJenisPegawai(item.jenis_pegawai) === statusFilter);
     const chartSummary = buildSummary(chartItems);
     const dashboardMenus = buildDashboardMenus(chartItems, chartSummary, {
       ukpdList,
@@ -938,6 +977,7 @@ export async function GET(request) {
       includeUkpdStatusChart: false
     });
     const dashboardMenusByStatus = {
+      [`${wilayahFilter}::${statusFilter}`]: dashboardMenus,
       [statusFilter]: dashboardMenus
     };
     if (statusFilter === "total") {
@@ -949,7 +989,9 @@ export async function GET(request) {
       summary,
       dashboardMenus,
       dashboardMenusByStatus,
-      dashboardMenuStatusOptions: buildDashboardMenuStatusOptions(baseChartItems),
+      dashboardMenuStatusOptions: buildDashboardMenuStatusOptions(wilayahChartItems),
+      dashboardMenuWilayahOptions,
+      dashboardMenuActiveWilayah: wilayahFilter,
       latestEmployees: data.slice(0, 5),
       usulanSummary: {
         mutasi: 0,

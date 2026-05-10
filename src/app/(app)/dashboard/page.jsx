@@ -921,11 +921,16 @@ function DashboardMenuCharts({
   statusOptions = [],
   activeStatus = "total",
   onStatusChange,
+  wilayahOptions = [],
+  activeWilayah = "all",
+  onWilayahChange,
   statusLoading = false,
+  wilayahLoading = false,
   activeMenu,
   onMenuChange
 }) {
-  const activeMenus = menusByStatus[activeStatus] || menusByStatus.total || menus;
+  const activeCacheKey = `${activeWilayah || "all"}::${activeStatus || "total"}`;
+  const activeMenus = menusByStatus[activeCacheKey] || menusByStatus[activeStatus] || menusByStatus.total || menus;
   const menuItems = dashboardMenuOrder
     .filter((id) => activeMenus[id])
     .map((id) => ({ id, ...activeMenus[id] }));
@@ -960,24 +965,44 @@ function DashboardMenuCharts({
           <div className="flex flex-col gap-1">
             <h2 className="font-display text-lg font-bold text-dinkes-900">{activeView.title}</h2>
           </div>
-          {statusOptions.length > 1 ? (
-            <label className="flex w-full flex-col gap-1 text-sm font-semibold text-slate-700 sm:w-72">
-              <span className="section-label">Status Pegawai</span>
-              <select
-                className="input py-2"
-                value={activeStatus}
-                disabled={statusLoading}
-                onChange={(event) => onStatusChange(event.target.value)}
-              >
-                {statusOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label} ({formatNumber(option.total)})
-                  </option>
-                ))}
-              </select>
-              {statusLoading ? <span className="text-xs font-medium text-slate-500">Memuat...</span> : null}
-            </label>
-          ) : null}
+          <div className="flex w-full flex-col gap-3 sm:flex-row lg:w-auto">
+            {wilayahOptions.length > 1 ? (
+              <label className="flex w-full flex-col gap-1 text-sm font-semibold text-slate-700 sm:w-72">
+                <span className="section-label">Wilayah</span>
+                <select
+                  className="input py-2"
+                  value={activeWilayah}
+                  disabled={wilayahLoading}
+                  onChange={(event) => onWilayahChange(event.target.value)}
+                >
+                  {wilayahOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label} ({formatNumber(option.total)})
+                    </option>
+                  ))}
+                </select>
+                {wilayahLoading ? <span className="text-xs font-medium text-slate-500">Memuat...</span> : null}
+              </label>
+            ) : null}
+            {statusOptions.length > 1 ? (
+              <label className="flex w-full flex-col gap-1 text-sm font-semibold text-slate-700 sm:w-72">
+                <span className="section-label">Status Pegawai</span>
+                <select
+                  className="input py-2"
+                  value={activeStatus}
+                  disabled={statusLoading}
+                  onChange={(event) => onStatusChange(event.target.value)}
+                >
+                  {statusOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label} ({formatNumber(option.total)})
+                    </option>
+                  ))}
+                </select>
+                {statusLoading ? <span className="text-xs font-medium text-slate-500">Memuat...</span> : null}
+              </label>
+            ) : null}
+          </div>
         </header>
         <section className="mt-4 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-3 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden xl:grid xl:grid-cols-2 xl:overflow-visible xl:pb-0">
           {(activeView.charts || []).map((chart) => (
@@ -1009,6 +1034,7 @@ export default function DashboardPage() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [dashboardMenu, setDashboardMenu] = useState("dashboard");
   const [dashboardStatus, setDashboardStatus] = useState("total");
+  const [dashboardWilayah, setDashboardWilayah] = useState("all");
   const [dashboardStatusLoading, setDashboardStatusLoading] = useState(false);
   const [dashboardStatusError, setDashboardStatusError] = useState("");
   const [analytics, setAnalytics] = useState(null);
@@ -1020,6 +1046,7 @@ export default function DashboardPage() {
     setLoading(true);
     setErrorMessage("");
     setDashboardStatus("total");
+    setDashboardWilayah("all");
     setDashboardStatusError("");
     setDashboardStatusLoading(false);
     setAnalytics(null);
@@ -1096,17 +1123,19 @@ export default function DashboardPage() {
     }
   }
 
-  async function handleDashboardStatusChange(nextStatus) {
-    if (!data || nextStatus === dashboardStatus) return;
-    if (data.dashboardMenusByStatus?.[nextStatus]) {
-      setDashboardStatus(nextStatus);
-      return;
-    }
+  function getDashboardMenuCacheKey(status, wilayah) {
+    return `${wilayah || "all"}::${status || "total"}`;
+  }
 
+  async function loadDashboardMenus(nextStatus, nextWilayah) {
     setDashboardStatusLoading(true);
     setDashboardStatusError("");
     try {
-      const response = await fetch(`/api/dashboard?status=${encodeURIComponent(nextStatus)}`, { cache: "no-store" });
+      const params = new URLSearchParams();
+      if (nextStatus && nextStatus !== "total") params.set("status", nextStatus);
+      if (nextWilayah && nextWilayah !== "all") params.set("wilayah", nextWilayah);
+      const query = params.toString();
+      const response = await fetch(`/api/dashboard${query ? `?${query}` : ""}`, { cache: "no-store" });
       const contentType = response.headers.get("content-type") || "";
       if (!contentType.includes("application/json")) {
         throw new Error(`API dashboard mengembalikan respons bukan JSON (HTTP ${response.status}).`);
@@ -1115,20 +1144,42 @@ export default function DashboardPage() {
       const payload = await response.json();
       if (!payload?.success) throw new Error(payload?.message || "Dashboard gagal dimuat.");
       const nextMenus = payload?.data?.dashboardMenus || {};
+      const nextCacheKey = getDashboardMenuCacheKey(nextStatus, nextWilayah);
       setData((current) => current ? {
         ...current,
+        dashboardMenus: nextMenus,
         dashboardMenusByStatus: {
           ...(current.dashboardMenusByStatus || {}),
-          [nextStatus]: nextMenus
+          [nextCacheKey]: nextMenus
         },
-        dashboardMenuStatusOptions: payload?.data?.dashboardMenuStatusOptions || current.dashboardMenuStatusOptions
+        dashboardMenuStatusOptions: payload?.data?.dashboardMenuStatusOptions || current.dashboardMenuStatusOptions,
+        dashboardMenuWilayahOptions: payload?.data?.dashboardMenuWilayahOptions || current.dashboardMenuWilayahOptions,
+        dashboardMenuActiveWilayah: payload?.data?.dashboardMenuActiveWilayah || nextWilayah
       } : current);
       setDashboardStatus(nextStatus);
+      setDashboardWilayah(nextWilayah);
     } catch (error) {
-      setDashboardStatusError(error.message || "Filter status pegawai gagal dimuat.");
+      setDashboardStatusError(error.message || "Filter dashboard gagal dimuat.");
     } finally {
       setDashboardStatusLoading(false);
     }
+  }
+
+  async function handleDashboardStatusChange(nextStatus) {
+    if (!data || nextStatus === dashboardStatus) return;
+
+    const cacheKey = getDashboardMenuCacheKey(nextStatus, dashboardWilayah);
+    if (data.dashboardMenusByStatus?.[cacheKey]) {
+      setDashboardStatus(nextStatus);
+      return;
+    }
+
+    await loadDashboardMenus(nextStatus, dashboardWilayah);
+  }
+
+  async function handleDashboardWilayahChange(nextWilayah) {
+    if (!data || nextWilayah === dashboardWilayah) return;
+    await loadDashboardMenus(dashboardStatus, nextWilayah);
   }
 
   return (
@@ -1155,7 +1206,11 @@ export default function DashboardPage() {
         statusOptions={data.dashboardMenuStatusOptions || []}
         activeStatus={dashboardStatus}
         onStatusChange={handleDashboardStatusChange}
+        wilayahOptions={data.dashboardMenuWilayahOptions || []}
+        activeWilayah={dashboardWilayah}
+        onWilayahChange={handleDashboardWilayahChange}
         statusLoading={dashboardStatusLoading}
+        wilayahLoading={dashboardStatusLoading}
         activeMenu={dashboardMenu}
         onMenuChange={setDashboardMenu}
       />

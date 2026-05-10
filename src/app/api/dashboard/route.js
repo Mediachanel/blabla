@@ -753,12 +753,10 @@ function buildDashboardMenus(items, summary, options = {}) {
       charts: [
         {
           id: "ukpd-total",
-          title: "Top 15 UKPD Berdasarkan Jumlah Pegawai",
+          title: "Total Pegawai per UKPD",
           fullWidth: true,
-          heightClass: "h-[520px]",
-          ...buildRankedValueChart(items, (item) => normalizeText(item.nama_ukpd) || "Tidak Diketahui", {
-            limit: 15
-          })
+          heightClass: "h-[720px]",
+          ...buildRankedValueChart(items, (item) => normalizeText(item.nama_ukpd) || "Tidak Diketahui")
         }
       ]
     }

@@ -527,24 +527,6 @@ function buildDashboardMenus(items, summary, options = {}) {
       type: "doughnut",
       heightClass: "h-80",
       ...buildDistributionChart(items, CHART_VIEW_CONFIGS.jenisKelamin)
-    },
-    {
-      id: "pegawai-wilayah",
-      title: "Pegawai per Wilayah",
-      heightClass: "h-80",
-      ...buildRankedValueChart(items, (item) => getWilayahLabel(item, ukpdList), {
-        preferredOrder: WILAYAH_ORDER
-      })
-    },
-    {
-      id: "pegawai-ukpd",
-      title: "Top 15 UKPD Berdasarkan Jumlah Pegawai",
-      horizontal: true,
-      fullWidth: true,
-      heightClass: "h-[520px]",
-      ...buildRankedValueChart(items, (item) => normalizeText(item.nama_ukpd) || "Tidak Diketahui", {
-        limit: 15
-      })
     }
   ];
 
@@ -572,6 +554,44 @@ function buildDashboardMenus(items, summary, options = {}) {
         { label: "Non ASN", value: summary.nonPns + summary.pjlp, helper: "NON PNS dan PJLP" }
       ]
     },
+    wilayah: {
+      label: "Berdasarkan Wilayah",
+      title: "Data Pegawai Berdasarkan Wilayah",
+      subtitle: "Sebaran pegawai aktif menurut wilayah administrasi atau wilayah UKPD.",
+      charts: [
+        {
+          id: "wilayah-total",
+          title: "Total Pegawai per Wilayah",
+          heightClass: "h-80",
+          ...buildRankedValueChart(items, (item) => getWilayahLabel(item, ukpdList), {
+            preferredOrder: WILAYAH_ORDER
+          })
+        },
+        {
+          id: "wilayah-gender",
+          title: "Wilayah per Jenis Kelamin",
+          heightClass: "h-80",
+          ...buildGenderGroupedChart(items, (item) => getWilayahLabel(item, ukpdList), WILAYAH_ORDER)
+        }
+      ]
+    },
+    ukpd: {
+      label: "Berdasarkan UKPD",
+      title: "Data Pegawai Berdasarkan UKPD",
+      subtitle: "Menampilkan UKPD dengan jumlah pegawai terbanyak sesuai filter status pegawai.",
+      charts: [
+        {
+          id: "ukpd-total",
+          title: "Top 15 UKPD Berdasarkan Jumlah Pegawai",
+          horizontal: true,
+          fullWidth: true,
+          heightClass: "h-[520px]",
+          ...buildRankedValueChart(items, (item) => normalizeText(item.nama_ukpd) || "Tidak Diketahui", {
+            limit: 15
+          })
+        }
+      ]
+    },
     pangkat: {
       label: "Berdasarkan Pangkat",
       title: "Data Pegawai Berdasarkan Pangkat/Golongan",
@@ -588,6 +608,29 @@ function buildDashboardMenus(items, summary, options = {}) {
           title: "Total Pegawai per Pangkat/Golongan",
           heightClass: "h-96",
           ...buildValueChart(items, getPangkatLabel, [...PANGKAT_GOLONGAN_OPTIONS, "Tidak Diketahui"])
+        }
+      ]
+    },
+    rumpunJabatan: {
+      label: "Berdasarkan Rumpun Jabatan",
+      title: "Data Pegawai Berdasarkan Rumpun Jabatan",
+      subtitle: "Sebaran pegawai menurut rumpun jabatan dan jenis kelamin.",
+      charts: [
+        {
+          id: "rumpun-gender",
+          title: "Rumpun Jabatan per Jenis Kelamin",
+          horizontal: true,
+          fullWidth: true,
+          heightClass: "h-[520px]",
+          ...buildGenderGroupedChart(items, (item) => normalizeText(item.status_rumpun) || "Tidak Diketahui")
+        },
+        {
+          id: "rumpun-total",
+          title: "Total Pegawai per Rumpun Jabatan",
+          horizontal: true,
+          fullWidth: true,
+          heightClass: "h-[520px]",
+          ...buildRankedValueChart(items, (item) => normalizeText(item.status_rumpun) || "Tidak Diketahui")
         }
       ]
     },

@@ -3,7 +3,7 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { BarChart3, BriefcaseMedical, ChevronDown, ChevronRight, Download, GraduationCap, Home, PieChart, Search, ShieldCheck, UserRoundCheck, UsersRound } from "lucide-react";
+import { BarChart3, BriefcaseMedical, Building2, ChevronDown, ChevronRight, Download, GraduationCap, Home, MapPinned, Network, PieChart, Search, ShieldCheck, UserRoundCheck, UsersRound } from "lucide-react";
 import KpiCard from "@/components/cards/KpiCard";
 import DataTable from "@/components/tables/DataTable";
 import StatusBadge from "@/components/ui/StatusBadge";
@@ -23,10 +23,13 @@ const analyticsTabs = [
   { id: "masa-kerja", label: "Masa Kerja" }
 ];
 
-const dashboardMenuOrder = ["dashboard", "pangkat", "masaKerja", "umur", "pendidikan", "pensiun"];
+const dashboardMenuOrder = ["dashboard", "wilayah", "ukpd", "pangkat", "rumpunJabatan", "masaKerja", "umur", "pendidikan", "pensiun"];
 const dashboardMenuIcons = {
   dashboard: Home,
+  wilayah: MapPinned,
+  ukpd: Building2,
   pangkat: BarChart3,
+  rumpunJabatan: Network,
   masaKerja: BriefcaseMedical,
   umur: PieChart,
   pendidikan: GraduationCap,

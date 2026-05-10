@@ -1,8 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
-import { PanelLeftClose, PanelLeftOpen, Plus } from "lucide-react";
+import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { filterDesktopMenuByRole } from "@/data/menu/sidebarMenu";
 import SidebarItem from "@/components/layout/SidebarItem";
 import dinkesLogo from "@/Foto/Dinkes.png";
@@ -50,12 +49,6 @@ export default function Sidebar({ user, collapsed, onToggle }) {
         ))}
       </nav>
       <footer className="hidden border-t border-white/10 p-4 lg:block">
-        {!collapsed ? (
-          <Link className="mb-3 flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-govgold-300 px-3 py-2 text-sm font-bold text-dinkes-900 transition hover:bg-govgold-100 focus-ring" href="/pegawai/new">
-            <Plus className="h-4 w-4" />
-            Tambah Data Pegawai
-          </Link>
-        ) : null}
         <button className="flex w-full items-center justify-center gap-2 rounded-lg border border-white/15 px-2 py-2 text-xs font-semibold text-white/75 transition hover:bg-white/10 hover:text-white focus-ring" onClick={onToggle}>
           {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
           {!collapsed ? "Sembunyikan" : null}

@@ -733,9 +733,7 @@ function buildDashboardMenus(items, summary, options = {}) {
         {
           id: "wilayah-total",
           title: "Total Pegawai per Wilayah",
-          horizontal: true,
-          fullWidth: true,
-          heightClass: "h-[420px]",
+          heightClass: "h-96",
           ...buildRankedValueChart(items, (item) => getWilayahLabel(item, ukpdList), {
             preferredOrder: WILAYAH_ORDER
           })
@@ -743,9 +741,7 @@ function buildDashboardMenus(items, summary, options = {}) {
         {
           id: "wilayah-gender",
           title: "Wilayah per Jenis Kelamin",
-          horizontal: true,
-          fullWidth: true,
-          heightClass: "h-[420px]",
+          heightClass: "h-96",
           ...buildGenderGroupedChart(items, (item) => getWilayahLabel(item, ukpdList), WILAYAH_ORDER)
         }
       ]
@@ -758,7 +754,6 @@ function buildDashboardMenus(items, summary, options = {}) {
         {
           id: "ukpd-total",
           title: "Top 15 UKPD Berdasarkan Jumlah Pegawai",
-          horizontal: true,
           fullWidth: true,
           heightClass: "h-[520px]",
           ...buildRankedValueChart(items, (item) => normalizeText(item.nama_ukpd) || "Tidak Diketahui", {

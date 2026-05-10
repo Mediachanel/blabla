@@ -733,7 +733,9 @@ function buildDashboardMenus(items, summary, options = {}) {
         {
           id: "wilayah-total",
           title: "Total Pegawai per Wilayah",
-          heightClass: "h-80",
+          horizontal: true,
+          fullWidth: true,
+          heightClass: "h-[420px]",
           ...buildRankedValueChart(items, (item) => getWilayahLabel(item, ukpdList), {
             preferredOrder: WILAYAH_ORDER
           })
@@ -741,7 +743,9 @@ function buildDashboardMenus(items, summary, options = {}) {
         {
           id: "wilayah-gender",
           title: "Wilayah per Jenis Kelamin",
-          heightClass: "h-80",
+          horizontal: true,
+          fullWidth: true,
+          heightClass: "h-[420px]",
           ...buildGenderGroupedChart(items, (item) => getWilayahLabel(item, ukpdList), WILAYAH_ORDER)
         }
       ]

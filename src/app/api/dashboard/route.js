@@ -732,17 +732,10 @@ function buildDashboardMenus(items, summary, options = {}) {
       charts: [
         {
           id: "wilayah-total",
-          title: "Total Pegawai per Wilayah",
+          title: "Pegawai per Wilayah Berdasarkan Status Pegawai",
+          stacked: true,
           heightClass: "h-96",
-          ...buildRankedValueChart(items, (item) => getWilayahLabel(item, ukpdList), {
-            preferredOrder: WILAYAH_ORDER
-          })
-        },
-        {
-          id: "wilayah-gender",
-          title: "Wilayah per Jenis Kelamin",
-          heightClass: "h-96",
-          ...buildGenderGroupedChart(items, (item) => getWilayahLabel(item, ukpdList), WILAYAH_ORDER)
+          ...buildGroupedChart(items, (item) => getWilayahLabel(item, ukpdList), CHART_VIEW_CONFIGS.statusPegawai)
         }
       ]
     },

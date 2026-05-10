@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   CheckCircle2,
+  Eye,
   FileCheck2,
   FileWarning,
   FileSignature,
@@ -927,14 +928,16 @@ export default function UsulanPutusJfPage() {
             <DataTable
               rowKey="id"
               data={filteredRows}
+              showNumber
+              actionWidth={180}
               columns={[
                 {
                   key: "pegawai",
                   header: "Pegawai",
-                  width: 270,
+                  width: 300,
                   wrap: true,
                   render: (item) => (
-                    <div className="max-w-[240px] whitespace-normal">
+                    <div className="max-w-[280px] whitespace-normal">
                       <p className="font-semibold text-slate-900">{item.nama_pegawai || "-"}</p>
                       <p className="text-xs text-slate-500">NRK {item.nrk || "-"} | NIP {item.nip || "-"}</p>
                     </div>
@@ -993,23 +996,22 @@ export default function UsulanPutusJfPage() {
                     </div>
                   )
                 },
-                { key: "tanggal_usulan", header: "Tgl Usulan", width: 150, render: (item) => formatDate(item.tanggal_usulan || item.created_at) }
+                { key: "tanggal_usulan", header: "Tgl Usulan", width: 170, render: (item) => formatDate(item.tanggal_usulan || item.created_at) }
               ]}
               actions={(item) => (
-                <div className="flex flex-wrap gap-2">
-                  <button className="btn-secondary" type="button" onClick={() => openDetail(item)}>Detail</button>
-                  <button className="btn-secondary" type="button" onClick={() => openEdit(item)}>
-                    <SquarePen className="h-4 w-4" />
-                    Edit
+                <div className="flex items-center justify-end gap-1 sm:gap-2">
+                  <button className="rounded-lg p-2 text-dinkes-700 hover:bg-dinkes-50 focus-ring" type="button" onClick={() => openDetail(item)} aria-label="Detail" title="Detail">
+                    <Eye className="h-4 w-4" />
                   </button>
-                  <button className="btn-secondary" type="button" onClick={() => openVerify(item)}>
+                  <button className="rounded-lg p-2 text-slate-700 hover:bg-slate-100 focus-ring" type="button" onClick={() => openEdit(item)} aria-label="Edit" title="Edit">
+                    <SquarePen className="h-4 w-4" />
+                  </button>
+                  <button className="rounded-lg p-2 text-emerald-700 hover:bg-emerald-50 focus-ring" type="button" onClick={() => openVerify(item)} aria-label="Verifikasi" title="Verifikasi">
                     <CheckCircle2 className="h-4 w-4" />
-                    Verifikasi
                   </button>
                   {canDeleteUsulan(user, item) ? (
-                    <button className="btn-secondary text-rose-600 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700" type="button" onClick={() => setDeleteTarget(item)}>
+                    <button className="rounded-lg p-2 text-rose-600 hover:bg-rose-50 focus-ring" type="button" onClick={() => setDeleteTarget(item)} aria-label="Hapus" title="Hapus">
                       <Trash2 className="h-4 w-4" />
-                      Hapus
                     </button>
                   ) : null}
                 </div>

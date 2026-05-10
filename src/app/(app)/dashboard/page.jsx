@@ -1004,7 +1004,7 @@ function DashboardMenuCharts({
             ) : null}
           </div>
         </header>
-        <section className="mt-4 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-3 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden xl:grid xl:grid-cols-2 xl:overflow-visible xl:pb-0">
+        <section className="mt-4 flex snap-x snap-mandatory items-stretch gap-4 overflow-x-auto pb-3 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden xl:grid xl:auto-rows-fr xl:grid-cols-2 xl:overflow-visible xl:pb-0">
           {(activeView.charts || []).map((chart) => (
             <div key={chart.id || chart.title} className={`w-full min-w-full snap-start ${chart.fullWidth ? "xl:col-span-2" : ""}`}>
               <DashboardChartCard
@@ -1017,7 +1017,7 @@ function DashboardMenuCharts({
                 datasets={chart.datasets}
                 horizontal={Boolean(chart.horizontal)}
                 stacked={Boolean(chart.stacked)}
-                heightClass={chart.heightClass || "h-64 sm:h-56"}
+                heightClass={chart.heightClass || "h-96"}
               />
             </div>
           ))}

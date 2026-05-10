@@ -570,14 +570,14 @@ function buildDashboardMenus(items, summary, options = {}) {
       id: "status-pegawai",
       title: "Berdasarkan Status Pegawai",
       type: "doughnut",
-      heightClass: "h-80",
+      heightClass: "h-96",
       ...buildDistributionChart(items, CHART_VIEW_CONFIGS.statusPegawai)
     },
     {
       id: "jenis-kelamin",
       title: "Berdasarkan Jenis Kelamin",
       type: "doughnut",
-      heightClass: "h-80",
+      heightClass: "h-96",
       ...buildDistributionChart(items, CHART_VIEW_CONFIGS.jenisKelamin)
     }
   ];
@@ -588,7 +588,7 @@ function buildDashboardMenus(items, summary, options = {}) {
       title: "Status Pegawai per UKPD",
       stacked: true,
       fullWidth: true,
-      heightClass: "h-[460px] lg:h-[560px]",
+      heightClass: "h-96",
       ...buildGroupedChart(items, (item) => item.nama_ukpd, CHART_VIEW_CONFIGS.statusPegawai)
     });
   }
@@ -652,13 +652,13 @@ function buildDashboardMenus(items, summary, options = {}) {
         {
           id: "masa-kerja-gender",
           title: "Masa Kerja per Jenis Kelamin",
-          heightClass: "h-80",
+          heightClass: "h-96",
           ...buildGenderGroupedChart(items, getMasaKerjaLabel, MASA_KERJA_ORDER)
         },
         {
           id: "masa-kerja-total",
           title: "Total Pegawai per Masa Kerja",
-          heightClass: "h-80",
+          heightClass: "h-96",
           ...buildValueChart(items, getMasaKerjaLabel, MASA_KERJA_ORDER)
         }
       ]
@@ -671,13 +671,13 @@ function buildDashboardMenus(items, summary, options = {}) {
         {
           id: "umur-gender",
           title: "Kelompok Umur per Jenis Kelamin",
-          heightClass: "h-80",
+          heightClass: "h-96",
           ...buildGenderGroupedChart(items, getAgeRange, AGE_RANGE_ORDER)
         },
         {
           id: "umur-total",
           title: "Total Pegawai per Kelompok Umur",
-          heightClass: "h-80",
+          heightClass: "h-96",
           ...buildValueChart(items, getAgeRange, AGE_RANGE_ORDER)
         }
       ]
@@ -690,13 +690,13 @@ function buildDashboardMenus(items, summary, options = {}) {
         {
           id: "pendidikan-gender",
           title: "Jenjang Pendidikan per Jenis Kelamin",
-          heightClass: "h-80",
+          heightClass: "h-96",
           ...buildGenderGroupedChart(items, (item) => item.jenjang_pendidikan || "Tidak Diketahui", EDUCATION_ORDER)
         },
         {
           id: "pendidikan-total",
           title: "Total Pegawai per Jenjang Pendidikan",
-          heightClass: "h-80",
+          heightClass: "h-96",
           ...buildValueChart(items, (item) => item.jenjang_pendidikan || "Tidak Diketahui", EDUCATION_ORDER)
         }
       ]
@@ -710,13 +710,13 @@ function buildDashboardMenus(items, summary, options = {}) {
         {
           id: "pensiun-rule",
           title: "Proyeksi Pensiun 5 Tahun per BUP",
-          heightClass: "h-80",
+          heightClass: "h-96",
           ...pensionProjection.byRule
         },
         {
           id: "pensiun-gender",
           title: "Proyeksi Pensiun 5 Tahun per Jenis Kelamin",
-          heightClass: "h-80",
+          heightClass: "h-96",
           ...pensionProjection.byGender
         }
       ]
@@ -757,7 +757,7 @@ function buildDashboardMenus(items, summary, options = {}) {
           title: "Pegawai per UKPD Berdasarkan Status Pegawai",
           stacked: true,
           fullWidth: true,
-          heightClass: "h-[720px]",
+          heightClass: "h-96",
           ...buildGroupedChart(items, (item) => normalizeText(item.nama_ukpd) || "Tidak Diketahui", CHART_VIEW_CONFIGS.statusPegawai)
         }
       ]

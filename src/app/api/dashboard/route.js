@@ -619,17 +619,13 @@ function buildDashboardMenus(items, summary, options = {}) {
         {
           id: "rumpun-gender",
           title: "Rumpun Jabatan per Jenis Kelamin",
-          horizontal: true,
-          fullWidth: true,
-          heightClass: "h-[520px]",
+          heightClass: "h-96",
           ...buildGenderGroupedChart(items, (item) => normalizeText(item.status_rumpun) || "Tidak Diketahui")
         },
         {
           id: "rumpun-total",
           title: "Total Pegawai per Rumpun Jabatan",
-          horizontal: true,
-          fullWidth: true,
-          heightClass: "h-[520px]",
+          heightClass: "h-96",
           ...buildRankedValueChart(items, (item) => normalizeText(item.status_rumpun) || "Tidak Diketahui")
         }
       ]

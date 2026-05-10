@@ -988,6 +988,7 @@ function DashboardMenuCharts({
                 labels={chart.labels || []}
                 values={chart.values || []}
                 colors={chart.colors}
+                names={chart.names || []}
                 datasets={chart.datasets}
                 horizontal={Boolean(chart.horizontal)}
                 stacked={Boolean(chart.stacked)}

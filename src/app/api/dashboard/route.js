@@ -124,13 +124,25 @@ const CHART_VIEW_CONFIGS = {
   }
 };
 
-function createSeriesChart(labels, categories, counts) {
+function formatEmployeeName(item) {
+  const name = normalizeText(item.nama) || "Tanpa Nama";
+  const ukpd = normalizeText(item.nama_ukpd);
+  return ukpd ? `${name} - ${ukpd}` : name;
+}
+
+function pushEmployee(map, key, item) {
+  if (!map.has(key)) map.set(key, []);
+  map.get(key).push(formatEmployeeName(item));
+}
+
+function createSeriesChart(labels, categories, counts, employees = new Map()) {
   return {
     labels,
     datasets: categories.map((category) => ({
       label: category.label,
       backgroundColor: category.color,
-      data: labels.map((label) => counts.get(`${label}||${category.key}`) || 0)
+      data: labels.map((label) => counts.get(`${label}||${category.key}`) || 0),
+      employeeNames: labels.map((label) => employees.get(`${label}||${category.key}`) || [])
     }))
   };
 }
@@ -138,6 +150,7 @@ function createSeriesChart(labels, categories, counts) {
 function buildGroupedChart(items, groupFn, config, sortByTotal = true) {
   const groupTotals = new Map();
   const counts = new Map();
+  const employees = new Map();
 
   for (const item of items) {
     const group = groupFn(item) || "Tidak Diketahui";
@@ -145,26 +158,32 @@ function buildGroupedChart(items, groupFn, config, sortByTotal = true) {
     if (!category || !config.categories.some((option) => option.key === category)) continue;
     groupTotals.set(group, (groupTotals.get(group) || 0) + 1);
     counts.set(`${group}||${category}`, (counts.get(`${group}||${category}`) || 0) + 1);
+    pushEmployee(employees, `${group}||${category}`, item);
   }
 
   const labels = [...groupTotals.entries()]
     .sort((a, b) => (sortByTotal ? b[1] - a[1] : 0) || a[0].localeCompare(b[0]))
     .map(([label]) => label);
 
-  return createSeriesChart(labels, config.categories, counts);
+  return createSeriesChart(labels, config.categories, counts, employees);
 }
 
 function buildDistributionChart(items, config) {
   const counts = new Map(config.categories.map((category) => [category.key, 0]));
+  const employees = new Map(config.categories.map((category) => [category.key, []]));
   for (const item of items) {
     const category = config.normalize(item[config.field]);
-    if (counts.has(category)) counts.set(category, counts.get(category) + 1);
+    if (counts.has(category)) {
+      counts.set(category, counts.get(category) + 1);
+      pushEmployee(employees, category, item);
+    }
   }
 
   return {
     labels: config.categories.map((category) => category.label),
     values: config.categories.map((category) => counts.get(category.key) || 0),
-    colors: config.categories.map((category) => category.color)
+    colors: config.categories.map((category) => category.color),
+    names: config.categories.map((category) => employees.get(category.key) || [])
   };
 }
 
@@ -304,25 +323,30 @@ function chartColorsFor(labels) {
 
 function buildValueChart(items, labelFn, preferredOrder = []) {
   const counts = new Map();
+  const employees = new Map();
   for (const item of items) {
     const label = labelFn(item) || "Tidak Diketahui";
     addCount(counts, label);
+    pushEmployee(employees, label, item);
   }
   const labels = sortLabels([...counts.keys()], preferredOrder);
   return {
     labels,
     values: labels.map((label) => counts.get(label) || 0),
-    colors: chartColorsFor(labels)
+    colors: chartColorsFor(labels),
+    names: labels.map((label) => employees.get(label) || [])
   };
 }
 
 function buildRankedValueChart(items, labelFn, { limit = 0, preferredOrder = [] } = {}) {
   const counts = new Map();
+  const employees = new Map();
   const order = new Map(preferredOrder.map((label, index) => [label, index]));
 
   for (const item of items) {
     const label = labelFn(item) || "Tidak Diketahui";
     addCount(counts, label);
+    pushEmployee(employees, label, item);
   }
 
   const labels = [...counts.entries()]
@@ -340,11 +364,12 @@ function buildRankedValueChart(items, labelFn, { limit = 0, preferredOrder = [] 
   return {
     labels,
     values: labels.map((label) => counts.get(label) || 0),
-    colors: chartColorsFor(labels)
+    colors: chartColorsFor(labels),
+    names: labels.map((label) => employees.get(label) || [])
   };
 }
 
-function createTotalLineDataset(data) {
+function createTotalLineDataset(data, employeeNames = []) {
   return {
     type: "line",
     label: "Total",
@@ -360,13 +385,16 @@ function createTotalLineDataset(data) {
     tension: 0.35,
     fill: false,
     order: 0,
-    summary: false
+    summary: false,
+    employeeNames
   };
 }
 
 function buildGenderGroupedChart(items, labelFn, preferredOrder = []) {
   const labelsSet = new Set();
   const counts = new Map();
+  const employees = new Map();
+  const totalEmployees = new Map();
 
   for (const item of items) {
     const label = labelFn(item) || "Tidak Diketahui";
@@ -374,20 +402,26 @@ function buildGenderGroupedChart(items, labelFn, preferredOrder = []) {
     if (!GENDER_CATEGORIES.some((category) => category.key === gender)) continue;
     labelsSet.add(label);
     addCount(counts, `${label}||${gender}`);
+    pushEmployee(employees, `${label}||${gender}`, item);
+    pushEmployee(totalEmployees, label, item);
   }
 
   const labels = sortLabels([...labelsSet], preferredOrder);
   const barDatasets = GENDER_CATEGORIES.map((category) => ({
     label: category.label,
     backgroundColor: category.color,
-    data: labels.map((label) => counts.get(`${label}||${category.key}`) || 0)
+    data: labels.map((label) => counts.get(`${label}||${category.key}`) || 0),
+    employeeNames: labels.map((label) => employees.get(`${label}||${category.key}`) || [])
   }));
 
   return {
     labels,
     datasets: [
       ...barDatasets,
-      createTotalLineDataset(labels.map((_, index) => barDatasets.reduce((sum, dataset) => sum + Number(dataset.data[index] || 0), 0)))
+      createTotalLineDataset(
+        labels.map((_, index) => barDatasets.reduce((sum, dataset) => sum + Number(dataset.data[index] || 0), 0)),
+        labels.map((label) => totalEmployees.get(label) || [])
+      )
     ]
   };
 }
@@ -445,6 +479,9 @@ function buildPensionProjection(items) {
   const yearSet = new Set(years);
   const ruleCounts = new Map();
   const genderCounts = new Map();
+  const ruleEmployees = new Map();
+  const genderEmployees = new Map();
+  const yearEmployees = new Map();
   const projectedByRule = new Map(PENSION_RULE_CATEGORIES.map((category) => [category.key, 0]));
   let eligibleTotal = 0;
   let invalidBirthDate = 0;
@@ -467,8 +504,11 @@ function buildPensionProjection(items) {
     const ruleKey = String(targetAge);
     const gender = normalizeGender(item.jenis_kelamin);
     addCount(ruleCounts, `${pensionYear}||${ruleKey}`);
+    pushEmployee(ruleEmployees, `${pensionYear}||${ruleKey}`, item);
+    pushEmployee(yearEmployees, pensionYear, item);
     if (GENDER_CATEGORIES.some((category) => category.key === gender)) {
       addCount(genderCounts, `${pensionYear}||${gender}`);
+      pushEmployee(genderEmployees, `${pensionYear}||${gender}`, item);
     }
     addCount(projectedByRule, ruleKey);
     projectedTotal += 1;
@@ -485,9 +525,13 @@ function buildPensionProjection(items) {
         ...PENSION_RULE_CATEGORIES.map((category) => ({
         label: category.label,
         backgroundColor: category.color,
-        data: years.map((year) => ruleCounts.get(`${year}||${category.key}`) || 0)
+        data: years.map((year) => ruleCounts.get(`${year}||${category.key}`) || 0),
+        employeeNames: years.map((year) => ruleEmployees.get(`${year}||${category.key}`) || [])
         })),
-        createTotalLineDataset(years.map((year) => PENSION_RULE_CATEGORIES.reduce((sum, category) => sum + Number(ruleCounts.get(`${year}||${category.key}`) || 0), 0)))
+        createTotalLineDataset(
+          years.map((year) => PENSION_RULE_CATEGORIES.reduce((sum, category) => sum + Number(ruleCounts.get(`${year}||${category.key}`) || 0), 0)),
+          years.map((year) => yearEmployees.get(year) || [])
+        )
       ]
     },
     byGender: {
@@ -496,9 +540,13 @@ function buildPensionProjection(items) {
         ...GENDER_CATEGORIES.map((category) => ({
           label: category.label,
           backgroundColor: category.color,
-          data: years.map((year) => genderCounts.get(`${year}||${category.key}`) || 0)
+          data: years.map((year) => genderCounts.get(`${year}||${category.key}`) || 0),
+          employeeNames: years.map((year) => genderEmployees.get(`${year}||${category.key}`) || [])
         })),
-        createTotalLineDataset(years.map((year) => GENDER_CATEGORIES.reduce((sum, category) => sum + Number(genderCounts.get(`${year}||${category.key}`) || 0), 0)))
+        createTotalLineDataset(
+          years.map((year) => GENDER_CATEGORIES.reduce((sum, category) => sum + Number(genderCounts.get(`${year}||${category.key}`) || 0), 0)),
+          years.map((year) => yearEmployees.get(year) || [])
+        )
       ]
     },
     statCards: [

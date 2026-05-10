@@ -203,12 +203,26 @@ function downloadChart(chartRef, title) {
   link.click();
 }
 
+function tooltipEmployeeLines(context) {
+  const names = context.dataset.employeeNames?.[context.dataIndex] || [];
+  if (!names.length) return [];
+
+  const visibleNames = names.slice(0, 12);
+  const remaining = names.length - visibleNames.length;
+  return [
+    "Pegawai:",
+    ...visibleNames.map((name) => `- ${name}`),
+    ...(remaining > 0 ? [`+ ${formatNumber(remaining)} lainnya`] : [])
+  ];
+}
+
 export default function DashboardChartCard({
   title,
   type = "bar",
   labels = [],
   values = [],
   colors,
+  names = [],
   datasets,
   horizontal = false,
   stacked = false,
@@ -251,6 +265,7 @@ export default function DashboardChartCard({
         {
           label: title,
           data: values,
+          employeeNames: names,
           backgroundColor: colors?.length ? colors : defaultColors,
           borderRadius: type === "bar" ? 2 : 0,
           maxBarThickness: horizontal ? 14 : 18
@@ -292,6 +307,10 @@ export default function DashboardChartCard({
               : flatTotal;
             const label = type === "doughnut" ? context.label : (context.dataset.label || context.label);
             return `${label}: ${formatNumber(value)} (${formatPercent(value, total)})`;
+          },
+          afterBody: (items) => {
+            const context = items?.[0];
+            return context ? tooltipEmployeeLines(context) : [];
           }
         }
       }

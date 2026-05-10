@@ -736,6 +736,12 @@ function buildDashboardMenus(items, summary, options = {}) {
           stacked: true,
           heightClass: "h-96",
           ...buildGroupedChart(items, (item) => getWilayahLabel(item, ukpdList), CHART_VIEW_CONFIGS.statusPegawai)
+        },
+        {
+          id: "wilayah-gender",
+          title: "Wilayah per Jenis Kelamin",
+          heightClass: "h-96",
+          ...buildGenderGroupedChart(items, (item) => getWilayahLabel(item, ukpdList), WILAYAH_ORDER)
         }
       ]
     },

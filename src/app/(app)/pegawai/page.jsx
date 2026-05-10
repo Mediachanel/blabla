@@ -127,7 +127,7 @@ export default function PegawaiPage() {
   }
 
   const columns = [
-    { key: "nama", header: "Nama", width: 240 },
+    { key: "nama", header: "Nama", width: 300 },
     { key: "nip", header: "NIP", width: 180, render: displayNip },
     { key: "nama_jabatan_menpan", header: "Jabatan Standar Kepgub 11", width: 280, wrap: true, render: (item) => item.nama_jabatan_menpan || item.nama_jabatan_orb || "-" },
     { key: "jenis_pegawai", header: "Status", width: 180, render: (item) => <StatusBadge status={item.jenis_pegawai} /> },
@@ -189,6 +189,7 @@ export default function PegawaiPage() {
             rowKey="id_pegawai"
             showNumber
             startNumber={(page - 1) * pageSize + 1}
+            actionWidth={150}
             actions={(item) => (
               <div className="flex items-center justify-end gap-1 sm:gap-2">
                 <Link className="rounded-lg p-2 text-dinkes-700 hover:bg-dinkes-50 focus-ring" href={`/pegawai/${item.id_pegawai}`} aria-label="Lihat profil" title="Lihat profil"><Eye className="h-4 w-4" /></Link>

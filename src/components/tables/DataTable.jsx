@@ -52,11 +52,11 @@ export default function DataTable({ columns, data, rowKey = "id", actions, actio
             </colgroup>
             <thead>
               <tr>
-                  {showNumber ? <th className={`table-th sticky left-0 z-20 bg-[#f3f4f6] text-center ${compact ? "px-2" : ""}`} scope="col">No</th> : null}
+                  {showNumber ? <th className={`table-th sticky left-0 z-30 border-r border-slate-200 bg-[#f3f4f6] text-center ${compact ? "px-2" : ""}`} scope="col">No</th> : null}
                 {columns.map((column, index) => (
                   <th
                     key={column.key}
-                    className={`table-th ${compact ? "px-2" : ""} ${column.align === "right" ? "text-right" : column.align === "center" ? "text-center" : ""} ${index === 0 ? "sticky z-20 bg-[#f3f4f6]" : ""}`}
+                    className={`table-th ${compact ? "px-2" : ""} ${column.align === "right" ? "text-right" : column.align === "center" ? "text-center" : ""} ${index === 0 ? "sticky z-30 border-r border-slate-200 bg-[#f3f4f6] shadow-[8px_0_12px_-12px_rgba(15,23,42,0.45)]" : ""}`}
                     style={index === 0 ? { left: firstColumnLeft } : undefined}
                     scope="col"
                   >
@@ -69,11 +69,11 @@ export default function DataTable({ columns, data, rowKey = "id", actions, actio
             <tbody className="bg-white">
               {data.map((item, index) => (
                 <tr key={item[rowKey]} className="group odd:bg-white even:bg-slate-50/45 hover:bg-dinkes-50/70">
-                  {showNumber ? <td className={`table-td sticky left-0 z-10 bg-inherit text-center group-hover:bg-dinkes-50/70 ${compact ? "px-2" : ""}`}>{startNumber + index}</td> : null}
+                  {showNumber ? <td className={`table-td sticky left-0 z-20 border-r border-slate-100 bg-white text-center group-hover:bg-dinkes-50/70 ${compact ? "px-2" : ""}`}>{startNumber + index}</td> : null}
                   {columns.map((column, columnIndex) => (
                     <td
                       key={column.key}
-                      className={`table-td ${compact ? "px-2" : ""} ${column.align === "right" ? "text-right" : column.align === "center" ? "text-center" : ""} ${columnIndex === 0 ? "sticky z-10 bg-inherit font-medium text-slate-900 group-hover:bg-dinkes-50/70" : ""}`}
+                      className={`table-td ${compact ? "px-2" : ""} ${column.align === "right" ? "text-right" : column.align === "center" ? "text-center" : ""} ${columnIndex === 0 ? "sticky z-20 border-r border-slate-100 bg-white font-medium text-slate-900 shadow-[8px_0_12px_-12px_rgba(15,23,42,0.45)] group-hover:bg-dinkes-50/70" : ""}`}
                       style={columnIndex === 0 ? { left: firstColumnLeft } : undefined}
                     >
                       <div className={column.wrap ? "whitespace-normal break-words leading-5" : "min-w-0 truncate"} title={!column.wrap && typeof item[column.key] === "string" ? item[column.key] : undefined}>

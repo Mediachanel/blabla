@@ -9,6 +9,7 @@ import { ensureUsulanSchema } from "@/lib/db/ensureUsulanSchema";
 const textField = z.string().optional().default("");
 const nullableNumber = z.union([z.coerce.number().int().nonnegative(), z.null()]).optional().nullable();
 const STATUS_VALUES = ["Diusulkan", "Verifikasi Sudin", "Diterima Dinas", "Verifikasi Dinas", "Dikembalikan", "Ditolak", "Diproses", "Selesai"];
+const DINAS_PROCESSED_STATUSES = new Set(["diterima dinas", "verifikasi dinas", "diproses", "selesai"]);
 
 const createSchema = z.object({
   nrk: textField,
@@ -59,6 +60,10 @@ function normalizeChecklist(value) {
 
 function containsVerificationPatch(patch) {
   return patch.status !== undefined || patch.verif_checklist !== undefined || patch.tanggal_usulan !== undefined;
+}
+
+function isDinasProcessed(item) {
+  return DINAS_PROCESSED_STATUSES.has(String(item?.status || "").trim().toLowerCase());
 }
 
 function buildScopeClause(alias, user) {
@@ -199,4 +204,24 @@ export async function PUT(request) {
 
   const item = await loadItem(pool, parsed.data.id);
   return ok(item, "Usulan mutasi berhasil diperbarui");
+}
+
+export async function DELETE(request) {
+  const { user, error } = await requireAuth([ROLES.SUPER_ADMIN, ROLES.ADMIN_WILAYAH, ROLES.ADMIN_UKPD], request);
+  if (error) return error;
+
+  const id = Number(request.nextUrl.searchParams.get("id"));
+  if (!Number.isInteger(id) || id <= 0) return fail("Parameter usulan mutasi tidak valid.", 422);
+
+  const pool = await getConnectedPool();
+  await ensureUsulanSchema(pool);
+  const current = await ensureAccessibleItem(pool, user, id);
+  if (!current) return fail("Usulan mutasi tidak ditemukan atau tidak dapat diakses.", 404);
+
+  if (user.role !== ROLES.SUPER_ADMIN && isDinasProcessed(current)) {
+    return fail("Usulan mutasi sudah diproses Dinas/Super Admin sehingga tidak dapat dihapus oleh Admin UKPD atau Admin Wilayah.", 403);
+  }
+
+  await pool.query("DELETE FROM `usulan_mutasi` WHERE `id` = ?", [id]);
+  return ok({ id }, "Usulan mutasi berhasil dihapus");
 }

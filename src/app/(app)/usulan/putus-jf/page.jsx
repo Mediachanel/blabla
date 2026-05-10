@@ -15,6 +15,7 @@ import {
   Send,
   SquarePen,
   Stamp,
+  Trash2,
   Undo2,
   Upload,
   X
@@ -25,6 +26,7 @@ import SearchFilterBar from "@/components/forms/SearchFilterBar";
 import StatusBadge from "@/components/ui/StatusBadge";
 import EmptyState from "@/components/ui/EmptyState";
 import ActionDrawer from "@/components/ui/ActionDrawer";
+import ConfirmDeleteModal from "@/components/ui/ConfirmDeleteModal";
 import { ROLES } from "@/lib/constants/roles";
 import {
   CHECKLIST_DOCUMENT_MAX_BYTES,
@@ -46,6 +48,7 @@ const FLOW_STEPS = [
 
 const STATUS_OPTIONS = ["Diusulkan", "Verifikasi Sudin", "Diterima Dinas", "Verifikasi Dinas", "Dikembalikan", "Selesai", "Ditolak"];
 const DINAS_PRINT_STATUSES = new Set(["diterima dinas", "verifikasi dinas", "diproses", "selesai"]);
+const DINAS_PROCESSED_STATUSES = new Set(["diterima dinas", "verifikasi dinas", "diproses", "selesai"]);
 
 const emptyForm = {
   nrk: "",
@@ -168,6 +171,12 @@ function canPrintDinasUsulan(user, item, statusOverride = "") {
   if (user?.role !== ROLES.SUPER_ADMIN || !item?.id) return false;
   const status = normalizeText(statusOverride || item.status).toLowerCase();
   return DINAS_PRINT_STATUSES.has(status);
+}
+
+function canDeleteUsulan(user, item) {
+  if (!user || !item?.id) return false;
+  if (user.role === ROLES.SUPER_ADMIN) return true;
+  return !DINAS_PROCESSED_STATUSES.has(normalizeText(item.status).toLowerCase());
 }
 
 function getDownloadFileName(disposition, fallback) {
@@ -528,6 +537,8 @@ export default function UsulanPutusJfPage() {
   const [saving, setSaving] = useState(false);
   const [printingId, setPrintingId] = useState(null);
   const [uploadingKey, setUploadingKey] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
   async function loadData() {
@@ -681,6 +692,25 @@ export default function UsulanPutusJfPage() {
       return exists ? current.map((item) => (item.id === updatedItem.id ? updatedItem : item)) : [updatedItem, ...current];
     });
     setSelectedId(updatedItem.id);
+  }
+
+  async function deleteUsulan() {
+    if (!deleteTarget?.id) return;
+
+    setDeleteLoading(true);
+    setErrorMessage("");
+    try {
+      const response = await fetch(`/api/usulan/putus-jf?id=${encodeURIComponent(deleteTarget.id)}`, { method: "DELETE" });
+      const payload = await parseApiResponse(response, "Usulan putus JF gagal dihapus.");
+      if (!response.ok || !payload.success) throw new Error(payload.message || "Usulan putus JF gagal dihapus.");
+      setRows((current) => current.filter((item) => item.id !== deleteTarget.id));
+      setSelectedId((current) => (current === deleteTarget.id ? null : current));
+      setDeleteTarget(null);
+    } catch (error) {
+      setErrorMessage(error.message || "Usulan putus JF gagal dihapus.");
+    } finally {
+      setDeleteLoading(false);
+    }
   }
 
   function validatePdfFile(file) {
@@ -968,6 +998,12 @@ export default function UsulanPutusJfPage() {
                     <CheckCircle2 className="h-4 w-4" />
                     Verifikasi
                   </button>
+                  {canDeleteUsulan(user, item) ? (
+                    <button className="btn-secondary text-rose-600 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700" type="button" onClick={() => setDeleteTarget(item)}>
+                      <Trash2 className="h-4 w-4" />
+                      Hapus
+                    </button>
+                  ) : null}
                 </div>
               )}
             />
@@ -1127,6 +1163,16 @@ export default function UsulanPutusJfPage() {
           drawer
         />
       </ActionDrawer>
+      <ConfirmDeleteModal
+        open={Boolean(deleteTarget)}
+        title="Hapus usulan putus JF?"
+        description={`Usulan putus JF ${deleteTarget?.nama_pegawai || ""} akan dihapus dari database.`}
+        loading={deleteLoading}
+        onCancel={() => {
+          if (!deleteLoading) setDeleteTarget(null);
+        }}
+        onConfirm={deleteUsulan}
+      />
     </>
   );
 }

@@ -30,6 +30,7 @@ const MASA_KERJA_ORDER = [
   "Tidak Diketahui"
 ];
 const PENSION_ASN_TYPES = new Set(["PNS", "CPNS", "PPPK", "PPPK Paruh Waktu"]);
+const MAX_TOOLTIP_EMPLOYEE_NAMES = 20;
 const PENSION_RULE_CATEGORIES = [
   { key: "58", label: "BUP 58", color: "#38bdf8" },
   { key: "60", label: "BUP 60", color: "#facc15" },
@@ -133,7 +134,10 @@ function formatEmployeeName(item) {
 
 function pushEmployee(map, key, item) {
   if (!map.has(key)) map.set(key, []);
-  map.get(key).push(formatEmployeeName(item));
+  const employees = map.get(key);
+  if (employees.length < MAX_TOOLTIP_EMPLOYEE_NAMES) {
+    employees.push(formatEmployeeName(item));
+  }
 }
 
 function createSeriesChart(labels, categories, counts, employees = new Map()) {

@@ -208,7 +208,8 @@ function tooltipEmployeeLines(context) {
   if (!names.length) return [];
 
   const visibleNames = names.slice(0, 12);
-  const remaining = names.length - visibleNames.length;
+  const total = Number(context.raw || 0);
+  const remaining = Math.max(0, (total || names.length) - visibleNames.length);
   return [
     "Pegawai:",
     ...visibleNames.map((name) => `- ${name}`),

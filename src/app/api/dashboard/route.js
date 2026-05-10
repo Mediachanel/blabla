@@ -753,10 +753,11 @@ function buildDashboardMenus(items, summary, options = {}) {
       charts: [
         {
           id: "ukpd-total",
-          title: "Total Pegawai per UKPD",
+          title: "Pegawai per UKPD Berdasarkan Status Pegawai",
+          stacked: true,
           fullWidth: true,
           heightClass: "h-[720px]",
-          ...buildRankedValueChart(items, (item) => normalizeText(item.nama_ukpd) || "Tidak Diketahui")
+          ...buildGroupedChart(items, (item) => normalizeText(item.nama_ukpd) || "Tidak Diketahui", CHART_VIEW_CONFIGS.statusPegawai)
         }
       ]
     }

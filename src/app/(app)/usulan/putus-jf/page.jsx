@@ -929,15 +929,17 @@ export default function UsulanPutusJfPage() {
               rowKey="id"
               data={filteredRows}
               showNumber
-              actionWidth={180}
+              actionWidth={132}
+              fitToWidth
+              compact
               columns={[
                 {
                   key: "pegawai",
                   header: "Pegawai",
-                  width: 300,
+                  width: 210,
                   wrap: true,
                   render: (item) => (
-                    <div className="max-w-[280px] whitespace-normal">
+                    <div className="max-w-[190px] whitespace-normal">
                       <p className="font-semibold text-slate-900">{item.nama_pegawai || "-"}</p>
                       <p className="text-xs text-slate-500">NRK {item.nrk || "-"} | NIP {item.nip || "-"}</p>
                     </div>
@@ -946,10 +948,10 @@ export default function UsulanPutusJfPage() {
                 {
                   key: "jabatan",
                   header: "Jabatan",
-                  width: 260,
+                  width: 190,
                   wrap: true,
                   render: (item) => (
-                    <div className="max-w-[220px] whitespace-normal text-sm">
+                    <div className="max-w-[175px] whitespace-normal text-sm">
                       <p>{item.jabatan || "-"}</p>
                       <p className="text-slate-400">ke</p>
                       <p>{item.jabatan_baru || "-"}</p>
@@ -959,10 +961,10 @@ export default function UsulanPutusJfPage() {
                 {
                   key: "surat",
                   header: "Surat",
-                  width: 230,
+                  width: 170,
                   wrap: true,
                   render: (item) => (
-                    <div className="w-44 whitespace-normal text-sm">
+                    <div className="w-40 whitespace-normal text-sm">
                       <p className="font-medium text-slate-900">{item.nomor_surat || "-"}</p>
                       <p className="text-xs text-slate-500">{formatDate(item.tanggal_surat)}</p>
                       <p className="mt-1 text-xs text-slate-500">{item.asal_surat || "-"}</p>
@@ -972,10 +974,10 @@ export default function UsulanPutusJfPage() {
                 {
                   key: "berkas",
                   header: "Berkas",
-                  width: 170,
+                  width: 120,
                   wrap: true,
                   render: (item) => (
-                    <div className="w-36 whitespace-normal text-sm">
+                    <div className="w-28 whitespace-normal text-sm">
                       <div className="mb-1 flex items-center gap-2">
                         {item._checklist.documentCount === item._checklist.total && item._checklist.total > 0 ? <CheckCircle2 className="h-4 w-4 text-emerald-600" /> : <FileWarning className="h-4 w-4 text-amber-600" />}
                         <span>{item._checklist.documentCount}/{item._checklist.total}</span>
@@ -987,30 +989,30 @@ export default function UsulanPutusJfPage() {
                 {
                   key: "tahap",
                   header: "Tahap",
-                  width: 190,
+                  width: 140,
                   wrap: true,
                   render: (item) => (
-                    <div className="w-40 whitespace-normal">
+                    <div className="w-32 whitespace-normal">
                       <p className="font-semibold text-slate-900">{item._flow.stageLabel}</p>
                       <StatusBadge status={item.status} />
                     </div>
                   )
                 },
-                { key: "tanggal_usulan", header: "Tgl Usulan", width: 170, render: (item) => formatDate(item.tanggal_usulan || item.created_at) }
+                { key: "tanggal_usulan", header: "Tgl", width: 112, render: (item) => formatDate(item.tanggal_usulan || item.created_at) }
               ]}
               actions={(item) => (
-                <div className="flex items-center justify-end gap-1 sm:gap-2">
-                  <button className="rounded-lg p-2 text-dinkes-700 hover:bg-dinkes-50 focus-ring" type="button" onClick={() => openDetail(item)} aria-label="Detail" title="Detail">
+                <div className="flex items-center justify-end gap-0.5">
+                  <button className="rounded-md p-1.5 text-dinkes-700 hover:bg-dinkes-50 focus-ring" type="button" onClick={() => openDetail(item)} aria-label="Detail" title="Detail">
                     <Eye className="h-4 w-4" />
                   </button>
-                  <button className="rounded-lg p-2 text-slate-700 hover:bg-slate-100 focus-ring" type="button" onClick={() => openEdit(item)} aria-label="Edit" title="Edit">
+                  <button className="rounded-md p-1.5 text-slate-700 hover:bg-slate-100 focus-ring" type="button" onClick={() => openEdit(item)} aria-label="Edit" title="Edit">
                     <SquarePen className="h-4 w-4" />
                   </button>
-                  <button className="rounded-lg p-2 text-emerald-700 hover:bg-emerald-50 focus-ring" type="button" onClick={() => openVerify(item)} aria-label="Verifikasi" title="Verifikasi">
+                  <button className="rounded-md p-1.5 text-emerald-700 hover:bg-emerald-50 focus-ring" type="button" onClick={() => openVerify(item)} aria-label="Verifikasi" title="Verifikasi">
                     <CheckCircle2 className="h-4 w-4" />
                   </button>
                   {canDeleteUsulan(user, item) ? (
-                    <button className="rounded-lg p-2 text-rose-600 hover:bg-rose-50 focus-ring" type="button" onClick={() => setDeleteTarget(item)} aria-label="Hapus" title="Hapus">
+                    <button className="rounded-md p-1.5 text-rose-600 hover:bg-rose-50 focus-ring" type="button" onClick={() => setDeleteTarget(item)} aria-label="Hapus" title="Hapus">
                       <Trash2 className="h-4 w-4" />
                     </button>
                   ) : null}

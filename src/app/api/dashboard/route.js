@@ -12,6 +12,17 @@ const GENDER_CATEGORIES = [
 ];
 const EDUCATION_ORDER = ["SD", "SMP", "SMA/SMK", "D1", "D2", "D3", "D4", "S1", "Profesi", "S2", "Spesialis", "S3", "Tidak Diketahui"];
 const AGE_RANGE_ORDER = ["<20", "20-24", "25-29", "30-34", "35-39", "40-44", "45-49", "50-54", "55-59", ">=60", "Tidak Diketahui"];
+const WILAYAH_ORDER = [
+  "Dinas Kesehatan",
+  "Provinsi",
+  "Jakarta Pusat",
+  "Jakarta Utara",
+  "Jakarta Barat",
+  "Jakarta Selatan",
+  "Jakarta Timur",
+  "Kepulauan Seribu",
+  "Tidak Diketahui"
+];
 const MASA_KERJA_ORDER = [
   ...Array.from({ length: 10 }, (_, index) => `${index * 2}-${index * 2 + 2} tahun`),
   ">20 tahun",
@@ -305,6 +316,34 @@ function buildValueChart(items, labelFn, preferredOrder = []) {
   };
 }
 
+function buildRankedValueChart(items, labelFn, { limit = 0, preferredOrder = [] } = {}) {
+  const counts = new Map();
+  const order = new Map(preferredOrder.map((label, index) => [label, index]));
+
+  for (const item of items) {
+    const label = labelFn(item) || "Tidak Diketahui";
+    addCount(counts, label);
+  }
+
+  const labels = [...counts.entries()]
+    .sort((a, b) => {
+      const totalDiff = b[1] - a[1];
+      if (totalDiff !== 0) return totalDiff;
+      const orderA = order.has(a[0]) ? order.get(a[0]) : Number.MAX_SAFE_INTEGER;
+      const orderB = order.has(b[0]) ? order.get(b[0]) : Number.MAX_SAFE_INTEGER;
+      if (orderA !== orderB) return orderA - orderB;
+      return String(a[0]).localeCompare(String(b[0]), "id");
+    })
+    .slice(0, limit > 0 ? limit : undefined)
+    .map(([label]) => label);
+
+  return {
+    labels,
+    values: labels.map((label) => counts.get(label) || 0),
+    colors: chartColorsFor(labels)
+  };
+}
+
 function createTotalLineDataset(data) {
   return {
     type: "line",
@@ -355,6 +394,13 @@ function buildGenderGroupedChart(items, labelFn, preferredOrder = []) {
 
 function getPangkatLabel(item) {
   return normalizePangkatGolonganOption(item.pangkat_golongan) || "Tidak Diketahui";
+}
+
+function getWilayahLabel(item, ukpdList = []) {
+  const wilayah = normalizeText(item.wilayah);
+  if (wilayah) return wilayah;
+  const derivedWilayah = normalizeText(getPegawaiWilayah(item, ukpdList));
+  return derivedWilayah && derivedWilayah !== "-" ? derivedWilayah : "Tidak Diketahui";
 }
 
 function getMasaKerjaLabel(item) {
@@ -466,6 +512,7 @@ function buildPensionProjection(items) {
 
 function buildDashboardMenus(items, summary, options = {}) {
   const pensionProjection = buildPensionProjection(items);
+  const ukpdList = options.ukpdList || [];
   const dashboardCharts = [
     {
       id: "status-pegawai",
@@ -480,6 +527,24 @@ function buildDashboardMenus(items, summary, options = {}) {
       type: "doughnut",
       heightClass: "h-80",
       ...buildDistributionChart(items, CHART_VIEW_CONFIGS.jenisKelamin)
+    },
+    {
+      id: "pegawai-wilayah",
+      title: "Pegawai per Wilayah",
+      heightClass: "h-80",
+      ...buildRankedValueChart(items, (item) => getWilayahLabel(item, ukpdList), {
+        preferredOrder: WILAYAH_ORDER
+      })
+    },
+    {
+      id: "pegawai-ukpd",
+      title: "Top 15 UKPD Berdasarkan Jumlah Pegawai",
+      horizontal: true,
+      fullWidth: true,
+      heightClass: "h-[520px]",
+      ...buildRankedValueChart(items, (item) => normalizeText(item.nama_ukpd) || "Tidak Diketahui", {
+        limit: 15
+      })
     }
   ];
 
@@ -774,6 +839,7 @@ export async function GET(request) {
       : baseChartItems.filter((item) => normalizeJenisPegawai(item.jenis_pegawai) === statusFilter);
     const chartSummary = buildSummary(chartItems);
     const dashboardMenus = buildDashboardMenus(chartItems, chartSummary, {
+      ukpdList,
       includeUkpdStatusChart: false
     });
     const dashboardMenusByStatus = {

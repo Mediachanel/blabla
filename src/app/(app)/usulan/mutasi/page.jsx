@@ -592,17 +592,25 @@ export default function UsulanMutasiPage() {
         fetch("/api/auth/me", { cache: "no-store" }),
         fetch("/api/pegawai/form-options", { cache: "no-store" })
       ]);
-      const [mutasiPayload, userPayload, optionsPayload] = await Promise.all([mutasiResponse.json(), userResponse.json(), optionsResponse.json()]);
+      const mutasiPayload = await parseApiResponse(mutasiResponse, "Data usulan mutasi gagal dimuat.");
       if (!mutasiResponse.ok || !mutasiPayload.success) {
         throw new Error(mutasiPayload.message || "Data usulan mutasi gagal dimuat.");
       }
-      if (optionsResponse.ok && optionsPayload.success) {
+
+      const userPayload = userResponse.ok
+        ? await parseApiResponse(userResponse, "Data pengguna gagal dimuat.").catch(() => null)
+        : null;
+      const optionsPayload = optionsResponse.ok
+        ? await parseApiResponse(optionsResponse, "Opsi form pegawai gagal dimuat.").catch(() => null)
+        : null;
+
+      if (optionsResponse.ok && optionsPayload?.success) {
         setReferenceOptions(optionsPayload.data || {});
       }
       setRows(mutasiPayload.data || []);
       setSelectedId((current) => current || mutasiPayload.data?.[0]?.id || null);
-      setUser(userPayload.data || null);
-      if (userPayload.data?.nama_ukpd) {
+      setUser(userPayload?.data || null);
+      if (userPayload?.data?.nama_ukpd) {
         setForm((current) => ({ ...current, nama_ukpd: current.nama_ukpd || userPayload.data.nama_ukpd }));
       }
     } catch (error) {

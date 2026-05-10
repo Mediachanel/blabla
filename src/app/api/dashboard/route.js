@@ -148,7 +148,7 @@ function createSeriesChart(labels, categories, counts, employees = new Map()) {
   };
 }
 
-function buildGroupedChart(items, groupFn, config, sortByTotal = true) {
+function buildGroupedChart(items, groupFn, config, sortByTotal = true, preferredOrder = []) {
   const groupTotals = new Map();
   const counts = new Map();
   const employees = new Map();
@@ -162,9 +162,11 @@ function buildGroupedChart(items, groupFn, config, sortByTotal = true) {
     pushEmployee(employees, `${group}||${category}`, item);
   }
 
-  const labels = [...groupTotals.entries()]
-    .sort((a, b) => (sortByTotal ? b[1] - a[1] : 0) || a[0].localeCompare(b[0]))
-    .map(([label]) => label);
+  const labels = preferredOrder.length
+    ? sortLabels([...groupTotals.keys()], preferredOrder)
+    : [...groupTotals.entries()]
+      .sort((a, b) => (sortByTotal ? b[1] - a[1] : 0) || a[0].localeCompare(b[0]))
+      .map(([label]) => label);
 
   return createSeriesChart(labels, config.categories, counts, employees);
 }
@@ -735,7 +737,7 @@ function buildDashboardMenus(items, summary, options = {}) {
           title: "Pegawai per Wilayah Berdasarkan Status Pegawai",
           stacked: true,
           heightClass: "h-96",
-          ...buildGroupedChart(items, (item) => getWilayahLabel(item, ukpdList), CHART_VIEW_CONFIGS.statusPegawai)
+          ...buildGroupedChart(items, (item) => getWilayahLabel(item, ukpdList), CHART_VIEW_CONFIGS.statusPegawai, true, WILAYAH_ORDER)
         },
         {
           id: "wilayah-gender",

@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import dinkesLogo from "@/Foto/Dinkes.png";
 import { isWebAuthnAvailable, requestOptionsFromJSON, serializePublicKeyCredential } from "@/lib/auth/webauthnClient";
+import PublicAiChat from "@/components/ai/PublicAiChat";
 
 const QUICK_ACTIONS = [
   { title: "Cari Informasi Mutasi", keyword: "mutasi", description: "Lihat syarat, alur, dan verifikasi usulan mutasi." },
@@ -1216,6 +1217,7 @@ function LoginShell() {
         <section className="mx-auto w-full max-w-7xl px-4 pb-10 sm:px-6 lg:px-8 lg:pb-12">
           <QnaSection quickSearch={quickSearch} onResetQuickSearch={() => setQuickSearch("")} />
         </section>
+        <PublicAiChat />
       </div>
     </>
   );
